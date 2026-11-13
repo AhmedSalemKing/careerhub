@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
   ]
 
   return (
-    <div style={{ minHeight:'100vh', background: isDark?'#0d0d0d':'#fafafa', padding:'32px 24px 120px', direction:'rtl' }}>
+    <div style={{ minHeight:'100vh', background: 'var(--background)', padding:'32px 24px 120px', direction:'rtl' }}>
       <div style={{ maxWidth: 760, margin:'0 auto' }}>
         <div style={{ marginBottom:28 }}>
           <h1 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
                     <BookOpen size={20} color="#5120c8"/>
                   </div>
                   <div style={{ flex:1 }}>
-                    <div style={{ color: isDark?'#f1f5f9':'#0d0d0d', fontSize:14, fontWeight:600 }}>{c.title}</div>
+                    <div style={{ color: 'var(--foreground)', fontSize:14, fontWeight:600 }}>{c.title}</div>
                     <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
                   </div>
                   <div style={{ color: isDark?'#94a3b8':'#6b7280', fontSize:13, fontWeight:600 }}>

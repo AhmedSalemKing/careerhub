@@ -334,9 +334,9 @@ export default function AdminCreateCoursePage() {
   const inputStyle: React.CSSProperties = {
     width: '100%', maxWidth: '100%', boxSizing: 'border-box',
     padding: '12px 16px', borderRadius: 10,
-    background: isDark ? '#1a1a1a' : '#f8fafc',
+    background: 'var(--surface-2)',
     border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
-    color: isDark ? '#f1f5f9' : '#0d0d0d',
+    color: 'var(--foreground)',
     fontSize: 14, outline: 'none', transition: 'border-color 0.2s',
   }
 
@@ -346,7 +346,7 @@ export default function AdminCreateCoursePage() {
   }
 
   const cardStyle: React.CSSProperties = {
-    background: isDark ? '#111111' : '#fff',
+    background: 'var(--surface)',
     borderRadius: 20, padding: 32,
     border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#e5e7eb'}`,
     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
@@ -590,7 +590,7 @@ export default function AdminCreateCoursePage() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
                   borderRadius: 12, padding: 20,
                   border: `2px dashed ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
-                  background: isDark ? '#1a1a1a' : '#f8fafc',
+                  background: 'var(--surface-2)',
                   cursor: 'pointer',
                 }}
               >
@@ -628,7 +628,7 @@ export default function AdminCreateCoursePage() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
                   borderRadius: 12, padding: 20,
                   border: `2px dashed ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
-                  background: isDark ? '#1a1a1a' : '#f8fafc',
+                  background: 'var(--surface-2)',
                   cursor: 'pointer',
                 }}
               >

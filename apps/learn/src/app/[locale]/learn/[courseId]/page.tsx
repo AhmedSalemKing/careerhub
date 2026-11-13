@@ -1099,10 +1099,10 @@ function MetaItem({
 
 	// Colors - Professional Educational Platform Design
 	const isDark = theme === "dark";
-	const bg = isDark ? "#0d0d0d" : "#ffffff";
-	const sidebarBg = isDark ? "#111111" : "#f8f8fa";
-	const headerBg = isDark ? "#0d0d0d" : "#ffffff";
-	const textPrimary = isDark ? "#f1f5f9" : "#0d0d0d";
+	const bg = "var(--background)";
+	const sidebarBg = "var(--surface)";
+	const headerBg = "var(--background)";
+	const textPrimary = "var(--foreground)";
 	const textSecondary = isDark ? "#94a3b8" : "#6b7280";
 	const borderColor = isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb";
 	const cardBg = isDark ? "#161616" : "#ffffff";

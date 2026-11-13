@@ -93,10 +93,10 @@ export default function CareerInterview({ isDark, onReportReady, mode = 'intervi
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const submittingRef = useRef(false)
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
+  const bg = 'var(--background)'
+  const cardBg = 'var(--surface)'
   const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const text = 'var(--foreground)'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
   useEffect(() => {
@@ -496,9 +496,9 @@ export default function CareerInterview({ isDark, onReportReady, mode = 'intervi
 }
 
 function CareerReportView({ report, isDark, isAr, onRestart }: { report: any; isDark: boolean; isAr: boolean; onRestart: () => void }) {
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const text = 'var(--foreground)'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
-  const cardBg = isDark ? '#111111' : '#ffffff'
+  const cardBg = 'var(--surface)'
   const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
 
   return (

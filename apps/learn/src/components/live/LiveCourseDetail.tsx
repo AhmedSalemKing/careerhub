@@ -130,9 +130,9 @@ export default function LiveCourseDetail({
 		return null;
 	}, [recordedLesson, course?.liveStartTime, course?.liveEndTime]);
 
-	const bg = isDark ? "#0d0d0d" : "#ffffff";
-	const surfaceBg = isDark ? "#111111" : "#f8f8fa";
-	const textPrimary = isDark ? "#f1f5f9" : "#0d0d0d";
+	const bg = "var(--background)";
+	const surfaceBg = "var(--surface)";
+	const textPrimary = "var(--foreground)";
 	const textSecondary = isDark ? "#94a3b8" : "#64748b";
 	const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
 	const purple = "#5120c8";

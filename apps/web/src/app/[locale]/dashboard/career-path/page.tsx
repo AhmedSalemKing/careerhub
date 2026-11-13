@@ -62,10 +62,10 @@ const [confirmModal, setConfirmModal] = useState<{
   onConfirm: () => void; destructive?: boolean;
 }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
   
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
+  const bg = 'var(--background)'
+  const cardBg = 'var(--surface)'
   const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const text = 'var(--foreground)'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
@@ -744,7 +744,7 @@ const [confirmModal, setConfirmModal] = useState<{
                 {coursesLoading ? (
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
                     {[1,2,3,4,5,6].map(i => (
-                      <div key={i} style={{ height:200, borderRadius:14, background: isDark?'#1a1a1a':'#f4f4f8' }}>
+                      <div key={i} style={{ height:200, borderRadius:14, background: 'var(--surface-2)' }}>
                         <div style={{ width:'100%', height:'100%', borderRadius:14, animation:'pulse 1.5s infinite', background: isDark?'#222':'#efefef' }} />
                       </div>
                     ))}
@@ -754,7 +754,7 @@ const [confirmModal, setConfirmModal] = useState<{
                     {courses.map((course: any) => (
                       <div key={course.id} style={{ borderRadius: 14, border: `1px solid ${border}`, background: cardBg, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
                       onClick={() => window.open(learnUrlWithToken(`/${locale}/courses/${course.slug || course.id}`), '_blank')}>
-                        <div style={{ height: 120, background: isDark ? '#1a1a1a' : '#f8f8fa', overflow: 'hidden' }}>
+                        <div style={{ height: 120, background: 'var(--surface-2)', overflow: 'hidden' }}>
                           {course.thumbnail ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={28} color={subtext} /></div>}
                         </div>
                         <div style={{ padding: '14px' }}>

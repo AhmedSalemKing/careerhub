@@ -36,11 +36,11 @@ export function ChatInterface({
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
-  const chatBg = isDark ? '#141414' : '#ffffff'
+  const chatBg = 'var(--bg-2)'
   const chatBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
   const messageBg = isDark ? '#0A0A0A' : '#f3f4f6'
   const messageBorder = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-  const textColor = isDark ? '#ffffff' : '#0d0d0d'
+  const textColor = 'var(--foreground)'
   const mutedColor = isDark ? '#9CA3AF' : '#6b7280'
 
   const [connected, setConnected] = useState(false)

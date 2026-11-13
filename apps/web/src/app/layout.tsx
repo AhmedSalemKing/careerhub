@@ -128,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         
         <style dangerouslySetInnerHTML={{ __html: `
-            html { background-color: var(--background, #0d0d0d); }
+            html { background-color: var(--background, #0b0820); }
             html.dark { color-scheme: dark; }
             html:not(.dark) { color-scheme: light; }
             body { background-color: inherit; min-height: 100vh; }

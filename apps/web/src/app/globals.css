@@ -140,17 +140,18 @@ input:-webkit-autofill:active {
 	--gold: #f5a623;
 
 	/* ── Core Palette ── */
-	--background: #ffffff;
-	--foreground: #0d0d0d;
-	--surface: #f4f4f8;
-	--surface-2: #f7f7f9;
-	--surface-3: #efeff1;
+	/* Unified with the home design system (--bg / --ink / --line below) */
+	--background: var(--bg);
+	--foreground: var(--ink);
+	--surface: #ffffff;
+	--surface-2: #f6f3ff;
+	--surface-3: #efe9ff;
 	--card: #ffffff;
-	--border: #e5e7eb;
-	--border-strong: #d1d1d6;
-	--muted: #6b7280;
-	--muted-foreground: #aeaeb2;
-	--foreground-2: #333338;
+	--border: var(--line);
+	--border-strong: var(--line-2);
+	--muted: var(--ink-3);
+	--muted-foreground: var(--ink-3);
+	--foreground-2: var(--ink-2);
 
 	/* ── Primary Purple ── */
 	--primary: #5120c8;
@@ -249,19 +250,19 @@ input:-webkit-autofill:active {
    ══════════════════════════════════════ */
 .dark {
 	/* ── Core Palette ── */
-	--background: #0d0d0d;
-	--background-2: #141414;
-	--foreground: #f1f5f9;
-	--surface: #1a1a1a;
-	--surface-2: #2c2c2e;
-	--surface-3: #3a3a3c;
-	--card: #111111;
-	--border: rgba(255,255,255,0.07);
-	--border-2: #48484a;
-	--border-strong: #636366;
-	--muted: #94a3b8;
-	--muted-foreground: rgba(255, 255, 255, 0.3);
-	--foreground-2: #ebebf5;
+	--background: var(--bg);
+	--background-2: var(--bg-2);
+	--foreground: var(--ink);
+	--surface: #151036;
+	--surface-2: #1b1542;
+	--surface-3: #241b5a;
+	--card: #151036;
+	--border: var(--line);
+	--border-2: var(--line-2);
+	--border-strong: var(--line-2);
+	--muted: var(--ink-3);
+	--muted-foreground: var(--ink-3);
+	--foreground-2: var(--ink-2);
 
 	/* ── Primary Purple (Same in both modes) ── */
 	--primary: #5120c8;
@@ -317,9 +318,9 @@ input:-webkit-autofill:active {
 	--cta-shadow-hover: 0 6px 18px rgba(81, 32, 200, 0.28);
 
 	/* ── Navigation ── */
-	--navbar-bg: #0d0d0d;
-	--navbar-border: #38383a;
-	--sidebar-bg: #0d0d0d;
+	--navbar-bg: var(--bg);
+	--navbar-border: var(--line);
+	--sidebar-bg: var(--bg);
 }
 
 /* ══════════════════════════════════════
@@ -1614,7 +1615,7 @@ html.no-transition *::after {
 /* Ensure body/html use correct background in dark mode */
 .dark body,
 .dark html {
-	background-color: #0d0d0d;
+	background-color: var(--background);
 	background-image: none;
 }
 
@@ -1629,12 +1630,12 @@ html.no-transition *::after {
 html[style*="#0f172a"],
 html[style*="--background: #0f172a"],
 html[style*="--background:#0f172a"] {
-	--background: #0d0d0d !important;
+	--background: var(--bg) !important;
 }
 html:not(.dark)[style*="#0f172a"],
 html:not(.dark)[style*="--background: #0f172a"],
 html:not(.dark)[style*="--background:#0f172a"] {
-	--background: #ffffff !important;
+	--background: var(--bg) !important;
 }
 
 /* Course images always visible */
@@ -1847,6 +1848,8 @@ h6,
 :root {
 	--lavender: #bf78fb;
 	--navy: #100c2e;
+	--bg: #fbfaff;
+	--bg-2: #f3f0fd;
 	--ink: #120e2b;
 	--ink-2: #4a4664;
 	--ink-3: #7a7694;
@@ -1876,6 +1879,8 @@ h6,
 }
 
 .dark {
+	--bg: #0b0820;
+	--bg-2: #110d2c;
 	--ink: #f3f0ff;
 	--ink-2: #bdb6dc;
 	--ink-3: #8e88b0;

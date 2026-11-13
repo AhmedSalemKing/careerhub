@@ -91,7 +91,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
     style: {
       base: {
         fontSize: '14px',
-        color: isDark ? '#f1f5f9' : '#0d0d0d',
+        color: 'var(--foreground)',
         '::placeholder': { color: isDark ? '#94a3b8' : '#9ca3af' },
         fontFamily: 'system-ui, sans-serif',
       },
@@ -134,7 +134,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
         <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'block' }}>
           {isAr ? 'بيانات البطاقة' : 'Card Details'}
         </label>
-        <div style={{ padding: '13px 14px', borderRadius: 10, border: `1.5px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', transition: 'border-color 0.15s' }}
+        <div style={{ padding: '13px 14px', borderRadius: 10, border: `1.5px solid ${border}`, background: 'var(--background)', transition: 'border-color 0.15s' }}
           onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = '#5120c8' }}
           onBlur={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = border }}>
           <CardElement options={cardStyle} />
