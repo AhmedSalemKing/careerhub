@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { getToken } from '@/lib/auth'
+import { aiMarketPayload } from '@/lib/market'
 import { withLearnToken } from '@/lib/learn-link'
 
 // Plain React + fetch only. The conversation lives in component state and every
@@ -356,6 +357,7 @@ export default function AiChatPage() {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
+            ...aiMarketPayload(),
             mode: 'rasheed',
             stream: true,
             messages: history.map((m, i) => ({

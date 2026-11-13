@@ -4,6 +4,7 @@ import { getToken } from '@/lib/auth'
 import { useStreamingTTS } from './tts-v2/useStreamingTTS'
 import { createSttController } from './stt-controller'
 import type { SttController, SttCommitReason } from './stt-controller'
+import { aiMarketPayload } from '../../lib/market'
 
 export interface Message {
   id: string
@@ -239,7 +240,7 @@ export function useAIChat() {
     setIsLoading(true)
 
     try {
-      const body: Record<string, unknown> = { messages: newMessages.map(m => ({ role: m.role, content: m.content })) }
+      const body: Record<string, unknown> = { ...aiMarketPayload(), messages: newMessages.map(m => ({ role: m.role, content: m.content })) }
       if (memoryContext) body.memoryContext = memoryContext
       const chatToken = getToken()
       const res = await fetch('/api/ai/chat', {

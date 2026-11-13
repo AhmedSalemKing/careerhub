@@ -9,8 +9,10 @@ import {
 } from 'lucide-react'
 import { RasheedAvatar } from '@/app/components/CharacterDuo'
 import { useAuthStore } from '@/stores/authStore'
-import { getCountryClient } from '@/lib/market'
-import { useTracks, fetchTrack, formatTrackPrice } from '@/lib/tracks'
+import { useMarket } from '@/app/contexts/MarketContext'
+import { MARKET_CONFIG, toLang } from '@/lib/marketConfig'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { useTracks, fetchTrack } from '@/lib/tracks'
 
 /* ── Display shape ───────────────────────────────────────── */
 interface ResultJob { title: string; description: string; salaryMin: number | null; salaryMax: number | null; vision2030: boolean }
@@ -53,10 +55,10 @@ interface Stored {
   weeklyHours?: number
 }
 
-const VISION = {
-  KSA: { name: 'رؤية السعودية 2030', logo: '/images/ro2ya.png' },
-  EG: { name: 'رؤية مصر 2030', logo: '/images/egypt-vision.webp' },
-} as const
+const VISION_LOGO = { KSA: '/images/ro2ya.png', EG: '/images/egypt-vision.webp' } as const
+
+/** Package prices are stored in SAR (base currency); EG shows the approximate EGP equivalent. */
+const packagePrice = (sar: number, market: 'KSA' | 'EG') => Math.round(sar * MARKET_CONFIG[market].salaryMultiplier)
 
 /** Readiness question p6q1: the first two options mean under 5 study hours a week. */
 const HOURS_BY_OPTION: Record<string, number> = {
@@ -101,8 +103,8 @@ export default function AssessmentResultPage() {
   const router = useRouter()
   const locale = useLocale()
   const user = useAuthStore((s) => s.user)
-  const market: 'EG' | 'KSA' = getCountryClient() === 'EG' ? 'EG' : 'KSA'
-  const currency: 'EGP' | 'SAR' = market === 'EG' ? 'EGP' : 'SAR'
+  const { market, config } = useMarket()
+  const lang = toLang(locale)
 
   const [stored, setStored] = useState<Stored | null>(null)
   const [checked, setChecked] = useState(false)
@@ -273,8 +275,8 @@ export default function AssessmentResultPage() {
                             {(j.salaryMin != null || j.salaryMax != null) && (
                               <span className="rs-sal">
                                 <TrendingUp size={13} aria-hidden="true" />
-                                <b>{j.salaryMin != null && j.salaryMax != null ? `${fmtK(j.salaryMin)} – ${fmtK(j.salaryMax)}` : fmtK((j.salaryMin ?? j.salaryMax) as number)} ألف {currency === 'EGP' ? 'ج.م' : 'ر.س'}</b>
-                                <small>/ شهريًا</small>
+                                <b>{j.salaryMin != null && j.salaryMax != null ? `${fmtK(j.salaryMin)} – ${fmtK(j.salaryMax)}` : fmtK((j.salaryMin ?? j.salaryMax) as number)} ألف {config.currencySymbol[lang]}</b>
+                                <small>/ {config.salaryUnit[lang]}</small>
                               </span>
                             )}
                             {j.vision2030 && <span className="rs-v2030">رؤية 2030</span>}
@@ -309,9 +311,9 @@ export default function AssessmentResultPage() {
 
                 {t.vision && (
                   <section className="rs-vision">
-                    <span className="rs-vlogo"><img src={VISION[t.vision].logo} alt={VISION[t.vision].name} /></span>
+                    <span className="rs-vlogo"><img src={VISION_LOGO[t.vision]} alt={MARKET_CONFIG[t.vision].vision.name[lang]} /></span>
                     <div>
-                      <p className="rs-vname"><Award size={13} aria-hidden="true" /> متوافق مع {VISION[t.vision].name}</p>
+                      <p className="rs-vname"><Award size={13} aria-hidden="true" /> متوافق مع {MARKET_CONFIG[t.vision].vision.name[lang]}</p>
                       {t.vision2030Text && <p>{t.vision2030Text}</p>}
                     </div>
                   </section>
@@ -321,7 +323,7 @@ export default function AssessmentResultPage() {
                   {t.price != null && (
                     <span className="rs-price">
                       <small>سعر واحد شامل</small>
-                      <b>{formatTrackPrice(t.price, 'SAR', 'ar')}</b>
+                      <b>{formatCurrency(packagePrice(t.price, market), market, locale)}</b>
                       <span className="rs-sample">نموذج</span>
                     </span>
                   )}

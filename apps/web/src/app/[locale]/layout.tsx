@@ -1,9 +1,12 @@
 import { LocaleShell } from '../components/LocaleShell'
+import { MarketProvider } from '../contexts/MarketContext'
 
 export default function LocaleLayout({ children }: { children: React.ReactNode }) {
   return (
-    <LocaleShell>
-      {children}
-    </LocaleShell>
+    <MarketProvider>
+      <LocaleShell>
+        {children}
+      </LocaleShell>
+    </MarketProvider>
   )
 }

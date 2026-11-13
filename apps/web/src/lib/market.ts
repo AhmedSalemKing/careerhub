@@ -116,3 +116,15 @@ export function formatMoney(
     maximumFractionDigits: 2,
   })} ر.س`
 }
+
+// ── AI CONTEXT ───────────────────────────────────────────────────────────────
+
+/**
+ * `market` + `locale` for every request to /api/ai/chat. The route turns them into the
+ * market block of the system prompt (currency, job market, Vision 2030).
+ * Market comes from the `market` cookie, locale from the URL prefix (/ar/..., /en/...).
+ */
+export function aiMarketPayload(): { market: 'KSA' | 'EG'; locale: 'ar' | 'en' } {
+  const locale = typeof window !== 'undefined' && /^\/en(\/|$)/.test(window.location.pathname) ? 'en' : 'ar'
+  return { market: getCountryClient() === 'EG' ? 'EG' : 'KSA', locale }
+}

@@ -10,8 +10,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 import { getToken } from '@/lib/auth'
 import { useQueries } from '@tanstack/react-query'
-import { useTracks, fetchTrack, formatSalaryRange, formatTrackPrice, type Track } from '@/lib/tracks'
-import { getCountryClient } from '@/lib/market'
+import { useTracks, fetchTrack, formatSalaryRange, type Track } from '@/lib/tracks'
+import { aiMarketPayload } from '@/lib/market'
+import { useMarket } from '@/app/contexts/MarketContext'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { MARKET_CONFIG, toLang } from '@/lib/marketConfig'
 import { RasheedAvatar, CharacterAvatar } from '../../../components/CharacterDuo'
 import { SECTION_SVGS, CHECK_SVG } from './sections'
 
@@ -679,8 +682,9 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
   const router = useRouter()
   const locale = useLocale()
   const RC_COLORS = ['var(--brand)', 'var(--purple)', 'var(--lavender)']
-  const market: 'EG' | 'KSA' = getCountryClient() === 'EG' ? 'EG' : 'KSA'
-  const currency: 'EGP' | 'SAR' = market === 'EG' ? 'EGP' : 'SAR'
+  const { market, config } = useMarket()
+  const currency = config.currency
+  const lang = toLang(locale)
 
   // Real tracks from the admin API: jobs, courses, vision and package price come from here.
   const { data: tracks = [] } = useTracks('ar')
@@ -720,8 +724,8 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
   }
 
   const VISION_LABEL = {
-    KSA: { name: 'رؤية السعودية 2030', logo: '/images/ro2ya.png' },
-    EG: { name: 'رؤية مصر 2030', logo: '/images/egypt-vision.webp' },
+    KSA: { name: MARKET_CONFIG.KSA.vision.name[lang], logo: '/images/ro2ya.png' },
+    EG: { name: MARKET_CONFIG.EG.vision.name[lang], logo: '/images/egypt-vision.webp' },
   } as const
 
   return (
@@ -816,13 +820,13 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                       <ul className="jobs">
                         {jobs.map((j) => {
                           const sal = market === 'EG' ? j.salaryEG : j.salaryKSA
-                          const salary = formatSalaryRange(sal.min, sal.max, currency, 'ar')
+                          const salary = formatSalaryRange(sal.min, sal.max, currency, lang)
                           return (
                             <li key={j.title}>
                               <span className="j-main">
                                 <span className="j-name">{j.titleAr || j.title}</span>
                                 {j.desc && <span className="j-desc">{j.desc}</span>}
-                                {salary && <span className="j-sal"><b>{salary}</b><small>/ شهريًا</small></span>}
+                                {salary && <span className="j-sal"><b>{salary}</b><small>/ {config.salaryUnit[lang]}</small></span>}
                               </span>
                             </li>
                           )
@@ -869,7 +873,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
 
                 <footer className="rc-foot">
                   {pkg ? (
-                    <span className="rc-price"><small>سعر واحد شامل</small><b>{formatTrackPrice(pkg.price, 'SAR', 'ar')}</b></span>
+                    <span className="rc-price"><small>سعر واحد شامل</small><b>{formatCurrency(market === 'EG' ? Math.round(pkg.price * config.salaryMultiplier) : pkg.price, market, locale)}</b></span>
                   ) : <span />}
                   <span className="rc-actions">
                     {tk && (
@@ -1019,7 +1023,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
     const res = await fetch('/api/ai/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }], ...(maxOutputTokens ? { maxOutputTokens } : {}), ...(ctx ? { ctx } : {}) }),
+      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }], ...aiMarketPayload(), ...(maxOutputTokens ? { maxOutputTokens } : {}), ...(ctx ? { ctx } : {}) }),
       signal:  AbortSignal.timeout(timeoutMs),
     })
     if (res.status === 429) throw new RateLimitedError()
@@ -1091,11 +1095,17 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
         ? platformTracks.map(t => `- ${t.slug}: ${t.name}`).join('\n')
         : `- Data Analyst, Frontend Developer, Backend Developer, Full Stack Developer, UI/UX Designer, Product Manager, Data Scientist, Business Analyst, DevOps Engineer, Digital Marketing, Cybersecurity, Mobile Developer`
 
+      const { market: aiMarket, locale: aiLocale } = aiMarketPayload()
+      const targetMarket = MARKET_CONFIG[aiMarket].aiTargetMarket[aiLocale]
+
       try {
         const text = await callChat(
 `أنت رشيد، مستشار مهني. بناءً على إجابات المستخدم التالية على أسئلة التقييم المهني، قدّم توصيات مسارات مهنية مخصصة:
 
 ${qaText}
+
+السوق المستهدف: ${targetMarket}
+اربط التوصيات بسوق العمل هذا، وأي راتب تذكره يكون بعملته.
 
 حلّل هذه الإجابات بعمق (لاحظ الأنماط وأي تناقضات بين الإجابات، ولا تحلل كل سؤال على حدة) وقدّم 3 مسارات مهنية مرتبة حسب التوافق مع أسباب واضحة لكل مسار.
 اختر المسارات من هذه القائمة فقط${platformTracks.length ? '، وأعد الـ slug كما هو في الحقل trackSlug' : ''}:
@@ -1128,7 +1138,7 @@ ${trackList}
         )
         const parsed = parseQuizResult(text)
         if (!parsed) throw new Error('unparseable result')
-        sessionStorage.setItem('assessmentResult', JSON.stringify({ result: parsed, answers: finalAnswers, timestamp: Date.now() }))
+        sessionStorage.setItem('assessmentResult', JSON.stringify({ result: parsed, answers: finalAnswers, timestamp: Date.now(), market: aiMarket }))
         router.push(`/${locale}/dashboard/assessment/result`)
       } catch (e) {
         console.error('[Assessment] analysis failed', e)

@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
 import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
+import { useMarket } from '../../../contexts/MarketContext'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
@@ -102,6 +103,8 @@ export default function CareerPathDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const { config: mkt } = useMarket()
+  const lang = isAr ? 'ar' : 'en'
   const router = useRouter()
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState<string | null>(null)
@@ -218,7 +221,7 @@ export default function CareerPathDetailPage() {
         jobs: m.jobs.map((j) => ({
           title: j.title,
           description: j.description,
-          salaryText: `${j.salaryMin.toLocaleString(nf)} – ${j.salaryMax.toLocaleString(nf)} ${isAr ? 'ألف ر.س / شهريًا' : 'k SAR / month'}`,
+          salaryText: `${j.salaryMin.toLocaleString(nf)} – ${j.salaryMax.toLocaleString(nf)} ${isAr ? 'ألف' : 'k'} ${mkt.currencySymbol[lang]} / ${mkt.salaryUnit[lang]}`,
           vision2030: j.vision2030,
         })),
         courses: m.courses.map((c) => ({
@@ -364,7 +367,7 @@ export default function CareerPathDetailPage() {
               {view.level && <span className="dw2-stat-pill">{isAr ? 'المستوى' : 'Level'}: {view.level}</span>}
               {view.demand && <span className="dw2-stat-pill">{view.demand}</span>}
               {view.languages && view.languages.length > 0 && <span className="dw2-stat-pill">{view.languages.join(' · ')}</span>}
-              {view.vision2030 && <span className="dw2-stat-pill dw2-pill-green">🇸🇦 {isAr ? 'متوافق مع رؤية 2030' : 'Vision 2030 aligned'}</span>}
+              {view.vision2030 && <span className="dw2-stat-pill dw2-pill-green">{mkt.flag} {isAr ? 'متوافق مع ' : 'Aligned with '}{mkt.vision.name[lang]}</span>}
               {view.trackVision && view.trackVision.length > 0 && <VisionBadges vision={view.trackVision} locale={locale} compact />}
             </div>
             <div className="dw2-cta-row">
@@ -391,7 +394,7 @@ export default function CareerPathDetailPage() {
                         {j.description && <span className="dw2-job-desc">{j.description}</span>}
                         {j.salaryText && <span className="dw2-salary">{j.salaryText}</span>}
                       </div>
-                      {j.vision2030 && <span className="dw2-stat-pill dw2-pill-green">🇸🇦 {isAr ? 'رؤية 2030' : 'Vision 2030'}</span>}
+                      {j.vision2030 && <span className="dw2-stat-pill dw2-pill-green">{mkt.flag} {mkt.vision.name[lang]}</span>}
                       {j.visionList && j.visionList.length > 0 && <VisionBadges vision={j.visionList} locale={locale} compact />}
                     </div>
                   ))}
@@ -417,7 +420,7 @@ export default function CareerPathDetailPage() {
                 <h2>{isAr ? 'التوافق مع رؤية 2030' : 'Vision 2030 alignment'}</h2>
                 <p className="dw2-sub">{isAr ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.'}</p>
                 <div className="dw2-vision">
-                  <span className="dw2-vision-title">🇸🇦 {isAr ? 'رؤية السعودية 2030' : 'Saudi Vision 2030'}</span>
+                  <span className="dw2-vision-title">{mkt.flag} {mkt.vision.name[lang]}</span>
                   <p>{isAr ? 'التحول الرقمي ممكّن أساسي لرؤية 2030، ويحتاج إلى مطورين قادرين على بناء الخدمات الرقمية.' : 'Digital transformation is a key enabler of Vision 2030 and needs developers able to build digital services.'}</p>
                   {visionJobs.length > 0 && <span className="dw2-jobs-label">{isAr ? 'الوظائف المتوافقة:' : 'Aligned jobs:'} {visionJobs.join(isAr ? '، ' : ', ')}</span>}
                   <span className="dw2-disclaimer">{isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر).' : 'Vision 2030 badges follow the market you selected (Saudi Arabia or Egypt).'}</span>

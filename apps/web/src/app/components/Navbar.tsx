@@ -10,6 +10,7 @@ import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
+import { useMarket } from '../contexts/MarketContext'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
 import { learnUrlWithToken, installLearnLinkTokenizer } from '../../lib/learn-link'
@@ -85,24 +86,14 @@ function ThemeToggle() {
    Market Switcher (KSA / EG) — drives the `market` cookie read by api.ts
    ════════════════════════════════════════ */
 function MarketSwitcher() {
-  const [market, setMarket] = useState<'SAR' | 'EGP' | null>(null)
-
-  useEffect(() => {
-    const m = document.cookie.match(/(?:^|;\s*)market=([^;]*)/)?.[1]
-    setMarket(m === 'EGP' ? 'EGP' : 'SAR')
-  }, [])
-
-  const choose = (next: 'SAR' | 'EGP') => {
-    if (next === market) return
-    document.cookie = `market=${next};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`
-    setMarket(next)
-    window.location.reload()
-  }
+  const tm = useTranslations('market')
+  const { market, setMarket } = useMarket()
 
   return (
-    <div className="mkt hide-sm" role="group" aria-label="Market">
-      <button type="button" className={market === 'SAR' ? 'on' : undefined} aria-pressed={market === 'SAR'} onClick={() => choose('SAR')}>KSA</button>
-      <button type="button" className={market === 'EGP' ? 'on' : undefined} aria-pressed={market === 'EGP'} onClick={() => choose('EGP')}>EG</button>
+    // dir="ltr" keeps KSA | EG in the same order and position in Arabic and English.
+    <div className="mkt hide-sm" dir="ltr" role="group" aria-label={tm('switcher')}>
+      <button type="button" className={market === 'KSA' ? 'on' : undefined} aria-pressed={market === 'KSA'} title={tm('ksa')} onClick={() => setMarket('KSA')}>KSA</button>
+      <button type="button" className={market === 'EG' ? 'on' : undefined} aria-pressed={market === 'EG'} title={tm('eg')} onClick={() => setMarket('EG')}>EG</button>
     </div>
   )
 }

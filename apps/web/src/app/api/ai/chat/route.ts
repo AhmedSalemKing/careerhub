@@ -3,6 +3,7 @@ import { productionCb } from './circuit-breaker'
 import { classify429Body } from './gemini-utils'
 import { verifyRequest } from '../_auth'
 import { RASHEED_SYSTEM_PROMPT } from './rasheed-prompt'
+import { aiMarketContextFor } from '../../../../lib/marketConfig'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -256,7 +257,7 @@ export async function POST(req: NextRequest) {
     // userName is derived server-side from the verified JWT — never trusted from client body.
     // memoryContext may still come from the client: an authenticated user passing their own
     // memory context only affects their own session; prompt injection risk is low and bounded.
-    const { messages, memoryContext, mode, stream, maxOutputTokens: reqMaxTokens, ctx: reqCtx } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean; maxOutputTokens?: number; ctx?: string }
+    const { messages, memoryContext, mode, stream, maxOutputTokens: reqMaxTokens, ctx: reqCtx, market: reqMarket, locale: reqLocale } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean; maxOutputTokens?: number; ctx?: string; market?: string; locale?: string }
     // Caller-supplied tag (e.g. insight:Q7 / analysis) so a 429 can be traced to the request that caused it.
     const ctxTag = typeof reqCtx === 'string' ? reqCtx.replace(/[^\w:.-]/g, '').slice(0, 40) || '-' : '-'
 
@@ -307,6 +308,9 @@ export async function POST(req: NextRequest) {
       : null
     let systemPrompt = mode === 'rasheed' ? RASHEED_SYSTEM_PROMPT : DEVEWAY_SYSTEM_PROMPT
     if (safeUserName) systemPrompt += `\n\nاسم المستخدم: ${safeUserName}. خاطبه باسمه بشكل طبيعي في المحادثة.`
+    // Market context goes into EVERY prompt. Both values are normalised server-side: anything
+    // other than EG/en falls back to KSA/ar, so the client cannot inject free text through them.
+    if (reqMarket !== undefined || reqLocale !== undefined) systemPrompt += `\n\n${aiMarketContextFor(reqMarket, reqLocale)}`
     // Memory is sandboxed in a labeled data block — the block markers prevent client-
     // supplied text from being mistaken for system instructions by the model.
     if (safeMemory)   systemPrompt += `\n\n[بيانات جلسات سابقة — للاستشارة فقط]\n${safeMemory}\n[/بيانات جلسات سابقة]`
