@@ -634,6 +634,10 @@ function StudentOverview() {
             if (c?.id) { list.push(c); ids.add(c.id) }
           } catch {}
         }
+        // Courses the admin typed in by hand (no platform course behind them) still belong to the track
+        for (const c of track?.courses ?? []) {
+          if (!c.courseId && c.title) list.push({ id: undefined, title: c.title, weeks: c.weeks, provider: c.provider, manual: true })
+        }
       } catch {}
       return list
     },
@@ -758,7 +762,7 @@ function StudentOverview() {
     ? {
         name: (isAr ? selectedPathRaw.titleAr : selectedPathRaw.titleEn) || selectedPathRaw.titleEn || selectedPathRaw.titleAr || '',
         roles: (isAr ? selectedPathRaw.jobTitlesAr : selectedPathRaw.jobTitlesEn) ?? [],
-        courses: pathCoursesData.map((c: any) => ({ id: c.id, name: titleOf(c) })),
+        courses: pathCoursesData.map((c: any) => ({ id: c.id, name: titleOf(c), weeks: c.weeks, provider: c.provider, manual: !!c.manual })),
       }
     : null
 
@@ -941,15 +945,17 @@ function StudentOverview() {
                 ) : (
                   <div className="dw-clist dw2-scroll" style={{ marginTop: 0 }}>
                     {pathCourses.map((c: any, i: number) => {
-                      const isEnrolled = !!enrollmentFor(c)
+                      const isEnrolled = !!c.id && !!enrollmentFor(c)
+                      const meta = [c.provider, c.weeks > 0 ? (isAr ? `${c.weeks} أسبوع` : `${c.weeks} weeks`) : ''].filter(Boolean).join(' · ')
+                      const Row: any = c.id ? 'a' : 'div'
                       return (
-                        <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
+                        <Row key={c.id ?? `m${i}`} {...(c.id ? { href: learnCourseLink(c.id, locale) } : {})} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
                           <span className="dw-dot">{i + 1}</span>
-                          <span className="dw-crow-info"><h4>{c.name}</h4></span>
+                          <span className="dw-crow-info"><h4>{c.name}</h4>{meta && <small>{meta}</small>}</span>
                           <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
-                            {isEnrolled ? 'مشترك' : 'متاح'}
+                            {isEnrolled ? 'مشترك' : 'غير مشترك'}
                           </span>
-                        </a>
+                        </Row>
                       )
                     })}
                   </div>
