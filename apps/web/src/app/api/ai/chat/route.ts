@@ -256,7 +256,9 @@ export async function POST(req: NextRequest) {
     // userName is derived server-side from the verified JWT — never trusted from client body.
     // memoryContext may still come from the client: an authenticated user passing their own
     // memory context only affects their own session; prompt injection risk is low and bounded.
-    const { messages, memoryContext, mode, stream, maxOutputTokens: reqMaxTokens } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean; maxOutputTokens?: number }
+    const { messages, memoryContext, mode, stream, maxOutputTokens: reqMaxTokens, ctx: reqCtx } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean; maxOutputTokens?: number; ctx?: string }
+    // Caller-supplied tag (e.g. insight:Q7 / analysis) so a 429 can be traced to the request that caused it.
+    const ctxTag = typeof reqCtx === 'string' ? reqCtx.replace(/[^\w:.-]/g, '').slice(0, 40) || '-' : '-'
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -326,6 +328,7 @@ export async function POST(req: NextRequest) {
     const fallbackMs    = longReply ? 25_000 : FALLBACK_TIMEOUT_MS
     const totalBudgetMs = longReply ? 55_000 : TOTAL_BUDGET_MS
 
+    let sawRateLimit = false
     const budgetStart = Date.now()
     let lastError     = ''
 
@@ -392,16 +395,18 @@ export async function POST(req: NextRequest) {
           // Body read is still under ctrl.signal — times out if the deadline fires.
           const errText = await geminiRes.text()
           lastError = `${model} http=${geminiRes.status} ms=${attemptMs}`
-          console.error(`[AI Chat] req=${reqId} ${lastError} body=${errText.slice(0, 120)}`)
+          console.error(`[AI Chat] req=${reqId} ctx=${ctxTag} ${lastError} body=${errText.slice(0, 120)}`)
 
           if (geminiRes.status === 429) {
+            sawRateLimit = true
+            console.warn(`[AI Chat] req=${reqId} RATE_LIMITED ctx=${ctxTag} model=${model}`)
             const quotaType = classify429Body(errText)
             if (quotaType === 'account_quota') {
               // Daily / free-tier quota — fallback model will also fail with the same key.
               cbRecordFailure(model, false)
               return NextResponse.json(
-                { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
-                { status: 200 }
+                { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true, rateLimited: true },
+                { status: 200, headers: { 'Retry-After': '4' } }
               )
             }
             // model_rate_limit or unknown → try fallback (unknown: conservative, preserves fallback benefit)
@@ -490,10 +495,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.error(`[AI Chat] req=${reqId} ALL_MODELS_FAILED last=${lastError} totalMs=${Date.now()-tStart}`)
+    console.error(`[AI Chat] req=${reqId} ctx=${ctxTag} ALL_MODELS_FAILED last=${lastError} rateLimited=${sawRateLimit} totalMs=${Date.now()-tStart}`)
     return NextResponse.json(
-      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
-      { status: 200 }
+      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true, ...(sawRateLimit ? { rateLimited: true } : {}) },
+      { status: 200, ...(sawRateLimit ? { headers: { 'Retry-After': '4' } } : {}) }
     )
   } catch (error: unknown) {
     const e = error as { message?: string }

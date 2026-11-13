@@ -912,6 +912,24 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
   )
 }
 
+/* Hint requests are paced (the free tier allows ~15 calls a minute); the final analysis skips this queue. */
+class RateLimitedError extends Error {}
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+const HINT_GAP_MS = 4000
+let lastHintAt = 0
+let hintChain: Promise<unknown> = Promise.resolve()
+function queueHint<T>(job: () => Promise<T>): Promise<T> {
+  const run = async () => {
+    const wait = Math.max(0, lastHintAt + HINT_GAP_MS - Date.now())
+    if (wait) await sleep(wait)
+    lastHintAt = Date.now()
+    return job()
+  }
+  const p = hintChain.then(run, run)
+  hintChain = p.catch(() => undefined)
+  return p
+}
+
 /** Pull the result JSON out of the model reply: tolerant of a missing closing tag, code fences and surrounding prose. */
 function parseQuizResult(text: string): QuizResult | null {
   const open = text.indexOf('[QUIZ_RESULT]')
@@ -996,26 +1014,33 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   }
   useEffect(() => clearAdvance, [])
 
-  const callChat = async (prompt: string, maxOutputTokens?: number): Promise<string> => {
+  const callChat = async (prompt: string, maxOutputTokens?: number, ctx?: string, timeoutMs = 26_000): Promise<string> => {
     const token = getToken()
     const res = await fetch('/api/ai/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }], ...(maxOutputTokens ? { maxOutputTokens } : {}) }),
+      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }], ...(maxOutputTokens ? { maxOutputTokens } : {}), ...(ctx ? { ctx } : {}) }),
+      signal:  AbortSignal.timeout(timeoutMs),
     })
+    if (res.status === 429) throw new RateLimitedError()
     if (!res.ok) throw new Error(`chat http=${res.status}`)
-    const data = await res.json() as { content?: string }
+    const data = await res.json() as { content?: string; isError?: boolean; rateLimited?: boolean }
+    // The route reports quota / overload as 200 + isError: that is an error, not Rasheed's words.
+    if (data.isError) throw (data.rateLimited ? new RateLimitedError() : new Error('chat error'))
     return data.content ?? ''
   }
 
   const handleSelect = async (opt: string) => {
     const qIndex = currentIndex
+    const sameAsBefore = answers[currentQuestion.id] === opt
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: opt }))
 
     clearAdvance()
     if (qIndex < ALL_QUESTIONS.length - 1) {
       advanceTimerRef.current = setTimeout(() => { advanceTimerRef.current = null; nextRef.current() }, 800)
     }
+
+    if (sameAsBefore) return
 
     const pool = RASHEED_REACTIONS[currentPhaseIdx] ?? RASHEED_REACTIONS[0]
     setReaction(pool[Math.floor(Math.random() * pool.length)])
@@ -1024,12 +1049,21 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
 
     setIsLoadingInsight(true)
     setInsight('')
+    const hintPrompt = `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.`
+    const askHint = () => callChat(hintPrompt, undefined, `insight:Q${qIndex + 1}`)
     try {
-      const text = await callChat(
-        `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.`
-      )
+      const text = await queueHint(async () => {
+        if (indexRef.current !== qIndex) return ''
+        try { return await askHint() }
+        catch (e) {
+          if (!(e instanceof RateLimitedError)) throw e
+          await sleep(5000)
+          if (indexRef.current !== qIndex) return ''
+          return await askHint() // a second 429 falls through: the question simply shows its normal hint
+        }
+      })
       if (indexRef.current === qIndex) setInsight(text.trim())
-    } catch { /* insight failure is non-critical */ }
+    } catch { /* a missing comment is non-critical: the question keeps its hint */ }
     finally { if (indexRef.current === qIndex) setIsLoadingInsight(false) }
   }
 
@@ -1089,6 +1123,8 @@ ${trackList}
 }
 [/QUIZ_RESULT]`,
           4096,
+          'analysis',
+          58_000,
         )
         const parsed = parseQuizResult(text)
         if (!parsed) throw new Error('unparseable result')
