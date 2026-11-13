@@ -302,7 +302,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
-    const models      = ['gemini-pro', 'gemini-1.0-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+    const models      = ['gemini-1.5-flash', 'gemini-1.5-flash-8b']
 
     // Streaming is opt-in; every other caller keeps the JSON response below.
     const wantsStream = (req.headers.get('accept') ?? '').includes('text/event-stream') || stream === true
