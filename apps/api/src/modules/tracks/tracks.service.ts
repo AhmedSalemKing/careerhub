@@ -26,13 +26,14 @@ export function toJsonArray<T = Record<string, unknown>>(value: unknown): T[] {
   }
   if (v && typeof v === 'object' && !Array.isArray(v)) v = Object.values(v as Record<string, unknown>);
   if (!Array.isArray(v)) return [];
-  return v
+  // a wrapped array ([[...]]) is flattened; empty placeholders ([] / {}) are dropped
+  return (v as unknown[]).flat(3)
     .map((item) => {
       let x: unknown = item;
       if (typeof x === 'string') { try { x = JSON.parse(x); } catch { return null; } }
       return x && typeof x === 'object' ? (x as T) : null;
     })
-    .filter((x): x is T => x !== null);
+    .filter((x): x is T => x !== null && Object.keys(x as object).length > 0);
 }
 
 const asArray = <T>(v: unknown): T[] => toJsonArray<T>(v);

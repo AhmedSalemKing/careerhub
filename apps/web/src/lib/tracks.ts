@@ -94,5 +94,6 @@ export function parseJsonArray<T = Record<string, any>>(value: unknown): T[] {
     try { v = JSON.parse(v) } catch { return [] }
   }
   if (v && typeof v === 'object' && !Array.isArray(v)) v = Object.values(v as Record<string, unknown>)
-  return Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as T[]) : []
+  // wrapped arrays ([[...]]) are flattened; empty placeholders are dropped
+  return Array.isArray(v) ? ((v as unknown[]).flat(3).filter((x) => x && typeof x === 'object' && Object.keys(x as object).length > 0) as T[]) : []
 }
