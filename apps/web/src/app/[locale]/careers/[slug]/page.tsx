@@ -674,10 +674,11 @@ export default function CareerPathDetailPage() {
               <div><small>{isAr ? 'اللغة' : 'Language'}</small><b>{selectedCourse.language || (isAr ? 'العربية · الإنجليزية' : 'Arabic · English')}</b></div>
               {track?.package && <div><small>{isAr ? 'السعر' : 'Price'}</small><b className="dw2-cm-in">{isAr ? 'مشمولة في المسار' : 'Included in the track'}</b></div>}
             </div>
-            {track?.package ? (
-              <div className="dw2-cm-note">{isAr ? 'ابدأ في أي وقت. تُفتح في مشغّل جهة التدريب بتسجيل دخولك في DeveWay.' : "Start any time. It opens in the provider's player with your DeveWay sign-in."}</div>
-            ) : (
-              <div className="dw2-cm-note">{isAr ? 'لا تُباع الدورات بشكل منفصل في المسار المجمّع.' : 'Courses are not sold separately inside the bundled track.'}</div>
+            {track?.package && (
+              <>
+                <div className="dw2-cm-note">{isAr ? 'ابدأ في أي وقت. تُفتح في مشغّل جهة التدريب بتسجيل دخولك في DeveWay.' : "Start any time. It opens in the provider's player with your DeveWay sign-in."}</div>
+                <div className="dw2-cm-note">{isAr ? 'لا تُباع الدورات بشكل منفصل في المسار المجمّع.' : 'Courses are not sold separately inside the bundled track.'}</div>
+              </>
             )}
             {selectedCourse.courseId && (
               <a className="dw2-btn ghost block" href={learnCourseLink(selectedCourse.courseId, locale)}>{isAr ? 'عرض الدورة' : 'View course'}</a>
