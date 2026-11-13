@@ -14,6 +14,7 @@ import { Skeleton } from '../../../components/ui/Skeleton'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { fetchTrack, formatSalaryRange, type TrackConsultant, type TrackCourse, type TrackPackageInfo } from '../../../../lib/tracks'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
+import { EnrollConfirmModal } from '../../../../components/careers/EnrollConfirmModal'
 import { formatCurrency } from '../../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../../lib/marketConfig'
 
@@ -110,8 +111,7 @@ export default function CareerPathDetailPage() {
   const money = (sar: number) => formatCurrency(toMarketAmount(sar, market), market, locale)
   const lang = isAr ? 'ar' : 'en'
   const router = useRouter()
-  const [enrolling, setEnrolling] = useState(false)
-  const [enrollError, setEnrollError] = useState<string | null>(null)
+  const [enrollModalOpen, setEnrollModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<TrackCourse | null>(null)
 
   const { data: track, isLoading: trackLoading } = useQuery({
@@ -150,6 +150,19 @@ export default function CareerPathDetailPage() {
       return (Array.isArray(arr) ? arr : []).find((p: any) => p.slug === slug) ?? null
     },
     staleTime: 5 * 60 * 1000,
+  })
+
+  // Recommended courses for this path, used when the plan itself has no courses yet
+  const { data: recommended = [], isLoading: recLoading } = useQuery({
+    queryKey: ['career-detail-recommended', slug, locale],
+    queryFn: async () => {
+      const res = await get('/courses', { params: { page: 1, limit: 5, language: isAr ? 'ar' : 'en', careerPath: slug } })
+      const d = (res?.data as any)
+      const arr = d?.data?.courses ?? d?.data ?? d ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+    staleTime: 60000,
+    retry: 0,
   })
 
   // Same endpoint /coaching uses; used only to show the real starting per-session price
@@ -275,22 +288,19 @@ export default function CareerPathDetailPage() {
   const cheapest = sessionPrices[0]
 
   const canEnroll = !!path?.id && !isMock && !track
-  const enroll = async () => {
-    if (!path?.id || isMock || enrolling) return
-    setEnrolling(true)
-    setEnrollError(null)
+  // Free enrollment in a career path (no package). Called from the confirmation popup, which shows any error.
+  const enrollInPath = async () => {
+    if (!path?.id || isMock) return
     try {
       await post(`/career/paths/add/${path.id}`, {}, { params: { source: 'MANUAL' } })
-      router.push(`/${locale}/dashboard/career-path`)
+      router.push(`/${locale}/dashboard`)
     } catch (e: any) {
       if (e?.response?.status === 401) {
-        router.push(`/${locale}/login`)
+        router.push(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/careers/${slug}`)}`)
         return
       }
       const m = e?.response?.data?.message
-      setEnrollError((Array.isArray(m) ? m.join(' - ') : m) || (isAr ? 'تعذر التسجيل في المسار' : 'Could not enroll in this path'))
-    } finally {
-      setEnrolling(false)
+      throw new Error((Array.isArray(m) ? m.join(' - ') : m) || (isAr ? 'تعذر التسجيل في المسار' : 'Could not enroll in this path'))
     }
   }
 
@@ -315,11 +325,10 @@ export default function CareerPathDetailPage() {
     <button
       type="button"
       className={`dw2-btn primary${block ? ' block' : ''}`}
-      onClick={enroll}
-      disabled={enrolling || isLoading || !canEnroll}
-      title={isMock ? (isAr ? 'بيانات تجريبية: التسجيل غير متاح' : 'Sample data: enrollment unavailable') : undefined}
+      onClick={() => setEnrollModalOpen(true)}
+      disabled={isLoading}
     >
-      {enrolling ? (isAr ? 'جارٍ التسجيل...' : 'Enrolling...') : (isAr ? 'سجّل في المسار الكامل' : 'Enroll in the full path')}
+      {isAr ? 'ابدأ المسار' : 'Start the path'}
     </button>
   )
 
@@ -375,10 +384,9 @@ export default function CareerPathDetailPage() {
               {view.trackVision && view.trackVision.length > 0 && <VisionBadges vision={view.trackVision} locale={locale} compact />}
             </div>
             <div className="dw2-cta-row">
-              {!track && enrollBtn()}
+              {enrollBtn()}
               <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
             </div>
-            {enrollError && <p className="dw2-error" role="alert">{enrollError}</p>}
           </>
         )}
       </section>
@@ -457,7 +465,36 @@ export default function CareerPathDetailPage() {
                 <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
               )}
               {view.courses.length === 0 ? (
-                <p className="dw2-sub">{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
+                recLoading ? (
+                  <div className="space-y-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="skeleton-shimmer h-14 rounded-xl" />)}</div>
+                ) : recommended.length === 0 ? (
+                  <p className="dw2-sub">{isAr ? 'سنضيف كورسات لهذا المسار قريبًا.' : 'Courses for this path are coming soon.'}</p>
+                ) : (
+                  <>
+                    <p className="dw2-sub" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                      <b style={{ color: 'var(--brand)' }}>{isAr ? 'كورسات مقترحة لهذا المسار' : 'Recommended courses for this path'}</b>
+                      <span className="dw2-badge">{isAr ? 'قريباً - باكدج متكامل' : 'Coming soon - full package'}</span>
+                    </p>
+                    <ol className="dw2-plan">
+                      {recommended.map((c: any, i: number) => {
+                        const title = (isAr ? (c.titleAr || c.title) : (c.titleEn || c.title)) || ''
+                        const meta = [c.duration ? formatMinutes(Number(c.duration), isAr) : '', c.level ? (isAr ? LEVELS_AR[c.level] ?? c.level : c.level) : ''].filter(Boolean)
+                        return (
+                          <li key={c.id ?? i}>
+                            <a href={learnCourseLink(c.id, locale)} className="dw2-course-row">
+                              <span className="dw2-course-num">{i + 1}</span>
+                              <span className="dw2-course-title">
+                                <b>{title}</b>
+                                <span className="dw2-course-meta">{meta.map((m) => <span key={m}>{m}</span>)}</span>
+                              </span>
+                              <span className="dw2-course-price">{isAr ? 'استكشف' : 'Explore'}</span>
+                            </a>
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  </>
+                )
               ) : (
                 <ol className="dw2-plan">
                   {view.courses.map((c, i) => {
@@ -584,6 +621,17 @@ export default function CareerPathDetailPage() {
           </aside>
         </div>
       )}
+
+      <EnrollConfirmModal
+        isOpen={enrollModalOpen}
+        onClose={() => setEnrollModalOpen(false)}
+        trackName={view?.title ?? ''}
+        coursesCount={view?.coursesCount ?? 0}
+        price={track?.package?.price ?? (!track && view && view.totalPrice > 0 ? view.totalPrice : null)}
+        paymentUrl={paymentUrl}
+        onEnroll={canEnroll ? enrollInPath : undefined}
+        comingSoon={isMock || (!!track && !view?.trackPackage)}
+      />
 
       {selectedCourse && (
         <div className="dw2-cm-overlay" onClick={() => setSelectedCourse(null)}>
