@@ -1067,7 +1067,7 @@ function MetaItem({
 			<span
 				style={{
 					padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
-					background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+					background: 'var(--bg-2)', border: '1px solid var(--line)',
 					color: '#9999aa', fontWeight: 500, fontFamily: 'var(--font-medium)',
 				}}>
 				{isAr ? 'فيديو' : 'Video'}
@@ -1573,7 +1573,7 @@ function MetaItem({
 									<div
 										style={{
 											padding: '8px 12px',
-											background: 'rgba(255,255,255,0.04)',
+											background: 'var(--bg-2)',
 											borderRadius: '8px',
 											marginBottom: '4px',
 											display: 'flex',
@@ -1839,8 +1839,8 @@ function MetaItem({
 										display: "flex",
 										alignItems: "center",
 										gap: 8,
-										background: "#0d0d0d",
-										borderBottom: "1px solid rgba(255,255,255,0.06)",
+										background: "var(--background)",
+										borderBottom: "1px solid var(--line)",
 										flexShrink: 0,
 									}}>
 									<button
@@ -1931,7 +1931,7 @@ function MetaItem({
 											overflow: 'hidden',
 											borderRadius: '18px',
 											background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
-											border: '1px solid rgba(255,255,255,0.08)',
+											border: '1px solid var(--line)',
 											boxShadow: '0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
 										}}>
 											<div
@@ -2098,8 +2098,8 @@ function MetaItem({
 											<div style={{
 												display: 'inline-flex', gap: '4px', padding: '5px',
 												borderRadius: '12px',
-												background: 'rgba(255,255,255,0.05)',
-												border: '1px solid rgba(255,255,255,0.06)',
+												background: 'var(--bg-2)',
+												border: '1px solid var(--line)',
 											}}>
 												{speeds.map((speed) => (
 													<button
@@ -2451,8 +2451,8 @@ function MetaItem({
 								<div
 									style={{
 										padding: "12px 16px",
-										background: "#111111",
-										borderTop: "1px solid rgba(255,255,255,0.06)",
+										background: "var(--surface)",
+										borderTop: "1px solid var(--line)",
 										display: "flex",
 										alignItems: "center",
 										gap: 12,
@@ -2720,8 +2720,8 @@ function MetaItem({
 														gap: "8px",
 														padding: "10px 16px",
 														borderRadius: "10px",
-														background: "rgba(255,255,255,0.04)",
-														border: "1px solid rgba(255,255,255,0.08)",
+														background: "var(--bg-2)",
+														border: "1px solid var(--line)",
 														color: textSecondary,
 														fontWeight: 300,
 														fontFamily: "var(--font-light)",
@@ -2741,8 +2741,8 @@ function MetaItem({
 													gap: "8px",
 													padding: "10px 16px",
 													borderRadius: "10px",
-													background: "rgba(255,255,255,0.04)",
-													border: "1px solid rgba(255,255,255,0.08)",
+													background: "var(--bg-2)",
+													border: "1px solid var(--line)",
 													color: textSecondary,
 													fontWeight: 300,
 													fontFamily: "var(--font-light)",
@@ -2817,8 +2817,8 @@ function MetaItem({
 													style={{
 														padding: "10px 16px",
 														borderRadius: "10px",
-														background: "rgba(255,255,255,0.05)",
-														border: "1px solid rgba(255,255,255,0.1)",
+														background: "var(--bg-2)",
+														border: "1px solid var(--line)",
 														color: textPrimary,
 														cursor: "pointer",
 														fontFamily: "var(--font-medium)",

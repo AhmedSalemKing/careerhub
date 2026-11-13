@@ -10,7 +10,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
-  Calendar, CalendarDays, DollarSign,
+  Calendar, CalendarClock, DollarSign,
   Brain, MessageSquare, Award, Settings,
   Shield, Users, Bell, ClipboardList, CalendarCheck,
   X, Menu, LogOut, Receipt
@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
       { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New', href: `/${locale}/dashboard/create-course` },
-      { icon: CalendarDays, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+      { icon: CalendarClock, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: BarChart2, labelAr: 'إحصائيات', labelEn: 'Stats', href: `/${locale}/dashboard/analytics` },
       { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     if (accountType === 'CONSULTANT') return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
-      { icon: CalendarDays, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+      { icon: CalendarClock, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Users, labelAr: 'جلسات عملائي', labelEn: 'Client Sessions', href: `/${locale}/dashboard/client-sessions` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },

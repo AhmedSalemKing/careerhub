@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
       <div style={{ maxWidth: 760, margin:'0 auto' }}>
         <div style={{ marginBottom:28 }}>
           <h1 style={{ color: 'var(--foreground)', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
-          <p style={{ color:'#6b7280', fontSize:14, marginTop:4 }}>تحليل أداء كورساتك وطلابك</p>
+          <p style={{ color:'var(--ink-3)', fontSize:14, marginTop:4 }}>تحليل أداء كورساتك وطلابك</p>
         </div>
 
         {isLoading ? (
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
                 <div key={i} style={{ background: 'var(--surface)', borderRadius:16, padding:'20px 18px', border:`1px solid ${'var(--border)'}` }}>
                   <div style={{ width:40, height:40, borderRadius:10, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>{s.icon}</div>
                   <div style={{ color: 'var(--foreground)', fontSize:20, fontWeight:800 }}>{s.value}</div>
-                  <div style={{ color:'#6b7280', fontSize:12, marginTop:4 }}>{s.label}</div>
+                  <div style={{ color:'var(--ink-3)', fontSize:12, marginTop:4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
             <div style={{ background: 'var(--surface)', borderRadius:20, padding:24, border:`1px solid ${'var(--border)'}` }}>
               <h3 style={{ color: 'var(--foreground)', fontSize:16, fontWeight:700, marginBottom:20 }}>أداء الكورسات</h3>
               {!courses.length ? (
-                <div style={{ textAlign:'center', padding:32, color:'#6b7280' }}>
+                <div style={{ textAlign:'center', padding:32, color:'var(--ink-3)' }}>
                   <BookOpen size={40} style={{ margin:'0 auto 12px', opacity:0.3 }}/>
                   <p>لا توجد كورسات بعد</p>
                 </div>
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ color: 'var(--foreground)', fontSize:14, fontWeight:600 }}>{c.title}</div>
-                    <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
+                    <div style={{ color:'var(--ink-3)', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
                   </div>
                   <div style={{ color: 'var(--muted)', fontSize:13, fontWeight:600 }}>
                     {formatCoursePrice(c)}

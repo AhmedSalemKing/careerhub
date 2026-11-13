@@ -343,11 +343,11 @@ export default function ScheduleClient() {
         onClick={(e: { target: EventTarget | null; currentTarget: EventTarget | null }) => { if (e.target === e.currentTarget) setSelected(null) }}
         style={{ position:'fixed', inset:0, zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.72)', backdropFilter:'blur(8px)', padding:16 }}
       >
-        <div style={{ width:'100%', maxWidth:420, borderRadius:20, border:`1px solid ${st.border}`, background:'#141414', padding:28, boxShadow:'0 32px 80px rgba(0,0,0,0.7)', maxHeight:'90vh', overflowY:'auto', fontFamily: 'var(--font-ui)' }}>
+        <div style={{ width:'100%', maxWidth:420, borderRadius:20, border:`1px solid ${st.border}`, background:'var(--surface)', padding:28, boxShadow:'0 32px 80px rgba(0,0,0,0.7)', maxHeight:'90vh', overflowY:'auto', fontFamily: 'var(--font-ui)' }}>
 
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <span style={{ fontWeight:500, fontSize:16, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>تفاصيل الجلسة</span>
+            <span style={{ fontWeight:500, fontSize:16, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>تفاصيل الجلسة</span>
             <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--ink) 10%, transparent)', background:'color-mix(in srgb, var(--ink) 5%, transparent)', color:'var(--ink-3)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
           </div>
 
@@ -359,7 +359,7 @@ export default function ScheduleClient() {
                 : initials}
             </div>
             <div>
-              <div style={{ fontWeight:500, fontSize:14, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
+              <div style={{ fontWeight:500, fontSize:14, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
               <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مرشد'}</div>
             </div>
             <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
@@ -372,24 +372,24 @@ export default function ScheduleClient() {
             {(s.topic || s.sessionName) && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
                 <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الموضوع</span>
-                <span style={{ color:'#f1f5f9', fontWeight:500, fontFamily: 'var(--font-ui)' }}>{s.topic || s.sessionName}</span>
+                <span style={{ color:'var(--ink)', fontWeight:500, fontFamily: 'var(--font-ui)' }}>{s.topic || s.sessionName}</span>
               </div>
             )}
             {startD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
                 <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>التاريخ</span>
-                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmtDateAr(startD)}</span>
+                <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmtDateAr(startD)}</span>
               </div>
             )}
             {startD && endD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
                 <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الوقت</span>
-                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmt12(startD)} — {fmt12(endD)}</span>
+                <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmt12(startD)} — {fmt12(endD)}</span>
               </div>
             )}
             <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
               <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>المدة</span>
-              <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} دقيقة</span>
+              <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} دقيقة</span>
             </div>
             {s.meetingLink && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
