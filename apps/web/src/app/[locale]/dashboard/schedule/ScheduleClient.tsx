@@ -360,7 +360,7 @@ export default function ScheduleClient() {
             </div>
             <div>
               <div style={{ fontWeight:500, fontSize:14, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
-              <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مستشار'}</div>
+              <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مرشد'}</div>
             </div>
             <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               {STATUS_AR[s.status] ?? s.status}
@@ -448,7 +448,7 @@ export default function ScheduleClient() {
               <div style={{ width:3, alignSelf:'stretch', borderRadius:2, background:st.border, flexShrink:0 }} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:500, fontSize:13, color:st.text, marginBottom:3, fontFamily: 'var(--font-ui)' }}>
-                  {s.topic || s.sessionName || 'جلسة استشارية'}
+                  {s.topic || s.sessionName || 'جلسة إرشادية'}
                 </div>
                 <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                   {userName(other)}
@@ -654,7 +654,7 @@ export default function ScheduleClient() {
                             }}
                           >
                             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500, fontSize:10 }}>
-                              {s.topic || s.sessionName || 'جلسة استشارية'}
+                              {s.topic || s.sessionName || 'جلسة إرشادية'}
                             </span>
                             {ht > 40 && (
                               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:9, fontWeight:300, opacity:0.75 }}>

@@ -96,14 +96,14 @@ export default function AdminOverviewPage() {
 			? {
 					STUDENT: "مستخدم",
 					INSTRUCTOR: "محاضر",
-					CONSULTANT: "مستشار",
+					CONSULTANT: "مرشد",
 					ADMIN: "مدير",
 					SUPER_ADMIN: "مدير أعلى",
 				}
 			: {
 					STUDENT: "User",
 					INSTRUCTOR: "Instructor",
-					CONSULTANT: "Consultant",
+					CONSULTANT: "Mentor",
 					ADMIN: "Admin",
 					SUPER_ADMIN: "Super Admin",
 				};

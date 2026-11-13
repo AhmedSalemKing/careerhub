@@ -251,7 +251,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
               <Calendar size={16} color="#f59e0b" />
-              {locale === 'ar' ? 'لوحة المستشار' : 'Consultant Panel'}
+              {locale === 'ar' ? 'لوحة المرشد' : 'Mentor Panel'}
             </Link>
           )}
 

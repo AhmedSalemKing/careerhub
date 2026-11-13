@@ -246,7 +246,7 @@ export default function ActivityPage() {
             <option value="">{isAr ? 'الكل' : 'All'}</option>
             <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
             <option value="INSTRUCTOR">{isAr ? 'مدرس' : 'Instructor'}</option>
-            <option value="CONSULTANT">{isAr ? 'مستشار' : 'Consultant'}</option>
+            <option value="CONSULTANT">{isAr ? 'مرشد' : 'Mentor'}</option>
             <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
           </select>
         </div>
@@ -327,7 +327,7 @@ export default function ActivityPage() {
                 const roleLabel: Record<string, string> = {
                   STUDENT: isAr ? 'طالب' : 'Student',
                   INSTRUCTOR: isAr ? 'مدرس' : 'Instructor',
-                  CONSULTANT: isAr ? 'مستشار' : 'Consultant',
+                  CONSULTANT: isAr ? 'مرشد' : 'Mentor',
                   ADMIN: isAr ? 'مدير' : 'Admin',
                 }
                 const name = act.user?.profile?.firstName

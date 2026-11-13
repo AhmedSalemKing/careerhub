@@ -124,7 +124,7 @@ export default function AdminSessionsPage() {
         <div>
           <h1 className="text-xl font-black flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
             <Calendar style={{ color: '#5120c8' }} />
-            {isAr ? 'إدارة الجلسات الاستشارية' : 'Consulting Sessions'}
+            {isAr ? 'إدارة الجلسات الإرشادية' : 'Mentoring Sessions'}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
             {isAr ? 'متابعة وإدارة جميع جلسات الاستشارة' : 'Track and manage all consulting sessions'}
@@ -206,7 +206,7 @@ export default function AdminSessionsPage() {
             {isAr ? 'لا توجد جلسات' : 'No sessions found'}
           </p>
           <p className="text-sm mt-1 mb-4" style={{ color: 'var(--muted)', opacity: 0.6 }}>
-            {isAr ? 'ابدأ بإضافة جلسة استشارية جديدة' : 'Start by adding a new consulting session'}
+            {isAr ? 'ابدأ بإضافة جلسة إرشادية جديدة' : 'Start by adding a new consulting session'}
           </p>
           <button
             onClick={goToCreateSession}
@@ -228,7 +228,7 @@ export default function AdminSessionsPage() {
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
                   {[
                     isAr ? 'مستخدم' : 'Student',
-                    isAr ? 'المستشار' : 'Consultant',
+                    isAr ? 'المرشد' : 'Mentor',
                     isAr ? 'الموضوع' : 'Topic',
                     isAr ? 'الموعد' : 'Date & Time',
                     isAr ? 'الطريقة' : 'Method',

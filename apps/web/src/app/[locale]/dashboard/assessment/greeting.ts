@@ -38,8 +38,8 @@ export function buildGreeting(input: GreetingInput = {}): string {
   const memory = sanitizeMemory(input.memorySummary)
 
   const opening = name
-    ? `مرحباً ${name}! أنا رشيد، مستشارك المهني في ديفي واي.`
-    : 'مرحباً! أنا رشيد، مستشارك المهني في ديفي واي.'
+    ? `مرحباً ${name}! أنا رشيد، مرشدك المهني في ديفي واي.`
+    : 'مرحباً! أنا رشيد، مرشدك المهني في ديفي واي.'
 
   const memoryLine = memory
     ? `\nفاكر إننا اتكلمنا قبل كده عن: ${memory}\nعايز نكمل من هنا ولا نبدأ من جديد؟`

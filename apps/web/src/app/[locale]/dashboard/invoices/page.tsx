@@ -276,7 +276,7 @@ export default function InvoicesPage() {
                     </p>
                     {inv.type === 'SESSION' && inv.metadata?.consultantName && (
                       <p className="text-xs text-[color:var(--ink-2)] mt-0.5">
-                        {isAr ? 'المستشار:' : 'Consultant:'} {inv.metadata.consultantName}
+                        {isAr ? 'المرشد:' : 'Mentor:'} {inv.metadata.consultantName}
                       </p>
                     )}
                   </div>

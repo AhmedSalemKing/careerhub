@@ -359,7 +359,7 @@ export default function MyCoursesPage() {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold font-madinet flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
               <Star className="h-8 w-8" style={{ color: 'var(--primary)' }} />
-              {locale === 'ar' ? 'جلساتي الاستشارية' : 'My Consulting Sessions'}
+              {locale === 'ar' ? 'جلساتي الإرشادية' : 'My Mentoring Sessions'}
             </h1>
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function MyCoursesPage() {
                     </span>
                   </div>
                   <p className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-                    {s.topic || 'جلسة استشارية'}
+                    {s.topic || 'جلسة إرشادية'}
                   </p>
                   <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <span className="flex items-center gap-1"><Users className="h-4 w-4" />{s.meetingMethod || 'Online'}</span>

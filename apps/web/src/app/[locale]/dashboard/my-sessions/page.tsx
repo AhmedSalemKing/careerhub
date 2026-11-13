@@ -54,8 +54,8 @@ const Ic = {
 }
 
 const STATUS_CONFIG: Record<string, any> = {
-  PENDING:              { ar: 'بانتظار موافقة المستشار', en: 'Pending Approval',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
-  PENDING_APPROVAL:     { ar: 'بانتظار موافقة المستشار', en: 'Pending Approval',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
+  PENDING:              { ar: 'بانتظار موافقة المرشد', en: 'Pending Approval',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
+  PENDING_APPROVAL:     { ar: 'بانتظار موافقة المرشد', en: 'Pending Approval',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
   AWAITING_PAYMENT:     { ar: 'بانتظار الدفع',           en: 'Awaiting Payment',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
   CONFIRMED:            { ar: 'مؤكدة',                   en: 'Confirmed',          color: 'var(--primary)', bg: 'var(--primary-subtle)' },
   IN_PROGRESS:          { ar: 'جارية',                   en: 'In Progress',        color: 'var(--success)', bg: 'var(--success-subtle)' },
@@ -155,7 +155,7 @@ export default function MySessionsPage() {
               </div>
               <div>
                 <h1 style={{ color: 'var(--ink)', fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
-                  {isAr ? 'جلساتي الاستشارية' : 'My Consulting Sessions'}
+                  {isAr ? 'جلساتي الإرشادية' : 'My Mentoring Sessions'}
                 </h1>
                 <p style={{ color: 'var(--ink-2)', fontSize: 11, margin: 0 }}>
                   {isAr ? `${mySessions.length} جلسة إجمالاً` : `${mySessions.length} total sessions`}
@@ -249,7 +249,7 @@ export default function MySessionsPage() {
                     <div style={{ padding: '10px 20px', background: 'var(--accent-light)', borderBottom: '1px solid var(--accent)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                       <Ic.alert size={14} color="var(--accent)" />
                       <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 500, flex: 1 }}>
-                        {isAr ? 'المستشار اقترح موعداً جديداً — هل توافق؟' : 'Consultant proposed a new time — do you approve?'}
+                        {isAr ? 'المرشد اقترح موعداً جديداً — هل توافق؟' : 'Mentor proposed a new time — do you approve?'}
                         {session.proposedAt && (
                           <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: 'var(--primary)', fontWeight: 300 }}>
                             {' '}{formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}
@@ -275,7 +275,7 @@ export default function MySessionsPage() {
                           : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: 16, fontWeight: 500, flexShrink: 0 }}>{consultantName?.[0] || '?'}</div>}
                         <div>
                           <div style={{ color: 'var(--ink-2)', fontSize: 11, fontWeight: 300, marginBottom: 1 }}>
-                            {isAr ? 'المستشار' : 'Consultant'}
+                            {isAr ? 'المرشد' : 'Mentor'}
                           </div>
                           <div style={{ color: 'var(--ink)', fontSize: 15, fontWeight: 500 }}>{consultantName}</div>
                           {consultant?.profile?.speciality && (

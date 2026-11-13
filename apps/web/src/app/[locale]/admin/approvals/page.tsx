@@ -187,7 +187,7 @@ export default function ApprovalsPage() {
       <div>
         <h1 className="font-madinet text-2xl font-black text-foreground">{isAr ? 'طلبات الموافقة' : 'Approval Requests'}</h1>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {isAr ? 'مراجعة طلبات انضمام المحاضرين والمستشارين، وكورسات تنتظر المراجعة' : 'Review instructor and consultant applications, and courses pending review'}
+          {isAr ? 'مراجعة طلبات انضمام المحاضرين والمرشدين، وكورسات تنتظر المراجعة' : 'Review instructor and mentor applications, and courses pending review'}
         </p>
       </div>
 
@@ -201,7 +201,7 @@ export default function ApprovalsPage() {
               : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
           }`}
         >
-          {isAr ? 'المحاضرون والمستشارون' : 'Instructors & Consultants'}
+          {isAr ? 'المحاضرون والمرشدون' : 'Instructors & Mentors'}
           {users.length > 0 && (
             <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {users.length}
@@ -288,7 +288,7 @@ export default function ApprovalsPage() {
                             ? 'bg-[#5120c8]/20 text-foreground'
                             : 'bg-purple-500/20 text-purple-400'
                         }`}>
-                          {u.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مستشار' : 'Consultant')}
+                          {u.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مرشد' : 'Mentor')}
                         </span>
                         <span className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
                           <Clock className="h-3 w-3" />
@@ -773,7 +773,7 @@ export default function ApprovalsPage() {
                       <p className="text-sm text-[color:var(--muted)]">{v.email}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
-                          {v.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مستشار' : 'Consultant')}
+                          {v.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مرشد' : 'Mentor')}
                         </span>
                       </div>
                     </div>

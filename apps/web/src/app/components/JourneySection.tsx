@@ -40,7 +40,7 @@ const STEPS = [
     titleEn: 'Real Support',
     descAr: 'جلسات مع خبراء لمساعدتك في كل خطوة',
     descEn: 'Sessions with experts to help you at every step',
-    detailsAr: ['50+ مستشار متخصص', 'حجز مرن عبر Zoom', 'تحضير للمقابلات', 'مراجعة الـ CV'],
+    detailsAr: ['50+ مرشد متخصص', 'حجز مرن عبر Zoom', 'تحضير للمقابلات', 'مراجعة الـ CV'],
   },
   {
     id: 4,

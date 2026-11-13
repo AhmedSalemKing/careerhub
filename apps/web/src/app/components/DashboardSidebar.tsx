@@ -27,7 +27,7 @@ export function DashboardSidebar() {
           {isConsultant ? (
             <>
               <Item href={`${base}/client-sessions`} label={isAr ? 'جلسات عملائي' : 'Client Sessions'} />
-              <Item href={`${base}/schedule`} label={isAr ? 'جدول مواعيدي' : 'My Schedule'} />
+              <Item href={`${base}/schedule`} label={isAr ? 'الجدول الزمني' : 'Schedule'} />
               <Item href={`${base}/earnings`} label={isAr ? 'أرباحي' : 'Earnings'} />
             </>
           ) : (

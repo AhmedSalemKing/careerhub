@@ -36,14 +36,14 @@ export default function AnalyticsPage() {
     <div style={{ minHeight:'100vh', background: 'var(--background)', padding:'32px 24px 120px', direction:'rtl' }}>
       <div style={{ maxWidth: 760, margin:'0 auto' }}>
         <div style={{ marginBottom:28 }}>
-          <h1 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
+          <h1 style={{ color: 'var(--foreground)', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
           <p style={{ color:'#6b7280', fontSize:14, marginTop:4 }}>تحليل أداء كورساتك وطلابك</p>
         </div>
 
         {isLoading ? (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ height:110, borderRadius:16, background: isDark?'#121212':'#fff', border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`, opacity:0.6, animation:'pulse 1.5s ease infinite' }} />
+              <div key={i} style={{ height:110, borderRadius:16, background: 'var(--surface)', border:`1px solid ${'var(--border)'}`, opacity:0.6, animation:'pulse 1.5s ease infinite' }} />
             ))}
           </div>
         ) : (
@@ -56,23 +56,23 @@ export default function AnalyticsPage() {
             )}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:28 }}>
               {statCards.map((s,i) => (
-                <div key={i} style={{ background: isDark?'#121212':'#fff', borderRadius:16, padding:'20px 18px', border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
+                <div key={i} style={{ background: 'var(--surface)', borderRadius:16, padding:'20px 18px', border:`1px solid ${'var(--border)'}` }}>
                   <div style={{ width:40, height:40, borderRadius:10, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>{s.icon}</div>
-                  <div style={{ color: isDark?'#fff':'#0d0d0d', fontSize:20, fontWeight:800 }}>{s.value}</div>
+                  <div style={{ color: 'var(--foreground)', fontSize:20, fontWeight:800 }}>{s.value}</div>
                   <div style={{ color:'#6b7280', fontSize:12, marginTop:4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ background: isDark?'#121212':'#fff', borderRadius:20, padding:24, border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
-              <h3 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:16, fontWeight:700, marginBottom:20 }}>أداء الكورسات</h3>
+            <div style={{ background: 'var(--surface)', borderRadius:20, padding:24, border:`1px solid ${'var(--border)'}` }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize:16, fontWeight:700, marginBottom:20 }}>أداء الكورسات</h3>
               {!courses.length ? (
                 <div style={{ textAlign:'center', padding:32, color:'#6b7280' }}>
                   <BookOpen size={40} style={{ margin:'0 auto 12px', opacity:0.3 }}/>
                   <p>لا توجد كورسات بعد</p>
                 </div>
               ) : courses.map((c: any) => (
-                <div key={c.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${isDark?'rgba(255,255,255,0.05)':'#f1f5f9'}` }}>
+                <div key={c.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${'var(--bg-2)'}` }}>
                   <div style={{ width:44, height:44, borderRadius:10, background:'rgba(81,32,200,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <BookOpen size={20} color="#5120c8"/>
                   </div>
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
                     <div style={{ color: 'var(--foreground)', fontSize:14, fontWeight:600 }}>{c.title}</div>
                     <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
                   </div>
-                  <div style={{ color: isDark?'#94a3b8':'#6b7280', fontSize:13, fontWeight:600 }}>
+                  <div style={{ color: 'var(--muted)', fontSize:13, fontWeight:600 }}>
                     {formatCoursePrice(c)}
                   </div>
                 </div>

@@ -185,7 +185,7 @@ export function SearchBar() {
               ref={inputRef}
               value={query}
               onChange={handleChange}
-              placeholder={isAr ? 'ابحث عن كورس أو مستشار...' : 'Search courses, consultants...'}
+              placeholder={isAr ? 'ابحث عن كورس أو مرشد...' : 'Search courses, mentors...'}
               autoFocus
               style={{
                 flex: 1,
@@ -339,7 +339,7 @@ export function SearchBar() {
                         ? '1px solid var(--border)' : 'none',
                       marginTop: (results?.courses?.length || 0) > 0 ? 4 : 0,
                     }}>
-                      {isAr ? 'المستشارون' : 'Consultants'}
+                      {isAr ? 'المرشدون' : 'Mentors'}
                     </div>
                     {results!.consultants.map(c => (
                       <a

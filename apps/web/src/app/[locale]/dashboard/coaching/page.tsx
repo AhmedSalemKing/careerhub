@@ -47,10 +47,10 @@ export default function DashboardCoachingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--ink)]">
-            {isConsultant ? (isAr ? 'جلساتي الاستشارية' : 'My Sessions') : (isAr ? 'الاستشارات المهنية' : 'Professional Consulting')}
+            {isConsultant ? (isAr ? 'جلساتي الإرشادية' : 'My Sessions') : (isAr ? 'الاستشارات المهنية' : 'Professional Consulting')}
           </h1>
           <p className="text-[color:var(--ink-2)] text-sm mt-1">
-            {isConsultant ? (isAr ? 'إدارة وقبول طلبات الاستشارة' : 'Manage and accept consultation requests') : (isAr ? 'احجز جلسة مع مستشار مهني متخصص' : 'Book a session with a professional consultant')}
+            {isConsultant ? (isAr ? 'إدارة وقبول طلبات الاستشارة' : 'Manage and accept consultation requests') : (isAr ? 'احجز جلسة مع مرشد مهني متخصص' : 'Book a session with a professional mentor')}
           </p>
         </div>
         {!isConsultant && (
@@ -118,11 +118,11 @@ export default function DashboardCoachingPage() {
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-[var(--ink)] mb-1">{isAr ? 'تحتاج توجيه مهني؟' : 'Need career guidance?'}</h3>
-            <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'تواصل مع مستشار متخصص للحصول على خارطة طريق واضحة' : 'Connect with a specialist for a clear roadmap'}</p>
+            <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'تواصل مع مرشد متخصص للحصول على خارطة طريق واضحة' : 'Connect with a specialist for a clear roadmap'}</p>
           </div>
           <Link href={`/${locale}/coaching`}
             className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">
-            {isAr ? 'تصفح المستشارين' : 'Browse Consultants'}
+            {isAr ? 'تصفح المرشدين' : 'Browse Mentors'}
           </Link>
         </div>
       )}

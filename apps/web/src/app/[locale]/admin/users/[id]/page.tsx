@@ -52,7 +52,7 @@ function getActionMeta(action: string) {
 const ROLE_LABELS: Record<string, { ar: string; en: string }> = {
   STUDENT: { ar: 'طالب', en: 'Student' },
   INSTRUCTOR: { ar: 'محاضر', en: 'Instructor' },
-  CONSULTANT: { ar: 'مستشار', en: 'Consultant' },
+  CONSULTANT: { ar: 'مرشد', en: 'Mentor' },
   ADMIN: { ar: 'مدير', en: 'Admin' },
 }
 

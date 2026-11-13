@@ -296,14 +296,14 @@ export default function AdminCreateSessionPage() {
               <div>
                 <label style={labelStyle}>
                   <GraduationCap size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
-                  {isAr ? 'المستشار / المحاضر (اختياري)' : 'Consultant / Instructor (optional)'}
+                  {isAr ? 'المرشد / المحاضر (اختياري)' : 'Mentor / Instructor (optional)'}
                 </label>
                 <select
                   value={form.consultantId}
                   onChange={(e) => handleConsultantChange(e.target.value)}
                   style={inputStyle}
                 >
-                  <option value="">{isAr ? 'اختر المستشار' : 'Select Consultant'}</option>
+                  <option value="">{isAr ? 'اختر المرشد' : 'Select Mentor'}</option>
                   {(consultants as any[]).map((cons: any) => (
                     <option key={cons.id} value={cons.id}>
                       {cons.profile?.firstName} {cons.profile?.lastName}
@@ -372,7 +372,7 @@ export default function AdminCreateSessionPage() {
                 opacity: 0.8, boxSizing: 'border-box',
               }}>
                 <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
-                  {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
+                  {isAr ? 'تلقائي من المرشد' : 'Auto from mentor'}
                 </span>
                 <span>
                   {parseFloat(form.price) > 0 ? formatMoney(parseFloat(form.price)) : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}

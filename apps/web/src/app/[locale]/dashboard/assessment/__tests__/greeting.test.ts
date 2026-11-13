@@ -3,7 +3,7 @@ import { buildGreeting, GREETING_CORE, sanitizeName } from '../greeting'
 describe('Interview greeting', () => {
   test('1 — without a name the greeting introduces Rasheed', () => {
     const text = buildGreeting()
-    expect(text).toContain('مرحباً! أنا رشيد، مستشارك المهني في ديفي واي.')
+    expect(text).toContain('مرحباً! أنا رشيد، مرشدك المهني في ديفي واي.')
     expect(text).toContain(GREETING_CORE)
   })
 

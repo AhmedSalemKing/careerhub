@@ -50,7 +50,7 @@ export function useAuth() {
       const roleNames: Record<string, string> = {
         STUDENT: 'طالب',
         INSTRUCTOR: 'محاضر',
-        CONSULTANT: 'مستشار',
+        CONSULTANT: 'مرشد',
         ADMIN: 'مدير',
       }
 

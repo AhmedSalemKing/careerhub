@@ -18,10 +18,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     const bio = isAr ? (coach?.bioAr || coach?.bioEn || '') : (coach?.bioEn || coach?.bioAr || '')
 
     return {
-      title: name ? `${name} | DeveWay` : (isAr ? 'المستشار المهني | DeveWay' : 'Professional Coach | DeveWay'),
+      title: name ? `${name} | DeveWay` : (isAr ? 'المرشد المهني | DeveWay' : 'Professional Coach | DeveWay'),
       description: specialties
         ? (isAr
-            ? `${name} — مستشار مهني متخصص في ${specialties}`
+            ? `${name} — مرشد مهني متخصص في ${specialties}`
             : `${name} — Professional coach specializing in ${specialties}`)
         : bio.slice(0, 160),
       alternates: {
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     }
   } catch {
     return {
-      title: isAr ? 'المستشار المهني | DeveWay' : 'Professional Coach | DeveWay',
+      title: isAr ? 'المرشد المهني | DeveWay' : 'Professional Coach | DeveWay',
     }
   }
 }

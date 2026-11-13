@@ -418,10 +418,10 @@ export default function AdminTracksPage() {
                       />
                     </Field>
                     <Field label="Slug"><input dir="ltr" value={f.slug} onChange={(e) => set({ slug: slugify(e.target.value), slugTouched: true })} /></Field>
-                    <Field label={isAr ? 'التخصص (لربط المرشدين)' : 'Speciality (links consultants)'} hint={isAr ? 'يُطابق تخصص المرشد في ملفه' : "Matched against the consultant's speciality"}>
+                    <Field label={isAr ? 'التخصص (لربط المرشدين)' : 'Speciality (links mentors)'} hint={isAr ? 'يُطابق تخصص المرشد في ملفه' : "Matched against the mentor's speciality"}>
                       <input value={f.speciality} onChange={(e) => set({ speciality: e.target.value })} />
                     </Field>
-                    <Field label={isAr ? 'سعر الجلسة (اختياري) ر.س' : 'Session price (optional) SAR'} hint={isAr ? 'إن تُرك فارغاً يُحسب من أقل مرشد' : 'Left empty, it is taken from the cheapest consultant'}>
+                    <Field label={isAr ? 'سعر الجلسة (اختياري) ر.س' : 'Session price (optional) SAR'} hint={isAr ? 'إن تُرك فارغاً يُحسب من أقل مرشد' : 'Left empty, it is taken from the cheapest mentor'}>
                       <input type="number" min={0} value={f.sessionPrice} onChange={(e) => set({ sessionPrice: e.target.value })} />
                     </Field>
                   </div>

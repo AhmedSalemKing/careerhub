@@ -149,7 +149,7 @@ export default function BookConsultingPage() {
         } catch {
           if (!cancelled) {
             setErrorMessage(
-              extractErrorMessage(primaryError, isAr ? 'تعذر تحميل بيانات المستشار' : 'Failed to load consultant'),
+              extractErrorMessage(primaryError, isAr ? 'تعذر تحميل بيانات المرشد' : 'Failed to load mentor'),
             )
           }
         }
@@ -304,10 +304,10 @@ export default function BookConsultingPage() {
         <div className="rounded-2xl p-4 sm:p-6 lg:p-8" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <header className="mb-5">
           <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
-            {isAr ? 'حجز جلسة استشارية' : 'Consulting session booking'}
+            {isAr ? 'حجز جلسة إرشادية' : 'Mentoring session booking'}
           </p>
           <h1 className="text-xl font-black sm:text-2xl" style={{ fontFamily: 'var(--font-madinet)' }}>
-            {isAr ? 'حجز جلسة مع' : 'Book a session with'} {displayName || (isAr ? 'المستشار' : 'the consultant')}
+            {isAr ? 'حجز جلسة مع' : 'Book a session with'} {displayName || (isAr ? 'المرشد' : 'the mentor')}
           </h1>
         </header>
 
@@ -456,7 +456,7 @@ export default function BookConsultingPage() {
                 maxLength={1000}
                 className="w-full resize-y rounded-xl border p-3 text-sm outline-none transition-colors"
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-                placeholder={isAr ? 'أخبر المستشار بما تحتاج مساعدة فيه' : 'Tell the consultant what you need help with'}
+                placeholder={isAr ? 'أخبر المرشد بما تحتاج مساعدة فيه' : 'Tell the mentor what you need help with'}
               />
             </section>
           </div>
@@ -468,11 +468,11 @@ export default function BookConsultingPage() {
                 <UserAvatar user={{ avatar: consultant?.profile?.avatar, gender: consultant?.profile?.gender, name: displayName }} size={48} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h2 className="truncate text-sm font-black">{displayName || (isAr ? 'مستشار' : 'Consultant')}</h2>
+                    <h2 className="truncate text-sm font-black">{displayName || (isAr ? 'مرشد' : 'Mentor')}</h2>
                     {consultant?.isVerified && <BadgeCheck size={15} style={{ color: 'var(--accent)' }} aria-label={isAr ? 'موثّق' : 'Verified'} />}
                   </div>
                   <p className="truncate text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                    {consultant?.profile?.speciality || (isAr ? 'استشارات مهنية' : 'Career consulting')}
+                    {consultant?.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}
                   </p>
                 </div>
               </div>
@@ -516,7 +516,7 @@ export default function BookConsultingPage() {
 
               <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
                 <Clock size={13} />
-                {isAr ? 'تأكيد المستشار مطلوب' : 'Consultant approval required'}
+                {isAr ? 'تأكيد المرشد مطلوب' : 'Mentor approval required'}
               </p>
             </div>
           </aside>
@@ -525,7 +525,7 @@ export default function BookConsultingPage() {
         {loadingConsultant && (
           <div className="mt-4 flex items-center justify-center gap-2 text-xs" style={{ color: 'var(--muted)' }}>
             <Loader2 size={14} className="animate-spin" />
-            {isAr ? 'جاري تحميل بيانات المستشار...' : 'Loading consultant...'}
+            {isAr ? 'جاري تحميل بيانات المرشد...' : 'Loading mentor...'}
           </div>
         )}
         </div>

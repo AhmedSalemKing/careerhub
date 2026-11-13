@@ -55,7 +55,7 @@ export default function PaymentSuccessPage() {
   }
 
   const getTypeConfig = () => {
-    if (type === 'consulting') return { icon: Calendar, color: '#5120c8', ar: 'جلسة استشارية', en: 'Consulting Session' }
+    if (type === 'consulting') return { icon: Calendar, color: '#5120c8', ar: 'جلسة إرشادية', en: 'Mentoring Session' }
     if (courseType === 'live') return { icon: Radio, color: '#dc2626', ar: 'بث مباشر', en: 'Live Session' }
     if (courseType === 'offline') return { icon: MapPin, color: '#16a34a', ar: 'مقر فعلي', en: 'Physical Course' }
     return { icon: Video, color: '#5120c8', ar: 'كورس مسجل', en: 'Recorded Course' }
@@ -110,7 +110,7 @@ export default function PaymentSuccessPage() {
         </h1>
         <p style={{ color: subtext, fontSize: 14, margin: '0 0 28px', lineHeight: 1.7 }}>
           {type === 'consulting'
-            ? (isAr ? 'تم تأكيد جلستك الاستشارية. ستتلقى إشعارا عند إضافة رابط الاجتماع.' : 'Your consulting session is confirmed. You will be notified when the meeting link is added.')
+            ? (isAr ? 'تم تأكيد جلستك الإرشادية. ستتلقى إشعارا عند إضافة رابط الاجتماع.' : 'Your consulting session is confirmed. You will be notified when the meeting link is added.')
             : courseType === 'live'
               ? (isAr ? 'تم تأكيد اشتراكك. يمكنك الانضمام للبث المباشر الآن.' : 'Enrollment confirmed. You can join the live stream now.')
               : courseType === 'offline'

@@ -789,7 +789,7 @@ export default function RegisterPage() {
               {([
                 { type: 'STUDENT' as const, icon: GraduationCap, label: ar ? 'مستخدم' : 'User', sub: ar ? 'وصول فوري' : 'Instant access' },
                 { type: 'INSTRUCTOR' as const, icon: User, label: ar ? 'مدرب' : 'Instructor', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
-                { type: 'CONSULTANT' as const, icon: Briefcase, label: ar ? 'مستشار' : 'Consultant', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
+                { type: 'CONSULTANT' as const, icon: Briefcase, label: ar ? 'مرشد' : 'Mentor', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
               ]).map(({ type, icon: Icon, label, sub }) => {
                 const isActive = step2.accountType === type
                 return (

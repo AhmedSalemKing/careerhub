@@ -39,7 +39,7 @@ const USER_TABS = [
   { id: 'ALL', labelAr: 'الكل', labelEn: 'All' },
   { id: 'STUDENT', labelAr: 'الطلاب', labelEn: 'Students' },
   { id: 'INSTRUCTOR', labelAr: 'المحاضرون', labelEn: 'Instructors' },
-  { id: 'CONSULTANT', labelAr: 'المستشارون', labelEn: 'Consultants' },
+  { id: 'CONSULTANT', labelAr: 'المرشدون', labelEn: 'Mentors' },
   { id: 'ADMIN', labelAr: 'الإداريون', labelEn: 'Admins' },
 ] as const
 
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
   const roleLabels: Record<string, string> = {
     STUDENT: isAr ? 'مستخدم' : 'User',
     INSTRUCTOR: isAr ? 'محاضر' : 'Instructor',
-    CONSULTANT: isAr ? 'مستشار' : 'Consultant',
+    CONSULTANT: isAr ? 'مرشد' : 'Mentor',
     ADMIN: isAr ? 'أدمن' : 'Admin',
   }
 
@@ -452,7 +452,7 @@ export default function AdminUsersPage() {
               >
                 <option value="STUDENT">{isAr ? 'مستخدم' : 'User'}</option>
                 <option value="INSTRUCTOR">{isAr ? 'محاضر' : 'Instructor'}</option>
-                <option value="CONSULTANT">{isAr ? 'مستشار' : 'Consultant'}</option>
+                <option value="CONSULTANT">{isAr ? 'مرشد' : 'Mentor'}</option>
                 <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
               </select>
               {createError && (

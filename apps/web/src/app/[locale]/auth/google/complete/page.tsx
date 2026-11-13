@@ -95,7 +95,7 @@ export default function GoogleCompleteProfile() {
             {[
               { value: 'STUDENT', label: 'مستخدم', icon: GraduationCap, desc: 'أريد التعلم واكتساب مهارات جديدة' },
               { value: 'INSTRUCTOR', label: 'محاضر', icon: User, desc: 'أريد تدريس ومشاركة معرفتي' },
-              { value: 'CONSULTANT', label: 'مستشار', icon: Briefcase, desc: 'أريد تقديم جلسات استشارية' },
+              { value: 'CONSULTANT', label: 'مرشد', icon: Briefcase, desc: 'أريد تقديم جلسات إرشادية' },
             ].map(type => (
               <div
                 key={type.value}

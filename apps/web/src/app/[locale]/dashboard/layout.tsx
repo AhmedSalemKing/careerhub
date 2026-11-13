@@ -49,6 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
       { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New', href: `/${locale}/dashboard/create-course` },
+      { icon: CalendarDays, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: BarChart2, labelAr: 'إحصائيات', labelEn: 'Stats', href: `/${locale}/dashboard/analytics` },
       { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
@@ -56,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     if (accountType === 'CONSULTANT') return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
-      { icon: CalendarDays, labelAr: 'جدول المواعيد', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+      { icon: CalendarDays, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Users, labelAr: 'جلسات عملائي', labelEn: 'Client Sessions', href: `/${locale}/dashboard/client-sessions` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },

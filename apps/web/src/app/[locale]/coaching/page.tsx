@@ -527,7 +527,7 @@ export default function CoachingPage() {
                       <article key={c.id} className="cch-coach">
                         <UserAvatar user={{ avatar: c.profile?.avatar, gender: c.profile?.gender, name }} size={64} />
                         <h3>{name}</h3>
-                        <span className="cch-spec">{c.profile?.speciality || 'استشارات مهنية'}</span>
+                        <span className="cch-spec">{c.profile?.speciality || 'إرشاد مهني'}</span>
                         {years > 0 && <p className="cch-meta">{years} سنة خبرة</p>}
                         {rate > 0 && (
                           <p className="cch-price">

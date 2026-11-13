@@ -424,7 +424,7 @@ export default function SettingsPage() {
           {(me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT') && (
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20, marginTop: 8 }}>
               <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>
-                {isAr ? 'معلومات المحاضر/المستشار' : 'Instructor/Consultant Info'}
+                {isAr ? 'معلومات المحاضر/المرشد' : 'Instructor/Mentor Info'}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div>

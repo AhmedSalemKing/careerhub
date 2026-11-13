@@ -208,7 +208,7 @@ export default function EarningsPage() {
         </h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
           {isAr
-            ? 'إيراداتك من الجلسات الاستشارية، محدثة من سجل الجلسات'
+            ? 'إيراداتك من الجلسات الإرشادية، محدثة من سجل الجلسات'
             : 'Your consulting revenue, sourced from the sessions ledger'}
         </p>
       </header>
@@ -287,7 +287,7 @@ export default function EarningsPage() {
                     </span>
                   </div>
                   <p className="truncate text-[11px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
-                    {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
+                    {session.sessionName || (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                   </p>
                   <p className="mt-1 text-[10px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                     {formatSessionDate(parseAnyDate(session), isAr)}
@@ -325,7 +325,7 @@ export default function EarningsPage() {
                         </div>
                       </td>
                       <td className="max-w-[220px] truncate p-3" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
-                        {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
+                        {session.sessionName || (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                       </td>
                       <td className="p-3 text-center" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                         {formatSessionDate(parseAnyDate(session), isAr)}

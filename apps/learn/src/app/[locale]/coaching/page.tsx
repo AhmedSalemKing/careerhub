@@ -210,7 +210,7 @@ function BookingModal({
               </div>
               {consultant.hourlyRate > 0 && (
                 <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-400">
-                  سيتم الدفع بعد تأكيد المستشار للموعد
+                  سيتم الدفع بعد تأكيد المرشد للموعد
                 </div>
               )}
               <div className="flex gap-3">
@@ -337,11 +337,11 @@ export default function CoachingPage() {
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-foreground mb-2">احجز استشارة مهنية</h1>
         <p className="text-[color:var(--muted)] text-lg max-w-xl mx-auto">
-          تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي
+          تواصل مع أفضل المرشدين المهنيين للحصول على توجيه شخصي
         </p>
       </div>
       <div className="mb-8 max-w-lg mx-auto">
-        <input type="text" placeholder="ابحث عن مستشار أو تخصص..."
+        <input type="text" placeholder="ابحث عن مرشد أو تخصص..."
           value={search} onChange={e => setSearch(e.target.value)}
           className="w-full rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-5 py-3.5 text-sm text-foreground focus:border-primary focus:outline-none shadow-sm" />
       </div>
@@ -354,8 +354,8 @@ export default function CoachingPage() {
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center">
           <User className="mx-auto mb-4 h-16 w-16 text-[color:var(--muted)] opacity-20" />
-          <h3 className="text-xl font-bold text-foreground mb-2">لا يوجد مستشارون</h3>
-          <p className="text-[color:var(--muted)]">لم يتم إضافة مستشارين بعد</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">لا يوجد مرشدون</h3>
+          <p className="text-[color:var(--muted)]">لم يتم إضافة مرشدين بعد</p>
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -382,7 +382,7 @@ export default function CoachingPage() {
                 </div>
                 <div className="p-5 pt-10">
                   <h3 className="font-bold text-foreground text-lg leading-tight">{name}</h3>
-                  <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مستشار مهني'}</p>
+                  <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مرشد مهني'}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
                     {consultant.experience && (
                       <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} {tc('years')}</span>

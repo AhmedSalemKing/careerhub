@@ -1103,9 +1103,9 @@ function MetaItem({
 	const sidebarBg = "var(--surface)";
 	const headerBg = "var(--background)";
 	const textPrimary = "var(--foreground)";
-	const textSecondary = isDark ? "#94a3b8" : "#6b7280";
-	const borderColor = isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb";
-	const cardBg = isDark ? "#161616" : "#ffffff";
+	const textSecondary = "var(--muted)";
+	const borderColor = "var(--border)";
+	const cardBg = "var(--surface)";
 	const purple = "#5120c8";
 	const purpleHover = "#6d35e0";
 	const teal = "#0d9488";
@@ -1200,13 +1200,7 @@ function MetaItem({
 			style={
 				{
 					background: bg,
-					"--background": bg,
-					"--surface": sidebarBg,
-					"--surface-2": isDark ? "#2C2C2E" : "#F7F7F9",
-					"--border": borderColor,
-					"--foreground": textPrimary,
-					"--muted": textSecondary,
-					"--card": cardBg,
+					// --background/--surface/--border/... come from the global theme tokens (no per-page overrides)
 					"--primary": purple,
 				} as React.CSSProperties
 			}>

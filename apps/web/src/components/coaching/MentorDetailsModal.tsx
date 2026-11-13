@@ -83,7 +83,7 @@ export function MentorDetailsModal({ mentor, onClose }: { mentor: MentorForModal
           <UserAvatar user={{ avatar: p.avatar, gender: p.gender, name }} size={96} />
           <h2 className="mt-2 text-2xl font-bold">{name}</h2>
           <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--wash)', color: 'var(--brand)' }}>
-            {p.speciality || (isAr ? 'استشارات مهنية' : 'Career consulting')}
+            {p.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}
           </span>
           <div className="mt-1 flex flex-wrap items-center justify-center gap-4 text-sm" style={{ color: 'var(--ink-2)' }}>
             {years > 0 && (

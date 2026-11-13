@@ -863,12 +863,12 @@ export default function InstructorReportsClient({ country }: { country: string }
               }}
             >
               <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
-                {isAr ? 'قسم الاستشاريين' : 'Consultants'}
+                {isAr ? 'قسم الإرشاديين' : 'Mentors'}
               </div>
               <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={thStyle}>{isAr ? 'اسم الاستشاري' : 'Consultant'}</th>
+                    <th style={thStyle}>{isAr ? 'اسم الإرشادي' : 'Mentor'}</th>
                     <th style={thStyle}>{isAr ? 'عدد الجلسات' : 'Sessions'}</th>
                     <th style={thStyle}>{isAr ? 'مكتملة' : 'Completed'}</th>
                     <th style={thStyle}>{isAr ? 'ملغاة' : 'Cancelled'}</th>

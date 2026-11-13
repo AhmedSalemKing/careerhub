@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: 'DeveWay | منصة التدريب',
     template: '%s | DeveWay',
   },
-  description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف واستشارات مهنية',
+  description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف وإرشاد مهني',
   keywords: ['كورسات', 'تدريب', 'تعليم', 'مهارات', 'مسار مهني', 'شهادات معتمدة'],
   openGraph: {
     type: 'website',

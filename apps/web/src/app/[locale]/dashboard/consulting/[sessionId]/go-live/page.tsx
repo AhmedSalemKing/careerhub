@@ -65,7 +65,7 @@ export default function ConsultingGoLivePage() {
           } catch (joinErr: any) {
             setError(
               joinErr?.response?.data?.message ||
-              (isAr ? 'لم تبدأ الجلسة بعد — انتظر المستشار' : 'Session not started yet — wait for the consultant')
+              (isAr ? 'لم تبدأ الجلسة بعد — انتظر المرشد' : 'Session not started yet — wait for the mentor')
             )
           }
         } else {

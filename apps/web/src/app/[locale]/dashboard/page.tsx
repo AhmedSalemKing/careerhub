@@ -356,7 +356,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
 
   const confirm = async () => {
     if (!mentor || !slot || booking) return
-    const t = (topic.trim() || pathName || 'جلسة استشارية')
+    const t = (topic.trim() || pathName || 'جلسة إرشادية')
     setBooking(true); setError(null)
     try {
       await post('/consulting/sessions/book', {
@@ -431,7 +431,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
                       : <span className="mentor-av">{name[0]}</span>}
                     <span className="mentor-info">
                       <b>{name}</b>
-                      <small>{c.profile?.speciality || 'استشارات مهنية'}</small>
+                      <small>{c.profile?.speciality || 'إرشاد مهني'}</small>
                     </span>
                     <span className="mentor-pick">{active ? 'مختار' : 'اختر'}</span>
                   </div>
@@ -467,7 +467,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
               </>
             )}
             {slot && (
-              <input className="book-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={`موضوع الجلسة (${pathName || 'جلسة استشارية'})`} />
+              <input className="book-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={`موضوع الجلسة (${pathName || 'جلسة إرشادية'})`} />
             )}
           </>
         )}
@@ -951,7 +951,7 @@ function StudentOverview() {
                   </p>
                 )}
                 <p className="dw-lc-sub">
-                  {upcomingSession.topic ?? upcomingSession.sessionName ?? 'جلسة استشارية'}
+                  {upcomingSession.topic ?? upcomingSession.sessionName ?? 'جلسة إرشادية'}
                 </p>
                 {upcomingMentor && (
                   <div className="dw2-lc-host">
@@ -1228,7 +1228,7 @@ function ConsultantOverview() {
     s.status !== 'COMPLETED'
   )
 
-  const firstName = user?.profile?.firstName || (isAr ? 'المستشار' : 'Coach')
+  const firstName = user?.profile?.firstName || (isAr ? 'المرشد' : 'Coach')
   const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
   const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
 
@@ -1288,7 +1288,7 @@ function ConsultantOverview() {
       }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 6 }}>
-            {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
+            {isAr ? 'لوحة تحكم المرشد' : 'Coach Dashboard'}
           </div>
           <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--ink)', margin: 0 }}>
             {isAr ? `مرحباً، ${firstName}` : `Welcome, ${firstName}`}
@@ -1487,7 +1487,7 @@ export default function DashboardPage() {
     if (accountType === 'CONSULTANT') return {
       icon: <Calendar size={22} color="var(--primary-foreground)"/>,
       title: 'جلساتي القادمة',
-      desc: 'إدارة مواعيد الجلسات الاستشارية',
+      desc: 'إدارة مواعيد الجلسات الإرشادية',
       href: `/${locale}/dashboard/my-sessions`,
       bg: 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1))',
       border: 'rgba(245,158,11,0.3)',
