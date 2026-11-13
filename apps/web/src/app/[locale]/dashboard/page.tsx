@@ -107,6 +107,7 @@ function InstructorOverview() {
   const actions = [
     { Icon: Plus, label: isAr ? 'إنشاء كورس جديد' : 'Create New Course', href: `/${locale}/dashboard/create-course`, primary: true },
     { Icon: BookOpen, label: isAr ? 'كورساتي' : 'My Courses', href: `/${locale}/dashboard/my-courses`, primary: false },
+    { Icon: CalendarClock, label: isAr ? 'الجدول الزمني' : 'Schedule', href: `/${locale}/dashboard/schedule`, primary: false },
     { Icon: DollarSign, label: isAr ? 'الإيرادات' : 'Revenue', href: `/${locale}/dashboard/revenue`, primary: false },
     { Icon: BarChart2, label: isAr ? 'الإحصائيات' : 'Analytics', href: `/${locale}/dashboard/analytics`, primary: false },
     { Icon: Settings, label: isAr ? 'الإعدادات' : 'Settings', href: `/${locale}/dashboard/settings`, primary: false },
@@ -1261,6 +1262,7 @@ function ConsultantOverview() {
 
   const actions = [
     { Icon: Calendar, label: isAr ? 'إدارة الجلسات' : 'Manage Sessions', href: `/${locale}/dashboard/my-sessions`, primary: true },
+    { Icon: CalendarClock, label: isAr ? 'الجدول الزمني' : 'Schedule', href: `/${locale}/dashboard/schedule`, primary: false },
     { Icon: Users, label: isAr ? 'طلبات العملاء' : 'Client Requests', href: `/${locale}/dashboard/client-sessions`, primary: false },
     { Icon: DollarSign, label: isAr ? 'الإيرادات' : 'Revenue', href: `/${locale}/dashboard/revenue`, primary: false },
     { Icon: Settings, label: isAr ? 'الإعدادات' : 'Settings', href: `/${locale}/dashboard/settings`, primary: false },
