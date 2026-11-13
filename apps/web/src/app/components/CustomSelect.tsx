@@ -40,6 +40,8 @@ export function CustomSelect({
   useEffect(() => {
     if (!open) return
     const close = () => setOpen(false)
+    // Scrolling the option list itself must not close it (that was the "dropdown disappears" bug)
+    const onScroll = (e: Event) => { if (!listRef.current?.contains(e.target as Node)) close() }
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       if (!triggerRef.current?.contains(t) && !listRef.current?.contains(t)) close()
@@ -48,12 +50,12 @@ export function CustomSelect({
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', close)
-    window.addEventListener('scroll', close, true)
+    window.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey, true)
       window.removeEventListener('resize', close)
-      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('scroll', onScroll, true)
     }
   }, [open])
 

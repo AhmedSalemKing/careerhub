@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, X, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Download, Search, Eye, EyeOff, Briefcase, BookOpen } from 'lucide-react'
 import { get, post, put, del } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
@@ -180,6 +180,8 @@ export default function AdminTracksPage() {
   const [formError, setFormError] = useState('')
   const [imageMode, setImageMode] = useState<'url' | 'upload'>('url')
   const [uploading, setUploading] = useState(false)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'HIDDEN'>('ALL')
 
   const { data: tracks = [], isLoading, error: listError, refetch } = useQuery({
     queryKey: ['admin-tracks'],
@@ -246,6 +248,18 @@ export default function AdminTracksPage() {
 
   const countryLabel = (c: string) => (c === 'EG' ? (isAr ? 'مصر' : 'Egypt') : c === 'KSA' ? (isAr ? 'السعودية' : 'Saudi Arabia') : isAr ? 'مصر والسعودية' : 'Egypt & Saudi')
 
+  const q = search.trim().toLowerCase()
+  const filteredTracks = tracks.filter((t) =>
+    (statusFilter === 'ALL' || (statusFilter === 'ACTIVE') === t.isActive) &&
+    (!q || [t.nameAr, t.nameEn, t.slug].some((x) => (x || '').toLowerCase().includes(q))))
+  const jobsTotal = tracks.reduce((n, t) => n + parseJsonArray(t.jobs).length, 0)
+  // The mentor link matches the mentor's speciality text, so the track's Arabic name is the stored value
+  const specialityOptions = (cur: string) => {
+    const opts = tracks.map((t) => ({ value: t.nameAr, label: isAr ? `${t.nameAr} - ${t.nameEn}` : `${t.nameEn} - ${t.nameAr}` }))
+    if (cur && !opts.some((o) => o.value === cur)) opts.push({ value: cur, label: cur })
+    return [{ value: '', label: isAr ? 'اختر التخصص' : 'Choose a speciality' }, ...opts]
+  }
+
   const open = (t?: TrackRow) => {
     setFormError('')
     setTab('basics')
@@ -290,8 +304,8 @@ export default function AdminTracksPage() {
     <div dir={isAr ? 'rtl' : 'ltr'} className="tk-page">
       <div className="tk-head">
         <div>
-          <h1>{isAr ? 'المسارات' : 'Tracks'}</h1>
-          <p>{isAr ? 'إدارة مسارات التعلّم والوظائف والرواتب المتوقعة والدورات ورؤية 2030' : 'Manage learning tracks, jobs and expected salaries, courses and Vision 2030'}</p>
+          <h1>{isAr ? 'المسارات المهنية' : 'Career tracks'}</h1>
+          <p>{isAr ? `${tracks.length} مسار مسجّل` : `${tracks.length} registered tracks`}</p>
         </div>
         <div className="tk-head-actions">
           <button type="button" className="tk-btn" disabled={importPaths.isPending} onClick={() => importPaths.mutate()} title={isAr ? 'ينشئ مسودات غير نشطة من المسارات المهنية الموجودة' : 'Creates inactive drafts from the existing career paths'}>
@@ -312,37 +326,53 @@ export default function AdminTracksPage() {
       ) : tracks.length === 0 ? (
         <div className="tk-empty">{isAr ? 'لا توجد مسارات بعد. أضف مساراً أو استورد من المسارات المهنية.' : 'No tracks yet. Add one or import from career paths.'}</div>
       ) : (
-        <div className="tk-table-wrap">
-          <table className="tk-table">
-            <thead>
-              <tr>
-                <th>{isAr ? 'الاسم (عربي)' : 'Name (AR)'}</th>
-                <th>{isAr ? 'الاسم (English)' : 'Name (EN)'}</th>
-                <th>{isAr ? 'الدولة' : 'Market'}</th>
-                <th>{isAr ? 'الحالة' : 'Status'}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {tracks.map((t) => (
-                <tr key={t.id}>
-                  <td>
-                    <b>{t.nameAr}</b>
-                    <code className="tk-slug">/{t.slug}</code>
-                    <span className="tk-counts">{isAr ? `${parseJsonArray(t.jobs).length} وظائف · ${parseJsonArray(t.courses).length} دورات` : `${parseJsonArray(t.jobs).length} jobs · ${parseJsonArray(t.courses).length} courses`}</span>
-                  </td>
-                  <td dir="ltr">{t.nameEn}</td>
-                  <td>
-                    <div>{countryLabel(t.country)}</div>
-                    <VisionBadges vision={visionOf(t.vision2030)} locale={locale} compact all />
-                  </td>
-                  <td>
-                    <button type="button" className={'tk-switch' + (t.isActive ? ' on' : '')} role="switch" aria-checked={t.isActive} disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(t)} aria-label={isAr ? 'نشط' : 'Active'}>
-                      <span />
-                    </button>
-                    <span className={'tk-status' + (t.isActive ? ' on' : '')}>{t.isActive ? (isAr ? 'نشط' : 'Active') : isAr ? 'مخفي' : 'Hidden'}</span>
-                  </td>
-                  <td className="tk-actions">
+        <>
+          <div className="tk-stats">
+            <div className="tk-stat"><b>{tracks.filter((t) => t.isActive).length}</b><span>{isAr ? 'مسار نشط' : 'Active tracks'}</span></div>
+            <div className="tk-stat"><b>{tracks.filter((t) => !t.isActive).length}</b><span>{isAr ? 'مسار مخفي' : 'Hidden tracks'}</span></div>
+            <div className="tk-stat"><b>{jobsTotal}</b><span>{isAr ? 'وظيفة مرتبطة' : 'Linked jobs'}</span></div>
+          </div>
+
+          <div className="tk-filters">
+            <label className="tk-search">
+              <Search size={16} />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isAr ? 'ابحث عن مسار...' : 'Search tracks...'} />
+            </label>
+            <div className="tk-filter-select">
+              <CustomSelect
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as 'ALL' | 'ACTIVE' | 'HIDDEN')}
+                options={[
+                  { value: 'ALL', label: isAr ? 'الكل' : 'All' },
+                  { value: 'ACTIVE', label: isAr ? 'نشط' : 'Active' },
+                  { value: 'HIDDEN', label: isAr ? 'مخفي' : 'Hidden' },
+                ]}
+              />
+            </div>
+          </div>
+
+          {filteredTracks.length === 0 ? (
+            <div className="tk-empty">{isAr ? 'لا توجد مسارات مطابقة.' : 'No matching tracks.'}</div>
+          ) : (
+            <div className="tk-cards">
+              {filteredTracks.map((t) => (
+                <div key={t.id} className="tk-card">
+                  <span className={'tk-dot' + (t.isActive ? ' on' : '')} aria-hidden="true" />
+                  <div className="tk-card-main">
+                    <div className="tk-card-title">
+                      <b>{t.nameAr}</b>
+                      <code className="tk-slug-pill">/{t.slug}</code>
+                    </div>
+                    <div className="tk-card-meta">
+                      <span><Briefcase size={13} />{parseJsonArray(t.jobs).length} {isAr ? 'وظيفة' : 'jobs'}</span>
+                      <span><BookOpen size={13} />{parseJsonArray(t.courses).length} {isAr ? 'دورة' : 'courses'}</span>
+                      <span>{countryLabel(t.country)}</span>
+                      <VisionBadges vision={visionOf(t.vision2030)} locale={locale} compact all />
+                    </div>
+                  </div>
+                  <span className="tk-en" dir="ltr">{t.nameEn}</span>
+                  <span className={'tk-status' + (t.isActive ? ' on' : '')}>{t.isActive ? (isAr ? 'نشط' : 'Active') : isAr ? 'مخفي' : 'Hidden'}</span>
+                  <div className="tk-actions">
                     {deletingId === t.id ? (
                       <>
                         <button type="button" className="tk-btn danger" disabled={remove.isPending} onClick={() => remove.mutate(t.id)}>{isAr ? 'تأكيد الحذف' : 'Confirm'}</button>
@@ -350,16 +380,17 @@ export default function AdminTracksPage() {
                       </>
                     ) : (
                       <>
-                        <button type="button" className="tk-btn" onClick={() => open(t)}><Pencil size={14} />{isAr ? 'تعديل' : 'Edit'}</button>
-                        <button type="button" className="tk-icon" onClick={() => setDeletingId(t.id)} aria-label={isAr ? 'حذف' : 'Delete'}><Trash2 size={15} /></button>
+                        <button type="button" className="tk-icon" disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(t)} aria-label={t.isActive ? (isAr ? 'إخفاء' : 'Hide') : isAr ? 'إظهار' : 'Show'}>{t.isActive ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+                        <button type="button" className="tk-icon" onClick={() => open(t)} aria-label={isAr ? 'تعديل' : 'Edit'}><Pencil size={16} /></button>
+                        <button type="button" className="tk-icon" onClick={() => setDeletingId(t.id)} aria-label={isAr ? 'حذف' : 'Delete'}><Trash2 size={16} /></button>
                       </>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {editing && f && (
@@ -419,7 +450,7 @@ export default function AdminTracksPage() {
                     </Field>
                     <Field label="Slug"><input dir="ltr" value={f.slug} onChange={(e) => set({ slug: slugify(e.target.value), slugTouched: true })} /></Field>
                     <Field label={isAr ? 'التخصص (لربط المرشدين)' : 'Speciality (links mentors)'} hint={isAr ? 'يُطابق تخصص المرشد في ملفه' : "Matched against the mentor's speciality"}>
-                      <input value={f.speciality} onChange={(e) => set({ speciality: e.target.value })} />
+                      <CustomSelect value={f.speciality} onChange={(v) => set({ speciality: v })} options={specialityOptions(f.speciality)} placeholder={isAr ? 'اختر التخصص' : 'Choose a speciality'} />
                     </Field>
                     <Field label={isAr ? 'سعر الجلسة (اختياري) ر.س' : 'Session price (optional) SAR'} hint={isAr ? 'إن تُرك فارغاً يُحسب من أقل مرشد' : 'Left empty, it is taken from the cheapest mentor'}>
                       <input type="number" min={0} value={f.sessionPrice} onChange={(e) => set({ sessionPrice: e.target.value })} />
@@ -596,6 +627,27 @@ export default function AdminTracksPage() {
         .tk-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); cursor: pointer; }
         .tk-icon:hover { background: var(--wash); }
         .tk-empty { padding: 40px; text-align: center; border: 1px dashed var(--line); border-radius: 16px; color: var(--ink-3); }
+        .tk-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .tk-stat { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+        .tk-stat b { font-size: 24px; font-weight: 800; color: var(--ink); }
+        .tk-stat span { font-size: 12px; color: var(--ink-2); }
+        .tk-filters { display: flex; gap: 12px; margin-bottom: 14px; }
+        .tk-search { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); color: var(--ink-3); }
+        .tk-search input { flex: 1; min-width: 0; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14px; outline: none; }
+        .tk-filter-select { width: 160px; }
+        .tk-cards { display: grid; gap: 10px; }
+        .tk-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: border-color .15s; }
+        .tk-card:hover { border-color: var(--brand); }
+        .tk-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+        .tk-dot.on { background: var(--good, var(--brand)); }
+        .tk-card-main { flex: 1; min-width: 0; }
+        .tk-card-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tk-card-title b { color: var(--ink); }
+        .tk-slug-pill { padding: 1px 8px; border-radius: 999px; background: var(--bg-2); color: var(--ink-3); font-size: 11px; direction: ltr; }
+        .tk-card-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; color: var(--ink-2); }
+        .tk-card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .tk-en { font-size: 13px; color: var(--ink-2); }
+        @media (max-width: 768px) { .tk-en { display: none; } .tk-stats { grid-template-columns: 1fr; } .tk-card { flex-wrap: wrap; } }
         .tk-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
         .tk-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .tk-table th { padding: 12px 14px; text-align: start; font-size: 12px; color: var(--ink-3); border-bottom: 1px solid var(--line); }

@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { api } from '../../../../lib/api'
 import {
   CheckCircle, XCircle, Search, ChevronLeft, ChevronRight,
-  PlusCircle, ExternalLink, BookOpen, Eye,
+  PlusCircle, ExternalLink, BookOpen, Eye, Pencil, Package, Check, X,
 } from 'lucide-react'
 
 import { learnUrlWithToken } from '../../../../lib/learn-link'
@@ -57,7 +57,9 @@ export default function AdminCoursesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [counts, setCounts] = useState({ all: 0, published: 0, draft: 0, pending: 0 })
   const [packageOpen, setPackageOpen] = useState(false)
-  const [packageToast, setPackageToast] = useState(false)
+  const [packageToast, setPackageToast] = useState<string | null>(null)
+  const [pathNames, setPathNames] = useState<Record<string, string>>({})
+  const [editPkg, setEditPkg] = useState<{ id: string; finalPrice: string; originalPrice: string; notes: string } | null>(null)
   const [packages, setPackages] = useState<AdminPackage[]>([])
 
   function fetchPackages() {
@@ -67,14 +69,53 @@ export default function AdminCoursesPage() {
   }
   useEffect(fetchPackages, [])
 
+  // Resolve the track / career path names the packages belong to
+  useEffect(() => {
+    const names: Record<string, string> = {}
+    Promise.allSettled([
+      api.get('/tracks', { params: { lang: isAr ? 'ar' : 'en' } }),
+      api.get('/career/paths', { params: { language: isAr ? 'ar' : 'en' } }),
+    ]).then(([t, c]) => {
+      if (t.status === 'fulfilled') {
+        const d: any = t.value.data
+        const arr = d?.data?.tracks ?? d?.data ?? []
+        ;(Array.isArray(arr) ? arr : []).forEach((x: any) => { if (x?.id) names[x.id] = x.name || x.nameAr })
+      }
+      if (c.status === 'fulfilled') {
+        const d: any = c.value.data
+        const arr = d?.data?.careerPaths ?? d?.data ?? []
+        ;(Array.isArray(arr) ? arr : []).forEach((x: any) => { if (x?.id && !names[x.id]) names[x.id] = x.titleAr || x.title || x.titleEn })
+      }
+      setPathNames(names)
+    })
+  }, [isAr])
+
+  function flash(msg: string) {
+    setPackageToast(msg)
+    setTimeout(() => setPackageToast(null), 3000)
+  }
+
+  async function savePackageEdit() {
+    if (!editPkg) return
+    const finalPrice = Number(editPkg.finalPrice)
+    if (!(finalPrice > 0)) return
+    const original = editPkg.originalPrice.trim() === '' ? undefined : Number(editPkg.originalPrice)
+    try {
+      await api.patch(`/packages/${editPkg.id}`, { finalPrice, ...(original !== undefined ? { originalPrice: original } : {}), notes: editPkg.notes })
+      setEditPkg(null)
+      fetchPackages()
+      flash(isAr ? 'تم الحفظ بنجاح' : 'Saved successfully')
+    } catch (e) { console.error(e) }
+  }
+
   async function togglePackage(pkg: AdminPackage) {
-    try { await api.patch(`/packages/${pkg.id}`, { isActive: !pkg.isActive }); fetchPackages() }
+    try { await api.patch(`/packages/${pkg.id}`, { isActive: !pkg.isActive }); fetchPackages(); flash(isAr ? 'تم الحفظ بنجاح' : 'Saved successfully') }
     catch (e) { console.error(e) }
   }
 
   async function deletePackage(id: string) {
     if (!confirm(isAr ? 'هل أنت متأكد؟' : 'Are you sure?')) return
-    try { await api.delete(`/packages/${id}`); setPackages((prev) => prev.filter((p) => p.id !== id)) }
+    try { await api.delete(`/packages/${id}`); setPackages((prev) => prev.filter((p) => p.id !== id)); flash(isAr ? 'تم حذف الباكدج' : 'Package deleted') }
     catch (e) { console.error(e) }
   }
 
@@ -121,9 +162,8 @@ export default function AdminCoursesPage() {
   }
 
   function onPackageCreated() {
-    setPackageToast(true)
     fetchPackages()
-    setTimeout(() => setPackageToast(false), 3000)
+    flash(isAr ? 'تم الحفظ بنجاح' : 'Saved successfully')
   }
 
   function goToCreateCourse() {
@@ -557,39 +597,75 @@ export default function AdminCoursesPage() {
         </div>
       )}
       <section>
-        <h2 className="text-base font-bold mb-3" style={{ color: 'var(--foreground)' }}>{isAr ? 'الباكدجات المُنشأة' : 'Created packages'}</h2>
+        <h2 className="mb-3 flex items-center gap-2 text-base font-bold" style={{ color: 'var(--ink)' }}><Package size={18} />{isAr ? 'الباكدجات' : 'Packages'}<span className="text-xs font-normal" style={{ color: 'var(--ink-3)' }}>({packages.length})</span></h2>
         {packages.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد باكدجات بعد.' : 'No packages yet.'}</p>
+          <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{isAr ? 'لا توجد باكدجات بعد.' : 'No packages yet.'}</p>
         ) : (
-          <div className="grid gap-3">
-            {packages.map((pkg) => (
-              <div key={pkg.id} className="rounded-xl p-4 border flex items-start justify-between gap-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div>
-                  <div className="text-sm font-semibold mb-1" style={{ color: 'var(--foreground)' }}>{pkg.notes || pkg.pathId}</div>
-                  <div className="flex gap-3 flex-wrap text-xs">
-                    <span style={{ color: 'var(--purple)', fontWeight: 500 }}>{pkg.finalPrice.toLocaleString()} SAR</span>
-                    {pkg.originalPrice != null && pkg.originalPrice > pkg.finalPrice && (
-                      <span style={{ color: 'var(--muted)' }}>{isAr ? 'خصم' : 'Discount'} {Math.round((1 - pkg.finalPrice / pkg.originalPrice) * 100)}%</span>
-                    )}
-                    <span style={{ color: 'var(--muted)' }}>{pkg.courseIds.length} {isAr ? 'دورة' : 'courses'}</span>
-                    <span style={{ color: pkg.isActive ? 'var(--foreground)' : 'var(--muted)' }}>{pkg.isActive ? (isAr ? 'نشط' : 'Active') : (isAr ? 'معطّل' : 'Disabled')}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => togglePackage(pkg)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)' }}>
-                    {pkg.isActive ? (isAr ? 'تعطيل' : 'Disable') : (isAr ? 'تفعيل' : 'Enable')}
-                  </button>
-                  <button type="button" onClick={() => deletePackage(pkg.id)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: '#ef4444' }}>
-                    {isAr ? 'حذف' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-x-auto rounded-xl border" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
+            <table className="w-full text-sm" style={{ color: 'var(--ink)' }}>
+              <thead>
+                <tr style={{ color: 'var(--ink-3)', borderBottom: '1px solid var(--line)' }}>
+                  {[isAr ? 'اسم الباكدج' : 'Package', isAr ? 'المسار' : 'Track', isAr ? 'الكورسات' : 'Courses', isAr ? 'السعر' : 'Price', isAr ? 'الحالة' : 'Status', ''].map((h, i) => (
+                    <th key={i} className="px-3 py-2.5 text-start text-xs font-semibold">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {packages.map((pkg) => {
+                  const trackName = pathNames[pkg.pathId] || pkg.pathId
+                  const editing = editPkg?.id === pkg.id
+                  return (
+                    <tr key={pkg.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td className="px-3 py-3 font-semibold">
+                        {editing ? (
+                          <input value={editPkg!.notes} onChange={(e) => setEditPkg({ ...editPkg!, notes: e.target.value })} className="w-full rounded-lg px-2 py-1 text-sm" style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)' }} />
+                        ) : (pkg.notes || trackName)}
+                      </td>
+                      <td className="px-3 py-3" style={{ color: 'var(--ink-2)' }}>{trackName}</td>
+                      <td className="px-3 py-3" style={{ color: 'var(--ink-2)' }}>{pkg.courseIds.length}</td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {editing ? (
+                          <span className="flex gap-1">
+                            <input type="number" min={0} placeholder={isAr ? 'الأصلي' : 'Original'} value={editPkg!.originalPrice} onChange={(e) => setEditPkg({ ...editPkg!, originalPrice: e.target.value })} className="w-20 rounded-lg px-2 py-1 text-sm" style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)' }} />
+                            <input type="number" min={0} placeholder={isAr ? 'النهائي' : 'Final'} value={editPkg!.finalPrice} onChange={(e) => setEditPkg({ ...editPkg!, finalPrice: e.target.value })} className="w-20 rounded-lg px-2 py-1 text-sm" style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)' }} />
+                          </span>
+                        ) : (
+                          <>
+                            <b style={{ color: 'var(--brand)' }}>{pkg.finalPrice.toLocaleString()} SAR</b>
+                            {pkg.originalPrice != null && pkg.originalPrice > pkg.finalPrice && (
+                              <span className="ms-2 text-xs" style={{ color: 'var(--ink-3)' }}>-{Math.round((1 - pkg.finalPrice / pkg.originalPrice) * 100)}%</span>
+                            )}
+                          </>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <button type="button" onClick={() => togglePackage(pkg)} className="rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: pkg.isActive ? 'var(--wash)' : 'var(--bg-2)', color: pkg.isActive ? 'var(--brand)' : 'var(--ink-3)', border: '1px solid var(--line)' }}>
+                          {pkg.isActive ? (isAr ? 'نشط' : 'Active') : (isAr ? 'معطّل' : 'Disabled')}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-end">
+                        {editing ? (
+                          <>
+                            <button type="button" onClick={savePackageEdit} aria-label={isAr ? 'حفظ' : 'Save'} className="rounded-lg p-1.5" style={{ color: 'var(--brand)' }}><Check size={16} /></button>
+                            <button type="button" onClick={() => setEditPkg(null)} aria-label={isAr ? 'إلغاء' : 'Cancel'} className="rounded-lg p-1.5" style={{ color: 'var(--ink-3)' }}><X size={16} /></button>
+                          </>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => setEditPkg({ id: pkg.id, finalPrice: String(pkg.finalPrice), originalPrice: pkg.originalPrice != null ? String(pkg.originalPrice) : '', notes: pkg.notes ?? '' })} aria-label={isAr ? 'تعديل' : 'Edit'} className="rounded-lg p-1.5" style={{ color: 'var(--ink-2)' }}><Pencil size={16} /></button>
+                            <button type="button" onClick={() => deletePackage(pkg.id)} className="rounded-lg px-2 py-1 text-xs" style={{ color: 'var(--error)' }}>{isAr ? 'حذف' : 'Delete'}</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
       {packageOpen && <PackageModal onClose={() => setPackageOpen(false)} onCreated={onPackageCreated} />}
-      {packageToast && <div className="dw2-pk-toast" role="status">تم إنشاء الباكدج بنجاح ✓</div>}
+      {packageToast && <div className="dw2-pk-toast" role="status">{packageToast}</div>}
     </div>
   )
 }
