@@ -4627,3 +4627,31 @@ section[class*="hero"] { padding-block: 48px }
 .dw-result .rs-empty { max-width: 420px; margin: 80px auto; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--ink-2); }
 .dw-result .rs-empty h2 { margin: 0; color: var(--ink); }
 .dw-result .rs-empty svg { color: var(--brand); }
+
+/* === Mobile safeguards (layout only) === */
+/* Long Arabic words must wrap instead of widening the page. */
+h1, h2, h3 { overflow-wrap: break-word; }
+h1, h2 { text-wrap: balance; }
+
+/* Auto-fill grids: never ask for a column wider than the viewport. */
+.dw-tracks { grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
+.dw-courses { grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
+.dw-tracks-grid { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
+
+@media (max-width: 480px) {
+  /* Booking / consultation panels */
+  .mentor-grid { grid-template-columns: 1fr; }
+  .dw2-cm-grid { grid-template-columns: 1fr; }
+
+  /* Assessment: previous/next stay visible and share the row */
+  .dw-assess .a-nav { gap: 8px; }
+  .dw-assess .a-nav .btn { flex: 1; justify-content: center; }
+
+  /* Result page: tighter cards, full-width actions */
+  .dw-result { padding-inline: 12px; }
+  .dw-result .rs-rasheed { padding: 16px; }
+  .dw-result .rs-head, .dw-result .rs-sec, .dw-result .rs-vision, .dw-result .rs-foot { padding-inline: 14px; }
+  .dw-result .rs-actions { width: 100%; margin-inline-start: 0; }
+  .dw-result .rs-actions .btn { flex: 1; justify-content: center; }
+  .dw-result .rs-cta .btn { width: 100%; justify-content: center; }
+}
