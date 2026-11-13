@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { get, post } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
+import { fetchTrack } from '../../../lib/tracks'
 import { getMediaUrl } from '../../../lib/media'
 import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
@@ -599,7 +600,22 @@ function StudentOverview() {
       })
       const d = (res?.data as any)
       const arr = d?.data?.courses ?? d?.data ?? d ?? []
-      return Array.isArray(arr) ? arr : []
+      const list: any[] = Array.isArray(arr) ? [...arr] : []
+      // Courses of the track's package / curated list, so admin-built tracks are covered too
+      try {
+        const track = await fetchTrack(selectedPathRaw.slug, locale)
+        const ids = new Set<string>(list.map((c: any) => c.id))
+        const extra: string[] = [...(track?.package?.courseIds ?? []), ...((track?.courses ?? []).map((c) => c.courseId).filter(Boolean) as string[])]
+        for (const id of Array.from(new Set(extra))) {
+          if (ids.has(id)) continue
+          try {
+            const r = await get(`/courses/${id}`)
+            const c = (r?.data as any)?.data?.course ?? (r?.data as any)?.data
+            if (c?.id) { list.push(c); ids.add(c.id) }
+          } catch {}
+        }
+      } catch {}
+      return list
     },
     enabled: !!selectedPathRaw?.slug,
     retry: 1, staleTime: 60000,

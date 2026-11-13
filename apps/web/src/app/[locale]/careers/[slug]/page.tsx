@@ -316,7 +316,7 @@ export default function CareerPathDetailPage() {
     .sort((a, b) => a.price - b.price)
   const cheapest = sessionPrices[0]
 
-  const canEnroll = !!path?.id && !isMock && !track
+  const canEnroll = !!path?.id && !isMock
   // Free enrollment in a career path (no package). Called from the confirmation popup, which shows any error.
   const enrollInPath = async () => {
     if (!path?.id || isMock) return
@@ -659,7 +659,7 @@ export default function CareerPathDetailPage() {
         price={track?.package?.price ?? (!track && view && view.totalPrice > 0 ? view.totalPrice : null)}
         paymentUrl={paymentUrl}
         onEnroll={canEnroll ? enrollInPath : undefined}
-        comingSoon={isMock || (!!track && !view?.trackPackage)}
+        comingSoon={!canEnroll}
       />
 
       {selectedCourse && (

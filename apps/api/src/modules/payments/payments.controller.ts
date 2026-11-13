@@ -52,7 +52,7 @@ export class PaymentsController {
     } catch (e: any) {
       console.error('[CONFIRM-PACKAGE] Error:', e?.message)
     }
-    return res.redirect(302, `https://devewayhub.vercel.app/${locale}/my-courses`)
+    return res.redirect(302, `https://deveway-teal.vercel.app/${locale}/dashboard`)
   }
 
   // Create checkout for consulting session

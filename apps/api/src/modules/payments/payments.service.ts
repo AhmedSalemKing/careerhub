@@ -188,6 +188,25 @@ export class PaymentsService {
       }
     }
 
+    // Put the track on the buyer's dashboard (best effort: payment already succeeded)
+    try {
+      let cp: { id: string; titleEn: string | null; titleAr: string | null } | null = null
+      if (pkg.pathKind === 'TRACK') {
+        const t = await this.prisma.track.findUnique({ where: { id: pkg.pathId }, select: { slug: true } })
+        if (t?.slug) cp = await this.prisma.careerPath.findFirst({ where: { slug: t.slug }, select: { id: true, titleEn: true, titleAr: true } })
+      } else {
+        cp = await this.prisma.careerPath.findUnique({ where: { id: pkg.pathId }, select: { id: true, titleEn: true, titleAr: true } })
+      }
+      if (cp) {
+        const exists = await this.prisma.userCareerPath.findFirst({ where: { userId, pathId: cp.id } })
+        if (!exists) {
+          await this.prisma.userCareerPath.create({ data: { userId, pathId: cp.id, pathTitle: cp.titleEn || cp.id, pathCategory: cp.titleAr || '', aiRecommended: false } })
+        }
+      }
+    } catch (e: any) {
+      console.error('[PACKAGE] Could not add track to user paths:', e?.message)
+    }
+
     const already = await this.prisma.payment.findUnique({ where: { transactionId: session.id } })
     if (!already) {
       await this.prisma.payment.create({
