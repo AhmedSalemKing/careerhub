@@ -5,7 +5,7 @@ import { verifyRequest } from '../_auth'
 import { RASHEED_SYSTEM_PROMPT } from './rasheed-prompt'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
 
 const DEVEWAY_SYSTEM_PROMPT = `أنت محاور مهني ذكي من منصة DeveWay المتخصصة في التوجيه المهني التقني.
 اسمك "DeveWay Career AI". بتتكلم بالعامية المصرية المبسطة — دافئ، فضولي، زي مقابلة حقيقية.
@@ -43,6 +43,15 @@ UI/UX Designer | Product Manager | Cybersecurity Engineer | Mobile Developer
 // Primary fails fast (7s) so the fallback can start promptly.
 // Fallback timeout is capped separately but the shared TOTAL_BUDGET_MS is the
 // hard ceiling — prevents a 7s primary + 18s fallback = 25s combined wait.
+/** Join the text of every non-thought part (Gemini 3.x can return several parts, text not always first). */
+function extractText(data: unknown): string | undefined {
+  const parts = (data as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] })
+    ?.candidates?.[0]?.content?.parts
+  if (!Array.isArray(parts)) return undefined
+  const text = parts.filter((p) => !p.thought).map((p) => p.text ?? '').join('')
+  return text.length > 0 ? text : undefined
+}
+
 const PRIMARY_TIMEOUT_MS  = 7_000
 const FALLBACK_TIMEOUT_MS = 14_000
 const TOTAL_BUDGET_MS     = 24_000  // shared across all attempts; maxDuration = 30s
@@ -302,7 +311,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
-    const models      = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
+    const models      = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest']
 
     // Streaming is opt-in; every other caller keeps the JSON response below.
     const wantsStream = (req.headers.get('accept') ?? '').includes('text/event-stream') || stream === true
@@ -313,9 +322,9 @@ export async function POST(req: NextRequest) {
     // Long structured replies (e.g. the assessment result JSON) ask for more tokens and get proportionally longer deadlines.
     const maxTokens     = Number.isFinite(Number(reqMaxTokens)) ? Math.min(4096, Math.max(200, Math.floor(Number(reqMaxTokens)))) : 800
     const longReply     = maxTokens > 800
-    const primaryMs     = longReply ? 18_000 : PRIMARY_TIMEOUT_MS
-    const fallbackMs    = longReply ? 22_000 : FALLBACK_TIMEOUT_MS
-    const totalBudgetMs = longReply ? 28_000 : TOTAL_BUDGET_MS
+    const primaryMs     = longReply ? 25_000 : PRIMARY_TIMEOUT_MS
+    const fallbackMs    = longReply ? 25_000 : FALLBACK_TIMEOUT_MS
+    const totalBudgetMs = longReply ? 55_000 : TOTAL_BUDGET_MS
 
     const budgetStart = Date.now()
     let lastError     = ''
@@ -438,7 +447,7 @@ export async function POST(req: NextRequest) {
                 continue
               }
               const data2 = await geminiRes2.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-              const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text
+              const text2 = extractText(data2)
               if (text2) {
                 cbRecordSuccess(model)
                 console.log(`[AI Chat] req=${reqId} SUCCESS model=${model}(nosys) len=${text2.length} totalMs=${Date.now()-tStart}`)
@@ -457,7 +466,7 @@ export async function POST(req: NextRequest) {
 
         // Body read is still under ctrl.signal.
         const data = await geminiRes.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        const text = extractText(data)
 
         if (text && text.trim().length > 0) {
           cbRecordSuccess(model)
@@ -465,7 +474,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ content: text })
         }
 
-        lastError = `${model} empty response`
+        lastError = `${model} empty response finish=${(data as { candidates?: { finishReason?: string }[] })?.candidates?.[0]?.finishReason ?? 'none'}`
         console.error(`[AI Chat] req=${reqId} ${lastError}`)
         cbRecordFailure(model, true)
 
