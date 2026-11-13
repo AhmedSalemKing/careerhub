@@ -7,84 +7,51 @@ import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar'
-import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
+import { useMarket } from '../contexts/MarketContext'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
-/* ═══ Cross-domain web app (notifications live there) ═══ */
+import '../dw-header.css'
+
+/* Cross-domain web app (notifications, AI chat, assessment live there) */
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
 
+const NAV_FONT = "var(--font-ui, 'IBM Plex Sans Arabic', sans-serif)"
 
-/* ═══ Shared font for nav + buttons ═══ */
-const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
-
-/* ════════════════════════════════════════
-   Theme Toggle (Professional & Smooth)
-   ════════════════════════════════════════ */
+/* Same markup and classes as the web app's header, so both sites look identical. */
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
-
   useEffect(() => setMounted(true), [])
-
-  if (!mounted) {
-    return (
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-xl"
-        style={{ background: 'var(--surface-2)' }}
-      >
-        <div className="h-4 w-4 rounded-full" style={{ background: 'var(--border)' }} />
-      </div>
-    )
-  }
-
-  const isDark = resolvedTheme === 'dark'
-
-  const handleToggle = () => {
-    if (isAnimating) return
-    setIsAnimating(true)
-    setTheme(isDark ? 'light' : 'dark')
-    setTimeout(() => setIsAnimating(false), 300)
-  }
-
+  const isDark = mounted && resolvedTheme === 'dark'
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode'
   return (
-    <button
-      onClick={handleToggle}
-      className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 overflow-hidden"
-      style={{ background: 'var(--surface-2)' }}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-    >
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out"
-        style={{
-          opacity: isDark ? 1 : 0,
-          transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(90deg) scale(0.5)',
-        }}
-      >
-        <Moon className="h-[15px] w-[15px]" style={{ color: '#5120c8' }} />
-      </div>
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out"
-        style={{
-          opacity: isDark ? 0 : 1,
-          transform: isDark ? 'rotate(-90deg) scale(0.5)' : 'rotate(0deg) scale(1)',
-        }}
-      >
-        <Sun className="h-[15px] w-[15px]" style={{ color: '#F59E0B' }} />
-      </div>
+    <button type="button" onClick={() => setTheme(isDark ? 'light' : 'dark')} className="icon-btn" aria-label={label} title={label}>
+      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {isDark ? (
+          <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        ) : (
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+        )}
+      </svg>
     </button>
   )
 }
 
-/* ════════════════════════════════════════
-   Avatar: image -> initial -> loading skeleton (never "?")
-   The token is available before /auth/me resolves, so for a moment the user is
-   signed in but has no name/email yet. Show a pulsing placeholder then.
-   ════════════════════════════════════════ */
+function MarketSwitcher() {
+  const tm = useTranslations('market')
+  const { market, setMarket } = useMarket()
+  return (
+    // dir=ltr keeps KSA | EG in the same order in Arabic and English
+    <div className="mkt" dir="ltr" role="group" aria-label={tm('switcher')}>
+      <button type="button" className={market === 'KSA' ? 'on' : undefined} aria-pressed={market === 'KSA'} title={tm('ksa')} onClick={() => setMarket('KSA')}>KSA</button>
+      <button type="button" className={market === 'EG' ? 'on' : undefined} aria-pressed={market === 'EG'} title={tm('eg')} onClick={() => setMarket('EG')}>EG</button>
+    </div>
+  )
+}
+
 function Avatar({
   user,
   size,
@@ -265,40 +232,25 @@ function UserDropdown({ locale }: { locale: string }) {
   )
 }
 
-/* ════════════════════════════════════════
-   Main Navbar Component (Professional Design)
-   ✨ DeveWay Text: Dark→White (#ffffff) | Light→Black (#0d0d0d)
-   ════════════════════════════════════════ */
+
 export function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
   const pathname = usePathname()
-  const { resolvedTheme, setTheme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  // Select individual fields instead of the whole store. Subscribing to the
-  // entire store object re-rendered the Navbar on *any* auth-store write
-  // (including the no-op hydrates below), which cascaded into the layout
-  // subtree. `hydrate` is a stable action reference from zustand.
   const user = useAuthStore((s) => s.user)
   const token = useAuthStore((s) => s.token)
   const hydrate = useAuthStore((s) => s.hydrate)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
-    // Read the stored user + token into the store immediately on mount.
-    // hydrate() is idempotent, so the follow-up syncs below are cheap no-ops.
     hydrate()
-
-    // Sync auth state across tabs
     const syncAuth = () => hydrate()
     window.addEventListener('storage', syncAuth)
     window.addEventListener('auth:updated', syncAuth)
-
     return () => {
       window.removeEventListener('storage', syncAuth)
       window.removeEventListener('auth:updated', syncAuth)
@@ -313,39 +265,27 @@ export function Navbar() {
   }, [])
 
   const isLoggedIn = mounted && !!token
-  const isAr = locale === 'ar'
-  const currentTheme = resolvedTheme || 'dark'
-
   const initials = mounted && user?.profile
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
     : ''
 
-  /* ═══ Navigation Links with Smart Routing ═══ */
-  const links = [
+  /* Learn pages stay local; pages that live in the web app link back to it. */
+  type NavItem = { key: string; href: string; label: string; external?: boolean }
+  const links: NavItem[] = [
+    { key: 'home', href: `/${locale}`, label: t('home') },
+    { key: 'courses', href: `/${locale}/courses`, label: t('courses') },
     {
-      href: `/${locale}`,
-      label: t('home')
-    },
-    {
-      href: `/${locale}/courses`,
-      label: t('courses')
-    },
-    {
+      key: 'my_courses',
       href: isLoggedIn ? `${WEB_URL}/${locale}/dashboard/my-courses` : `/${locale}/login`,
       label: t('my_courses'),
-      requiresAuth: true,
-      external: isLoggedIn
+      external: isLoggedIn,
     },
-    {
-      href: `${MAIN_URL}/${locale}/coaching`,
-      label: t('book_consultation'),
-      external: true
-    },
+    { key: 'careers', href: `${MAIN_URL}/${locale}/careers`, label: t('careers'), external: true },
+    { key: 'assessment', href: `${MAIN_URL}/${locale}/dashboard/assessment`, label: t('assessment'), external: true },
+    { key: 'coaching', href: `${MAIN_URL}/${locale}/coaching`, label: t('book_consultation'), external: true },
   ]
-
   const isActive = (href: string) => pathname === href
 
-  /* ═══ Header badges: unread notifications ═══ */
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ['navbar-notifications-unread'],
     enabled: isLoggedIn,
@@ -362,396 +302,122 @@ export function Navbar() {
     refetchInterval: 60000,
   })
 
+  const renderLink = (l: NavItem, mobile = false) => {
+    const active = !l.external && isActive(l.href)
+    const content = (
+      <>
+        {l.label}
+        {l.external && <ArrowUpRight size={12} style={{ opacity: 0.4 }} aria-hidden="true" />}
+      </>
+    )
+    if (mobile) {
+      const mobileProps = {
+        className: 'rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150 flex items-center gap-1',
+        style: { fontWeight: 500, fontFamily: NAV_FONT, color: active ? 'var(--brand)' : 'var(--foreground)', background: active ? 'var(--surface-2)' : 'transparent' },
+        onClick: () => setMobileOpen(false),
+      }
+      return l.external
+        ? <a key={l.key} href={l.href} {...mobileProps}>{content}</a>
+        : <Link key={l.key} href={l.href} {...mobileProps}>{content}</Link>
+    }
+    return l.external
+      ? <a key={l.key} href={l.href}>{content}</a>
+      : <Link key={l.key} href={l.href} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>{content}</Link>
+  }
 
   return (
     <>
-      <style jsx>{`
-        @keyframes navFadeIn {
-          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes mobileSlide {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
-      {/* ═══ HEADER - Original Dark Background ═══ */}
-      <header
-        className="sticky top-0 z-40 w-full transition-all duration-200"
-        style={{
-          background: 'var(--navbar-bg)',
-          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
-          borderBottom: scrolled ? '1px solid var(--navbar-border)' : '1px solid transparent',
-          boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
-        }}
-      >
-        <div className="dw-container flex h-[68px] items-center justify-between">
-
-          {/* ═══ Branding (Logo + DeveWay Text) ═══ */}
-          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:mr-6 md:mr-8" style={{ marginRight: '12px' }}>
-            <img
-              src="/logo-icon.png"
-              alt="DeveWay"
-              className="h-[44px] w-auto object-contain transition-opacity duration-200 hover:opacity-80 sm:h-[52px]"
-              style={{ background: 'transparent', minWidth: '44px' }}
-              onError={(e) => { e.currentTarget.style.display = 'none' }}
-            />
-            
-            {/* ✨ DEVEWAY TEXT - Dynamic Color Based on Theme */}
-            <span
-              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-all duration-300 hover:opacity-80 md:text-[24px]"
-              style={{ 
-                fontFamily: NAV_FONT, 
-                color: currentTheme === 'dark' ? '#ffffff' : '#0d0d0d', 
-                lineHeight: 1,
-                transition: 'color 0.3s ease'
-              }}
-            >
-              DeveWay
-            </span>
+      <header className={`header dw-header${scrolled ? ' scrolled' : ''}`}>
+        <div className="wrap">
+          <Link href={`/${locale}`} className="logo" aria-label="DeveWay">
+            <img className="on-light" src="/logo-wordmark-light.webp" alt="DeveWay" />
+            <img className="on-dark" src="/logo-wordmark-dark.webp" alt="" />
           </Link>
 
-          {/* ═══ Navigation Links (Desktop) ═══ */}
-          <nav className="hidden lg:flex items-center gap-0.5">
-            {links.map((l) => {
-              const active = isActive(l.href)
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    letterSpacing: '-0.01em',
-                    fontFamily: NAV_FONT,
-                    color: active ? '#5120c8' : 'var(--foreground)',
-                    background: active ? 'var(--surface-2)' : 'transparent',
-                    opacity: active ? 1 : 0.75,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.background = 'var(--surface-2)'
-                      e.currentTarget.style.opacity = '1'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.opacity = '0.75'
-                    }
-                  }}
-                >
-                  {l.label}
-                  {l.external && (
-                    <ArrowUpRight className="inline-block ml-1 h-3 w-3 opacity-35" />
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
+          <nav className="nav" aria-label="Main">{links.map((l) => renderLink(l))}</nav>
 
-          {/* ═══ Actions ═══ */}
-          <div className="flex items-center gap-1.5">
-            
-            {/* Icon buttons row */}
-            <div className="flex items-center gap-1">
-              
-              <SearchBar />
+          <div className="hdr-tools">
+            <span className="hide-sm"><SearchBar /></span>
+            <MarketSwitcher />
+            <LanguageSwitcher />
+            <ThemeToggle />
 
-              <div className="hidden sm:flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
-                <LanguageSwitcher />
-                <ThemeToggle />
-                  {mounted && isLoggedIn && (
-                  <a
-                    href={`https://deveway-teal.vercel.app/${locale}/dashboard/ai-chat`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="DeveWay AI"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-                    style={{ background: 'rgba(81, 32, 200, 0.10)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.18)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
-                  >
-                    <Sparkles className="h-[14px] w-[14px]" style={{ color: '#5120c8' }} />
-                  </a>
-                )}
-              </div>
-
-              {mounted && isLoggedIn && (
+            {mounted && isLoggedIn && (
+              <>
                 <a
                   href={`${WEB_URL}/${locale}/dashboard/notifications`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="الإشعارات"
+                  className="icon-btn"
                   aria-label="Notifications"
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-                  style={{ color: 'var(--muted)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  title={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
                 >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
+                  <Bell className="icon" />
+                  {unreadCount > 0 && <span className="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                 </a>
-              )}
-
-            </div>
-
-            {/* Separator */}
-            {mounted && isLoggedIn && (
-              <div className="hidden lg:block h-6 w-px mx-0.5" style={{ background: 'var(--border)' }} />
+                <a href={`${WEB_URL}/${locale}/dashboard/ai-chat`} title="DeveWay AI" aria-label="DeveWay AI" className="icon-btn hide-sm">
+                  <Sparkles className="icon" />
+                </a>
+                <div className="hidden lg:block">
+                  {user?.role === 'ADMIN' ? (
+                    <Link href={`/${locale}/admin`} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium" style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#fff' }}>
+                        {initials || 'A'}
+                      </div>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}>Admin</span>
+                    </Link>
+                  ) : (
+                    <UserDropdown locale={locale} />
+                  )}
+                </div>
+              </>
             )}
 
-            {/* Auth buttons (desktop) - Tall & Narrow Design */}
-            {!mounted ? (
-              <div className="h-9 w-[160px] hidden lg:block" />
-            ) : isLoggedIn ? (
-              <div className="hidden lg:block">
-                {user?.role === 'ADMIN' ? (
-                  <Link
-                    href={`/${locale}/admin`}
-                    className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-colors duration-150"
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <div
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium"
-                      style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
-                    >
-                      {initials || 'A'}
-                    </div>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
-                    >
-                      Admin
-                    </span>
-                  </Link>
-                ) : (
-                  <UserDropdown locale={locale} />
-                )}
-              </div>
-            ) : (
-              <div className="hidden lg:flex items-center gap-2">
-                {/* تسجيل الدخول */}
-                <Link
-                  href={`/${locale}/login`}
-                  className="px-4 py-[10px] text-[12px] font-medium rounded-xl transition-all duration-150"
-                  style={{
-                    color: 'var(--muted)',
-                    border: '1px solid var(--border)',
-                    fontFamily: NAV_FONT,
-                    height: '38px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--foreground)'
-                    e.currentTarget.style.borderColor = 'var(--border-strong)'
-                    e.currentTarget.style.background = 'var(--surface-2)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--muted)'
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                    e.currentTarget.style.background = 'transparent'
-                  }}
-                >
-                  {t('login')}
-                </Link>
-                
-                {/* إنشاء حساب */}
-                <Link
-                  href={`/${locale}/register`}
-                  className="px-5 py-[10px] text-[12px] font-medium rounded-xl transition-all duration-150"
-                  style={{
-                    background: '#5120c8',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
-                    fontFamily: NAV_FONT,
-                    height: '38px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#4318a8'
-                    e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(81,32,200,0.30)'
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#5120c8'
-                    e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(81,32,200,0.25)'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  {t('register')}
-                </Link>
-              </div>
+            {mounted && !isLoggedIn && (
+              <>
+                <Link href={`/${locale}/login`} className="dwh-btn dwh-btn-ghost hide-md">{t('login')}</Link>
+                <Link href={`/${locale}/register`} className="dwh-btn dwh-btn-primary hide-sm">{t('register')}</Link>
+              </>
             )}
 
-            {/* Mobile toggle */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="flex lg:hidden h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-              style={{
-                color: 'var(--muted)',
-                background: mobileOpen ? 'var(--surface-2)' : 'transparent',
-              }}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="h-[18px] w-[18px]" /> : <Menu className="h-[18px] w-[18px]" />}
+            <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="icon-btn menu-btn" aria-label="Menu" aria-expanded={mobileOpen}>
+              {mobileOpen ? <X className="icon" /> : <Menu className="icon" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* ═══ Mobile Menu ═══ */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 top-[68px] z-30 lg:hidden overflow-y-auto"
-          style={{
-            background: 'var(--surface)',
-            borderTop: '1px solid var(--border)',
-            animation: 'mobileSlide 0.2s ease-out',
-          }}
-        >
+        <div className="dw-menu fixed inset-0 top-[64px] z-[99] lg:hidden overflow-y-auto" style={{ background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
           <div className="px-4 py-5 space-y-5">
-            {/* Nav links */}
-            <nav className="flex flex-col gap-0.5">
-              {links.map((l) => {
-                const active = isActive(l.href)
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
-                    style={{
-                      fontWeight: 500,
-                      fontFamily: NAV_FONT,
-                      color: active ? '#5120c8' : 'var(--foreground)',
-                      background: active ? 'var(--surface-2)' : 'transparent',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {l.label}
-                    {l.external && <ArrowUpRight className="inline-block h-3 w-3 opacity-30 ml-1" />}
-                  </Link>
-                )
-              })}
-            </nav>
+            <nav className="flex flex-col gap-0.5">{links.map((l) => renderLink(l, true))}</nav>
 
-            {/* Mobile actions row */}
-            <div
-              className="flex items-center gap-2 px-1"
-              style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}
-            >
-              <LanguageSwitcher />
-              <ThemeToggle />
-              {mounted && isLoggedIn && (
-                <a
-                  href={`https://deveway-teal.vercel.app/${locale}/dashboard/ai-chat`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
-                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  AI
-                </a>
-              )}
-              {mounted && isLoggedIn && (
-                <a
-                  href={`${WEB_URL}/${locale}/dashboard/notifications`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="الإشعارات"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Notifications"
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-                  style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}
-                >
-                  <Bell className="h-[18px] w-[18px]" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </a>
-              )}
+            <div className="flex flex-wrap items-center gap-2 px-1" style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
+              <SearchBar />
             </div>
 
-            {/* Auth section */}
             {isLoggedIn ? (
-              <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-3 px-2">
-                  <Avatar user={user} size="md" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
-                      {user?.profile?.firstName
-                        ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
-                        : user?.email}
-                    </p>
-                    <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2.5">
-                  <Link
-                    href={`${WEB_URL}/${locale}/dashboard/my-courses`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-colors duration-150"
-                    style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    {t('my_courses')}
-                  </Link>
-                  <button
-                    onClick={() => {
-                      const currentLocale = locale ?? 'ar'
-                      window.location.href = `/${currentLocale}/logout`
-                    }}
-                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150"
-                    style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </div>
+              <div className="flex gap-2.5 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <a
+                  href={`${WEB_URL}/${locale}/dashboard`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold"
+                  style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  {t('dashboard')}
+                </a>
+                <button
+                  onClick={() => { window.location.href = `/${locale}/logout` }}
+                  className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium"
+                  style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
+                  aria-label={t('logout')}
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
               </div>
             ) : mounted ? (
-              <div className="flex flex-col gap-2.5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <Link
-                  href={`/${locale}/login`}
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
-                  style={{ border: '1px solid var(--border)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
-                >
-                  {t('login')}
-                </Link>
-                <Link
-                  href={`/${locale}/register`}
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
-                  style={{
-                    background: '#5120c8',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
-                    fontFamily: NAV_FONT,
-                  }}
-                >
-                  {t('register')}
-                </Link>
+              <div className="flex flex-col gap-2.5 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <Link href={`/${locale}/login`} onClick={() => setMobileOpen(false)} className="dwh-btn dwh-btn-ghost w-full">{t('login')}</Link>
+                <Link href={`/${locale}/register`} onClick={() => setMobileOpen(false)} className="dwh-btn dwh-btn-primary w-full">{t('register')}</Link>
               </div>
             ) : null}
           </div>

@@ -423,7 +423,7 @@ export default function CareerPathDetailPage() {
                   <span className="dw2-vision-title">{mkt.flag} {mkt.vision.name[lang]}</span>
                   <p>{isAr ? 'التحول الرقمي ممكّن أساسي لرؤية 2030، ويحتاج إلى مطورين قادرين على بناء الخدمات الرقمية.' : 'Digital transformation is a key enabler of Vision 2030 and needs developers able to build digital services.'}</p>
                   {visionJobs.length > 0 && <span className="dw2-jobs-label">{isAr ? 'الوظائف المتوافقة:' : 'Aligned jobs:'} {visionJobs.join(isAr ? '، ' : ', ')}</span>}
-                  <span className="dw2-disclaimer">{isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر).' : 'Vision 2030 badges follow the market you selected (Saudi Arabia or Egypt).'}</span>
+                  <span className="dw2-disclaimer">{isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته.' : 'Vision 2030 badges follow the market you selected.'}</span>
                   <span className="dw2-disclaimer">{isAr ? 'يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : 'Alignment reflects DeveWay’s reading of announced national priorities, not an official endorsement.'}</span>
                 </div>
               </section>

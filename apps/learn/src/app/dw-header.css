@@ -1,0 +1,85 @@
+/* Header shared with apps/web (same markup, same look). Ported from web's globals.css.
+   Buttons use .dwh-btn* so they never collide with learn's own .btn-primary rules. */
+.dw-header-font { font-family: var(--font-ui, 'IBM Plex Sans Arabic', system-ui, sans-serif); }
+
+.header {
+	position: sticky;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	width: 100%;
+	z-index: 100;
+	background: rgba(255, 255, 255, 0.82);
+	backdrop-filter: blur(14px);
+	-webkit-backdrop-filter: blur(14px);
+	border-bottom: 1px solid rgba(84, 20, 246, 0.12);
+	font-family: var(--font-ui, 'IBM Plex Sans Arabic', system-ui, sans-serif);
+	transition: background .22s ease, box-shadow .22s ease, backdrop-filter .22s ease;
+}
+.header.scrolled {
+	background: color-mix(in srgb, var(--background) 88%, transparent);
+	backdrop-filter: blur(18px) saturate(1.5);
+	-webkit-backdrop-filter: blur(18px) saturate(1.5);
+	box-shadow: 0 1px 0 var(--line);
+}
+.dark .header { background: color-mix(in srgb, var(--background) 82%, transparent); border-bottom-color: var(--line); }
+
+.header .wrap { display: flex; align-items: center; height: 64px; max-width: 1280px; margin-inline: auto; padding-inline: 24px; gap: 0; }
+
+.header .logo { flex-shrink: 0; display: inline-flex; align-items: center; gap: 10px; margin-inline-end: 36px; text-decoration: none; }
+.header .logo img { display: block; height: 30px; width: auto; min-width: 0; }
+.header .logo .on-dark { display: none; }
+.dark .header .logo .on-light { display: none; }
+.dark .header .logo .on-dark { display: block; }
+
+.header .nav { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.header .nav a {
+	display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; border-radius: 8px;
+	font-size: .875rem; font-weight: 500; line-height: 1.4; color: var(--ink-2);
+	text-decoration: none; white-space: nowrap; transition: color .14s ease, background .14s ease;
+}
+.header .nav a:hover, .header .nav a:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent); outline: none; }
+.header .nav a.active, .header .nav a[aria-current='page'] { color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, transparent); }
+@media (max-width: 1023px) { .header .nav { display: none; } .header .wrap { justify-content: space-between; } }
+
+.hdr-tools { display: flex; align-items: center; gap: 6px; margin-inline-start: 24px; flex-shrink: 0; }
+@media (max-width: 1023px) { .hdr-tools { margin-inline-start: 0; } }
+
+.mkt { display: flex; align-items: center; background: var(--surface-2, #1e1a3a); border-radius: 99px; padding: 3px; gap: 2px; }
+.mkt button { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: none; cursor: pointer; color: var(--ink-2); background: transparent; transition: all 0.15s; }
+.mkt button.on { background: var(--purple, #5414f6); color: #fff; box-shadow: 0 1px 4px rgba(84, 20, 246, 0.3); }
+
+.icon-btn {
+	position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 9px;
+	border-radius: 8px; color: var(--ink-2); background: transparent; border: none; cursor: pointer;
+	font-size: .8125rem; font-weight: 500; transition: color .14s ease, background .14s ease; line-height: 1; white-space: nowrap;
+}
+.icon-btn:hover, .icon-btn:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent); outline: none; }
+.icon-btn .icon { width: 18px; height: 18px; flex-shrink: 0; }
+.icon-btn .badge { position: absolute; top: 2px; inset-inline-end: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.menu-btn .icon { width: 20px; height: 20px; }
+
+@media (max-width: 639px)  { .hide-sm { display: none !important; } }
+@media (max-width: 767px)  { .hide-md { display: none !important; } }
+@media (min-width: 1024px) { .menu-btn { display: none !important; } }
+
+.header .dwh-btn, .dw-menu .dwh-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 40px; padding: 0 18px;
+	border-radius: 999px; font-weight: 700; font-size: 14px; white-space: nowrap; cursor: pointer; text-decoration: none;
+	font-family: inherit; transition: transform .25s ease, box-shadow .25s ease, background-color .25s ease, border-color .25s ease, color .25s ease;
+}
+.header .dwh-btn-primary, .dw-menu .dwh-btn-primary { background: var(--brand); color: var(--on-brand, #fff); border: 0; box-shadow: 0 10px 24px -10px rgb(84 20 246 / 0.7); }
+.header .dwh-btn-primary:hover, .dw-menu .dwh-btn-primary:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.header .dwh-btn-ghost, .dw-menu .dwh-btn-ghost { border: 1.5px solid var(--line-2); background: var(--surface, transparent); color: var(--ink); }
+.header .dwh-btn-ghost:hover, .dw-menu .dwh-btn-ghost:hover { border-color: var(--brand); color: var(--brand); transform: translateY(-2px); }
+
+.lang-btn .lang-short { display: none; }
+@media (max-width: 639px) {
+	.header .wrap { padding-inline: 12px; }
+	.header .logo { margin-inline-end: 6px; min-width: 0; flex-shrink: 1; }
+	.header .logo img { height: 24px; max-width: 100%; }
+	.hdr-tools { gap: 2px; flex-shrink: 1; min-width: 0; }
+	.hdr-tools .icon-btn { padding: 7px 6px; }
+	.mkt button { padding: 4px 7px; font-size: 11px; }
+	.lang-btn .lang-full { display: none; }
+	.lang-btn .lang-short { display: inline; font-weight: 600; }
+}

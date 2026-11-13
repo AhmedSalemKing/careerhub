@@ -102,3 +102,7 @@ export const toMarket = (v: unknown): Market => (v === 'EG' || v === 'EGP' ? 'EG
 export function aiMarketContextFor(market: unknown, locale: unknown): string {
   return MARKET_CONFIG[toMarket(market)].aiMarketContext[toLang(locale)]
 }
+
+/** Base-currency (SAR) amount -> approximate amount in the market's currency. */
+export const toMarketAmount = (sar: number, market: Market): number =>
+  market === 'EG' ? Math.round(sar * MARKET_CONFIG.EG.salaryMultiplier) : sar

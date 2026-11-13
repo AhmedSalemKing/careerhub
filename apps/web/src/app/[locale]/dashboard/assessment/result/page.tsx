@@ -158,7 +158,7 @@ export default function AssessmentResultPage() {
       const all = (tk?.courses ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
       const pkgIds = pkg?.courseIds ?? []
       const inPkg = pkgIds.length ? all.filter((x) => x.courseId && pkgIds.includes(x.courseId)) : []
-      const vision = tk ? (tk.vision2030.includes(market) ? market : (tk.vision2030[0] ?? null)) : null
+      const vision = tk && tk.vision2030.includes(market) ? market : null
       return {
         rank: i + 1,
         trackName: tk?.name ?? c.name ?? '',
@@ -360,7 +360,7 @@ export default function AssessmentResultPage() {
           تعرض الرواتب النطاق الشهري الإجمالي المعتاد في السوق الذي اخترته، بجميع مستويات الخبرة. يبدأ المنضمون الجدد عادةً قرب الحد الأدنى.
         </p>
         <p className="rs-fine">
-          تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر) أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
+          تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
         </p>
         <div className="rs-cta">
           <button type="button" className="btn btn-ghost" onClick={retake}><RotateCcw size={16} aria-hidden="true" /> أعد التقييم</button>

@@ -1,6 +1,7 @@
 'use client'
 
 import type { TrackVision } from '../../lib/tracks'
+import { useMarket } from '../contexts/MarketContext'
 
 /* Flags are national artwork, so their colours are the flags' own, not theme tokens. */
 export function Flag({ code }: { code: TrackVision }) {
@@ -26,8 +27,10 @@ const LABEL = {
 } as const
 
 /** Logo + flag + name for each national vision a track is aligned with. */
-export function VisionBadges({ vision, locale, compact }: { vision: readonly string[]; locale: string; compact?: boolean }) {
-  const items = (['KSA', 'EG'] as const).filter((v) => vision.includes(v))
+/** Shows ONLY the visitor's selected market's vision (never both). Admin screens pass `all` to see every vision a track carries. */
+export function VisionBadges({ vision, locale, compact, all }: { vision: readonly string[]; locale: string; compact?: boolean; all?: boolean }) {
+  const { market } = useMarket()
+  const items = (['KSA', 'EG'] as const).filter((v) => vision.includes(v) && (all || v === market))
   if (items.length === 0) return null
   return (
     <div className="dw-vision-badges">
@@ -49,15 +52,16 @@ const DEFAULT_DESC = {
 
 /** "Vision 2030 alignment" block of the track page: one card per selected vision. */
 export function VisionBox({
-  vision, descKSA, descEG, jobTitles, locale,
-}: { vision: readonly string[]; descKSA?: string | null; descEG?: string | null; jobTitles: string[]; locale: string }) {
+  vision, descKSA, descEG, jobTitles, locale, all,
+}: { vision: readonly string[]; descKSA?: string | null; descEG?: string | null; jobTitles: string[]; locale: string; all?: boolean }) {
   const ar = locale === 'ar'
-  const cards = (['KSA', 'EG'] as const).filter((v) => vision.includes(v))
+  const { market } = useMarket()
+  const cards = (['KSA', 'EG'] as const).filter((v) => vision.includes(v) && (all || v === market))
   if (cards.length === 0) return null
   return (
     <div className="vision-box">
       <h2>{ar ? 'التوافق مع رؤية 2030' : 'Vision 2030 alignment'}</h2>
-      <p className="muted">{ar ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.'}</p>
+      <p className="muted">{all ? (ar ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.') : (ar ? `كيف يرتبط هذا المسار المهني بأولويات ${market === 'EG' ? 'مصر' : 'السعودية'} الوطنية.` : `How this career path relates to ${market === 'EG' ? 'Egypt' : 'Saudi Arabia'}'s national priorities.`)}</p>
       {cards.map((v) => {
         const custom = ar ? (v === 'KSA' ? descKSA : descEG) : null
         return (
@@ -77,7 +81,7 @@ export function VisionBox({
         )
       })}
       <p className="muted small" style={{ marginTop: 10 }}>
-        {ar ? 'تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر) أعلى الصفحة.' : 'Vision 2030 badges follow the market you selected (Saudi Arabia or Egypt) at the top of the page.'}
+        {ar ? 'تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة.' : 'Vision 2030 badges follow the market you selected at the top of the page.'}
       </p>
       <p className="note">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

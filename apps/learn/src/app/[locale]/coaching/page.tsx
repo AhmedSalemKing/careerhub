@@ -7,6 +7,9 @@ import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
 import { formatDate } from '../../../lib/time'
 import { notify } from '../../../lib/notify'
+import { useMarket } from '../../contexts/MarketContext'
+import { formatCurrency } from '../../../lib/formatCurrency'
+import { toMarketAmount } from '../../../lib/marketConfig'
 import {
   Clock, Globe, Video, Phone,
   X, User,
@@ -304,6 +307,7 @@ function ConsultantModal({
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const { market } = useMarket()
   const tc = useTranslations('coaches')
   const router = useRouter()
   const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null)
@@ -390,8 +394,7 @@ export default function CoachingPage() {
                   )}
                   <div className="mt-4 flex items-center justify-between">
                     <p className="text-2xl font-bold text-primary">
-                      {consultant.hourlyRate || 0}
-                      <span className="text-sm font-normal text-[color:var(--muted)] mr-1">ريال</span>
+                      {formatCurrency(toMarketAmount(Number(consultant.hourlyRate) || 0, market), market, locale)}
                     </p>
                     <div className="flex gap-2">
                       <button onClick={() => setSelectedConsultant(consultant)}

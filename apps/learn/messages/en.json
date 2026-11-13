@@ -14,7 +14,8 @@
     "courses": "Courses",
     "my_courses": "My Courses",
     "book_consultation": "Book Consultation",
-    "back_to_deveway": "Back to DeveWay"
+    "back_to_deveway": "Back to DeveWay",
+    "assessment": "Assessment"
   },
   "hero": {
     "badge": "🚀 AI-Powered Career Platform",
@@ -386,5 +387,25 @@
     "minutes": "min",
     "lessonsCompleted": "lessons completed",
     "moneyBack": "30-day money-back guarantee"
+  },
+  "market": {
+    "ksa": "KSA",
+    "eg": "Egypt",
+    "currency": {
+      "sar": "SAR",
+      "egp": "EGP"
+    },
+    "vision": {
+      "ksa": "Saudi Vision 2030",
+      "eg": "Egypt Vision 2030",
+      "ksa_desc": "Aligned with Saudi Arabia's Vision 2030 national goals",
+      "eg_desc": "Aligned with Egypt's Vision 2030 sustainable development goals"
+    },
+    "salary_unit": "per month",
+    "job_market": {
+      "ksa": "Saudi Job Market",
+      "eg": "Egyptian Job Market"
+    },
+    "switcher": "Market"
   }
 }

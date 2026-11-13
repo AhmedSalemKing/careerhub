@@ -9,6 +9,8 @@ import { CHARS } from '../../lib/characters'
 import { formatCoursePrice, getCountryClient } from '../../lib/market'
 import { instructorDisplayName } from '../../lib/instructor'
 import { useAuthStore } from '../../stores/authStore'
+import { useMarket } from '../contexts/MarketContext'
+import VisionBadge from '../../components/VisionBadge'
 
 const MAIN_SITE_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
@@ -104,24 +106,6 @@ function parseVision(raw: unknown): string[] {
   } catch { return [] }
 }
 
-/* Flags are national artwork, so their colours are the flags' own, not theme tokens. */
-function VisionFlag({ code }: { code: 'KSA' | 'EG' }) {
-  return code === 'KSA' ? (
-    <svg viewBox="0 0 30 20" width="22" height="15" aria-hidden="true">
-      <rect width="30" height="20" rx="2" fill="#006C35" />
-      <path d="M7 8.2c1.2-1.6 2.4 1 3.6-.4s1.6-1.6 2.6-.2 1.8.6 2.8-.6 1.6 1.4 3 .2 1.8-.6 3.6-.8" stroke="#fff" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      <path d="M8 13.4h13.5l-1.4 1.2M8 13.4l-.8-.9" stroke="#fff" strokeWidth="1.1" fill="none" strokeLinecap="round" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 30 20" width="22" height="15" aria-hidden="true">
-      <rect width="30" height="6.67" rx="2" fill="#CE1126" />
-      <rect y="6.67" width="30" height="6.67" fill="#fff" />
-      <rect y="13.33" width="30" height="6.67" rx="2" fill="#000" />
-      <circle cx="15" cy="10" r="2.5" fill="#C09300" />
-    </svg>
-  )
-}
-
 const PERSONA_CAST: string[][] = [['sa2', 'eg1'], ['eg2', 'sa3'], ['sa1', 'eg3']]
 const TILE_ICONS: (keyof typeof ICON)[] = ['compass', 'eye', 'route', 'mentor']
 
@@ -131,6 +115,7 @@ export default function HomePage() {
   const isAr = locale === 'ar'
   const authUser = useAuthStore((s) => s.user)
   const authToken = useAuthStore((s) => s.token)
+  const { market } = useMarket()
 
   const [tracks, setTracks] = useState<TrackCard[]>([])
   const [tracksLoaded, setTracksLoaded] = useState(false)
@@ -236,7 +221,7 @@ export default function HomePage() {
   const personas = [1, 2, 3].map((n) => ({ t: t(`persona${n}t`), d: t(`persona${n}d`) }))
 
   return (
-    <main className="dw2-learn" dir={isAr ? 'rtl' : 'ltr'}>
+    <main className="dw2-learn overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
       {/* HERO */}
       <section className="phero">
         <div className="hero-bg">
@@ -346,14 +331,10 @@ export default function HomePage() {
                         {p.roles.map((r) => <span key={r}>{r}</span>)}
                       </div>
                     )}
-                    {p.vision.length > 0 && (
+                    {/* Only the selected market's Vision 2030 badge, never both */}
+                    {p.vision.includes(market) && (
                       <div className="dw-vision-badges">
-                        {(['KSA', 'EG'] as const).filter((v) => p.vision.includes(v)).map((v) => (
-                          <span key={v} className="dw-vision-badge sm">
-                            <VisionFlag code={v} />
-                            <span>{v === 'KSA' ? (isAr ? 'رؤية السعودية 2030' : 'Saudi Vision 2030') : (isAr ? 'رؤية مصر 2030' : 'Egypt Vision 2030')}</span>
-                          </span>
-                        ))}
+                        <VisionBadge compact />
                       </div>
                     )}
                     <div className="t-foot">

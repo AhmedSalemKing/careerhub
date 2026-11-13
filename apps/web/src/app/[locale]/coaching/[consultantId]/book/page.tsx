@@ -7,6 +7,9 @@ import { api } from '../../../../../lib/api'
 import StayPicker from '@/components/kokonutui/stay-picker'
 import { formatDateOnly, formatTimeOnly } from '@/lib/time'
 import toast from 'react-hot-toast'
+import { useMarket } from '../../../../contexts/MarketContext'
+import { formatCurrency } from '../../../../../lib/formatCurrency'
+import { toMarketAmount } from '../../../../../lib/marketConfig'
 import {
   AlertCircle,
   BadgeCheck,
@@ -99,6 +102,8 @@ export default function BookConsultingPage() {
   const router = useRouter()
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const { market } = useMarket()
+  const money = (sar: number) => formatCurrency(toMarketAmount(sar, market), market, locale)
   const todayKey = useMemo(() => dateKey(new Date()), [])
 
   const [consultant, setConsultant] = useState<Consultant | null>(null)
@@ -375,7 +380,7 @@ export default function BookConsultingPage() {
                     {option} {isAr ? 'دقيقة' : 'min'}
                   </span>
                   <span className="mt-1 block text-xs font-bold" style={{ color: active ? 'var(--accent)' : 'var(--muted)' }}>
-                    {optionPrice > 0 ? `${optionPrice} ${isAr ? 'ر.س' : 'SAR'}` : isAr ? 'مجاني' : 'Free'}
+                    {optionPrice > 0 ? money(optionPrice) : isAr ? 'مجاني' : 'Free'}
                   </span>
                 </button>
               )
@@ -510,7 +515,7 @@ export default function BookConsultingPage() {
                   <>
                     {summaryDate} {isAr ? 'الساعة' : 'at'} {summaryTime} — {duration} {isAr ? 'دقيقة' : 'min'} —{' '}
                     <span style={{ color: 'var(--primary)' }}>
-                      {price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : isAr ? 'مجاني' : 'Free'}
+                      {price > 0 ? money(price) : isAr ? 'مجاني' : 'Free'}
                     </span>
                   </>
                 ) : (

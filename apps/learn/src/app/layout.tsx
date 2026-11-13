@@ -11,6 +11,7 @@ import { ToastProvider } from '../lib/toast'
 import { QueryProvider } from '../lib/query'
 import { LoadingProvider } from './components/PageLoader'
 import { TokenSync } from './components/TokenSync'
+import { MarketProvider } from './contexts/MarketContext'
 import KeepAlivePing from './components/KeepAlivePing'
 import NumberInputGuard from './components/NumberInputGuard'
 
@@ -97,6 +98,7 @@ export default async function RootLayout({
           <NumberInputGuard />
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
+              <MarketProvider>
               <ToastProvider>
                 <LoadingProvider>
                   <Suspense><TokenSync /></Suspense>
@@ -108,6 +110,7 @@ export default async function RootLayout({
                   </div>
                 </LoadingProvider>
               </ToastProvider>
+              </MarketProvider>
             </QueryProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

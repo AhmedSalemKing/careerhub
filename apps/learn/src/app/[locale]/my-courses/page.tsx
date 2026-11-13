@@ -10,6 +10,9 @@ import { getMediaUrl } from '../../../lib/media'
 import { BookOpen, ArrowRight, Search, Star, Users, Award, CheckCircle, Clock, XCircle, LayoutGrid } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { formatDate } from '../../../lib/time'
+import { useMarket } from '../../contexts/MarketContext'
+import { formatCurrency } from '../../../lib/formatCurrency'
+import { toMarketAmount } from '../../../lib/marketConfig'
 
 // ══════════════════════════════════════
 // TYPES
@@ -221,6 +224,7 @@ function EmptyState({ locale }: { locale: string }) {
 
 export default function MyCoursesPage() {
   const locale = useLocale() as 'ar' | 'en'
+  const { market } = useMarket()
   const [accountType, setAccountType] = useState<string>('STUDENT')
   const [filter, setFilter] = useState<'all' | 'in-progress' | 'completed'>('all')
   const [retryCount, setRetryCount] = useState(0)
@@ -391,7 +395,7 @@ export default function MyCoursesPage() {
                   <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <span className="flex items-center gap-1"><Users className="h-4 w-4" />{s.meetingMethod || 'Online'}</span>
                     <span className="font-bold text-base" style={{ color: 'var(--primary)' }}>
-                      {s.price ? `${s.price} ريال` : 'مجاني'}
+                      {s.price ? formatCurrency(toMarketAmount(Number(s.price), market), market, locale) : (locale === 'ar' ? 'مجاني' : 'Free')}
                     </span>
                   </div>
                 </div>

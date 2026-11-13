@@ -763,7 +763,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
             const inPackage = pkgIds.length ? allCourses.filter((c) => c.courseId && pkgIds.includes(c.courseId)) : []
             const courses = inPackage.length ? inPackage : allCourses
             const skills = tk?.skills?.length ? tk.skills : career.skillsToLearn
-            const vision = tk ? (tk.vision2030.includes(market) ? market : tk.vision2030[0]) : undefined
+            const vision = tk && tk.vision2030.includes(market) ? market : undefined
             const visionDesc = vision === 'KSA' ? td?.visionDescKSA : vision === 'EG' ? td?.visionDescEG : null
             return (
               <article
@@ -900,7 +900,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
           </p>
         )}
         <p className="muted small" style={{ textAlign: 'center', marginTop: 10 }}>
-          تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر) أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
+          تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
         </p>
 
         <div className="rc-bottom">

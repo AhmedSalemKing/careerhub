@@ -85,13 +85,13 @@ function ThemeToggle() {
 /* ════════════════════════════════════════
    Market Switcher (KSA / EG) — drives the `market` cookie read by api.ts
    ════════════════════════════════════════ */
-function MarketSwitcher() {
+function MarketSwitcher({ inMenu }: { inMenu?: boolean }) {
   const tm = useTranslations('market')
   const { market, setMarket } = useMarket()
 
   return (
     // dir="ltr" keeps KSA | EG in the same order and position in Arabic and English.
-    <div className="mkt hide-sm" dir="ltr" role="group" aria-label={tm('switcher')}>
+    <div className={inMenu ? "mkt" : "mkt hide-sm"} dir="ltr" role="group" aria-label={tm('switcher')}>
       <button type="button" className={market === 'KSA' ? 'on' : undefined} aria-pressed={market === 'KSA'} title={tm('ksa')} onClick={() => setMarket('KSA')}>KSA</button>
       <button type="button" className={market === 'EG' ? 'on' : undefined} aria-pressed={market === 'EG'} title={tm('eg')} onClick={() => setMarket('EG')}>EG</button>
     </div>
@@ -550,6 +550,7 @@ export function Navbar() {
               className="flex items-center gap-2 px-1"
               style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}
             >
+              <MarketSwitcher inMenu />
               <LanguageSwitcher />
               <ThemeToggle />
               {mounted && isLoggedIn && (

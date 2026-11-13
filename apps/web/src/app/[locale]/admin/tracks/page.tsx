@@ -334,7 +334,7 @@ export default function AdminTracksPage() {
                   <td dir="ltr">{t.nameEn}</td>
                   <td>
                     <div>{countryLabel(t.country)}</div>
-                    <VisionBadges vision={visionOf(t.vision2030)} locale={locale} compact />
+                    <VisionBadges vision={visionOf(t.vision2030)} locale={locale} compact all />
                   </td>
                   <td>
                     <button type="button" className={'tk-switch' + (t.isActive ? ' on' : '')} role="switch" aria-checked={t.isActive} disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(t)} aria-label={isAr ? 'نشط' : 'Active'}>
@@ -559,6 +559,7 @@ export default function AdminTracksPage() {
                       <p className="tk-muted">{isAr ? 'اختر رؤية لعرض المعاينة.' : 'Pick a vision to see the preview.'}</p>
                     ) : (
                       <VisionBox
+                        all
                         vision={f.vision2030}
                         descKSA={f.visionDescKSA}
                         descEG={f.visionDescEG}

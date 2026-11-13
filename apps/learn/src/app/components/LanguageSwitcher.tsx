@@ -1,83 +1,36 @@
-// ==========================================
-// File: src/app/components/LanguageSwitcher.tsx
-// ==========================================
 'use client'
 
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
-import { Globe, ChevronDown, Check } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
 
+/* Header language toggle: shows the language you will switch TO ("English" on the
+   Arabic site, "العربية" on the English site), matching the reference nav. */
 export function LanguageSwitcher() {
   const locale = useLocale()
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const languages = [
-    { code: 'ar', name: 'العربية' },
-    { code: 'en', name: 'English' },
-  ]
+  const target = locale === 'ar' ? 'en' : 'ar'
+  const label = target === 'en' ? 'English' : 'العربية'
 
-  const currentLang = languages.find((l) => l.code === locale)
-
-  const switchLocale = (newLocale: string) => {
-    if (newLocale === locale) { setIsOpen(false); return }
+  const switchLocale = () => {
     const segments = pathname.split('/')
-    segments[1] = newLocale
-    setIsOpen(false)
+    segments[1] = target
     window.location.href = segments.join('/')
   }
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Change language"
-        aria-expanded={isOpen}
-        className="inline-flex items-center gap-2 h-9 px-3 rounded-xl transition-colors duration-150"
-        style={{ background: 'var(--surface-2)', color: 'var(--foreground)' }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)' }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-      >
-        <Globe className="h-4 w-4" />
-        <span className="hidden sm:inline text-sm font-medium">{currentLang?.name}</span>
-        <ChevronDown className="h-3 w-3" style={{ color: 'var(--muted)' }} />
-      </button>
-
-      {isOpen && (
-        <div
-          className="absolute top-full mt-2 right-0 rtl:right-auto rtl:left-0 min-w-[140px] rounded-xl overflow-hidden z-50"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-        >
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => switchLocale(lang.code)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150"
-              style={{
-                color: locale === lang.code ? '#5120c8' : 'var(--foreground)',
-                background: locale === lang.code ? 'var(--surface-2)' : 'transparent',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = locale === lang.code ? 'var(--surface-2)' : 'transparent' }}
-            >
-              <span>{lang.name}</span>
-              {locale === lang.code && <Check className="h-4 w-4 mr-auto rtl:ml-auto rtl:mr-0" style={{ color: '#5120c8' }} />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      className="icon-btn lang-btn"
+      onClick={switchLocale}
+      aria-label="Language"
+      data-testid="language-switcher"
+    >
+      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 5h8M8 3v2M10.5 5c-.9 3.6-3.1 6.4-6.5 8M6 9c1 1.8 2.6 3.2 4.5 4M12 21l4.5-10 4.5 10M13.4 18h6.2" />
+      </svg>
+      <span className="lang-full">{label}</span>
+      <span className="lang-short" aria-hidden="true">{target.toUpperCase()}</span>
+    </button>
   )
 }

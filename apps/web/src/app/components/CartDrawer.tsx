@@ -6,6 +6,9 @@ import { get, del } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { notify } from '../../lib/notify'
 import { formatCoursePrice } from '../../lib/market'
+import { useMarket } from '../contexts/MarketContext'
+import { formatCurrency } from '../../lib/formatCurrency'
+import { toMarketAmount } from '../../lib/marketConfig'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -26,6 +29,7 @@ type CartItem = {
 export function CartIcon() {
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
+  const { market } = useMarket()
   const token = useAuthStore((s) => s.token)
 
   const { data: items = [] } = useQuery<CartItem[]>({
@@ -158,7 +162,7 @@ export function CartIcon() {
               <div className="border-t border-[color:var(--border)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[color:var(--muted)]">الإجمالي:</span>
-                  <span className="text-xl font-bold text-primary">{total} ريال</span>
+                  <span className="text-xl font-bold text-primary">{formatCurrency(toMarketAmount(total, market), market, 'ar')}</span>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
