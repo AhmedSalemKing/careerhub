@@ -121,7 +121,6 @@ function streamChat(opts: {
                   generationConfig: {
                     temperature: 0.8,
                     maxOutputTokens: 800,
-                    ...(model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-lite' ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
                   },
                 }),
               },
@@ -303,7 +302,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
-    const models      = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
+    const models      = ['gemini-1.5-flash', 'gemini-1.5-flash-8b']
 
     // Streaming is opt-in; every other caller keeps the JSON response below.
     const wantsStream = (req.headers.get('accept') ?? '').includes('text/event-stream') || stream === true
@@ -345,7 +344,6 @@ export async function POST(req: NextRequest) {
       const generationConfig = {
         temperature: 0.8,
         maxOutputTokens: 800,
-        ...(model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-lite' ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
       }
       const baseBody = {
         contents,
