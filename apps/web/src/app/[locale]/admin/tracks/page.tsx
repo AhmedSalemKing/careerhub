@@ -124,11 +124,11 @@ function toPayload(f: FormState) {
     visionDescEG: f.visionDescEG.trim() || null,
     vision2030: f.vision2030,
     skills: f.skills, skillsEn: f.skillsEn,
-    jobs: f.jobs.filter((j) => j.titleAr.trim() || j.titleEn.trim()).map((j) => ({
+    jobs: f.jobs.filter((j) => j.titleAr.trim() || j.titleEn.trim() || j.descAr.trim() || j.descEn.trim()).map((j) => ({
       titleAr: j.titleAr.trim(), titleEn: j.titleEn.trim(), descAr: j.descAr.trim(), descEn: j.descEn.trim(),
       salaryMinEG: num(j.salaryMinEG), salaryMaxEG: num(j.salaryMaxEG), salaryMinKSA: num(j.salaryMinKSA), salaryMaxKSA: num(j.salaryMaxKSA),
     })),
-    courses: f.courses.filter((c) => c.titleAr.trim() || c.titleEn.trim()).map((c) => ({
+    courses: f.courses.filter((c) => c.titleAr.trim() || c.titleEn.trim() || c.courseId).map((c) => ({
       ...c, order: num(c.order) ?? 0, weeks: num(c.weeks) ?? 0, courseId: c.courseId || undefined,
     })),
     freeItemsAr: f.freeItemsAr, freeItemsEn: f.freeItemsEn,
@@ -218,6 +218,7 @@ export default function AdminTracksPage() {
   const save = useMutation({
     mutationFn: async ({ id, form }: { id: string | null; form: FormState }) => {
       const payload = toPayload(form)
+      console.log('SAVING payload courses:', payload.courses.length, 'of', form.courses.length, 'rows;', 'jobs:', payload.jobs.length, 'of', form.jobs.length, 'rows')
       return id ? put(`/admin/tracks/${id}`, payload) : post('/admin/tracks', payload)
     },
     onSuccess: () => { refresh(); notify.success(isAr ? 'تم حفظ المسار' : 'Track saved'); setEditing(null) },
