@@ -272,17 +272,9 @@ export function Navbar() {
   /* Learn pages stay local; pages that live in the web app link back to it. */
   type NavItem = { key: string; href: string; label: string; external?: boolean }
   const links: NavItem[] = [
-    { key: 'home', href: `/${locale}`, label: t('home') },
-    { key: 'courses', href: `/${locale}/courses`, label: t('courses') },
-    {
-      key: 'my_courses',
-      href: isLoggedIn ? `${WEB_URL}/${locale}/dashboard/my-courses` : `/${locale}/login`,
-      label: t('my_courses'),
-      external: isLoggedIn,
-    },
     { key: 'careers', href: `${MAIN_URL}/${locale}/careers`, label: t('careers'), external: true },
-    { key: 'assessment', href: `${MAIN_URL}/${locale}/dashboard/assessment`, label: t('assessment'), external: true },
-    { key: 'coaching', href: `${MAIN_URL}/${locale}/coaching`, label: t('book_consultation'), external: true },
+    { key: 'learners', href: `/${locale}`, label: locale === 'ar' ? 'للمتعلّمين' : 'For Learners' },
+    { key: 'mentors', href: `${MAIN_URL}/${locale}/coaching`, label: locale === 'ar' ? 'للمرشدين' : 'For Mentors', external: true },
   ]
   const isActive = (href: string) => pathname === href
 
