@@ -629,11 +629,37 @@ function StudentOverview() {
 
   if (isLoading) {
     return (
-      <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'البيانات قيد التحميل...' : 'Loading your data...'}>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
-          ))}
+      <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle="">
+        <div className="space-y-6" aria-busy="true" aria-label={isAr ? 'جارٍ التحميل' : 'Loading'}>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-28 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="skeleton-shimmer mb-3 h-3 w-16 rounded" />
+                <div className="skeleton-shimmer mb-2 h-7 w-24 rounded" />
+                <div className="skeleton-shimmer h-3 w-20 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="h-64 rounded-2xl p-5 lg:col-span-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="skeleton-shimmer mb-4 h-4 w-32 rounded" />
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="mb-3 flex items-center gap-3">
+                  <div className="skeleton-shimmer h-10 w-10 flex-shrink-0 rounded-full" />
+                  <div className="flex-1">
+                    <div className="skeleton-shimmer mb-2 h-3 w-3/4 rounded" />
+                    <div className="skeleton-shimmer h-3 w-1/2 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="h-64 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="skeleton-shimmer mb-4 h-4 w-24 rounded" />
+              <div className="skeleton-shimmer mx-auto mb-4 h-32 w-32 rounded-full" />
+              <div className="skeleton-shimmer mx-auto mb-2 h-3 w-3/4 rounded" />
+              <div className="skeleton-shimmer mx-auto h-3 w-1/2 rounded" />
+            </div>
+          </div>
         </div>
       </DashboardShell>
     )

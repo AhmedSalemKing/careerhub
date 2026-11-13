@@ -19,7 +19,7 @@ import {
   Loader2,
   MessageSquareText,
   StickyNote,
-  Star,
+  X,
   User,
 } from 'lucide-react'
 
@@ -277,292 +277,285 @@ export default function BookConsultingPage() {
   const displayName = userName(consultant)
   const freeSlots = slots.filter((slot) => slot.available).length
 
+  const closeModal = useCallback(() => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push(`/${locale}/coaching`)
+  }, [router, locale])
+
+  // Modal behaviour: Escape closes, page behind does not scroll.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [closeModal])
+
+  const card = 'rounded-2xl border p-4 sm:p-5'
+  const cardStyle = { background: 'var(--surface)', borderColor: 'var(--border)' } as const
+
   return (
     <div
-      dir="rtl"
-      className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:py-10"
-      style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-0 sm:p-4 sm:py-8"
+      onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isAr ? 'حجز جلسة استشارية' : 'Book a consulting session'}
     >
-      <header className="mb-6">
-        <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
-          {isAr ? 'حجز جلسة استشارية' : 'Consulting session booking'}
-        </p>
-        <h1 className="text-2xl font-black sm:text-3xl" style={{ fontFamily: 'var(--font-madinet)' }}>
-          {isAr ? 'حجز جلسة مع' : 'Book a session with'} {displayName || (isAr ? 'المستشار' : 'the consultant')}
-        </h1>
-      </header>
-
-      <section
-        className="mb-6 flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      <div
+        dir={isAr ? 'rtl' : 'ltr'}
+        className="relative mx-auto w-full max-w-4xl rounded-none p-4 sm:rounded-2xl sm:p-6"
+        style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)', border: '1px solid var(--border)' }}
       >
-        <div className="flex items-center gap-3">
-          {consultant?.profile?.avatar ? (
-            <img
-              src={consultant.profile.avatar}
-              alt={displayName}
-              className="h-14 w-14 rounded-2xl object-cover"
-              style={{ border: '1px solid var(--border)' }}
-            />
-          ) : (
-            <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-black"
-              style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-            >
-              {displayName ? displayName.charAt(0) : <User size={22} />}
-            </div>
-          )}
-
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h2 className="truncate text-base font-black">{displayName || (isAr ? 'مستشار' : 'Consultant')}</h2>
-              {consultant?.isVerified && (
-                <BadgeCheck size={16} style={{ color: 'var(--accent)' }} aria-label={isAr ? 'موثّق' : 'Verified'} />
-              )}
-            </div>
-            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              {consultant?.profile?.speciality || (isAr ? 'استشارات مهنية' : 'Career consulting')}
-            </p>
-            {consultant?.profile?.yearsExperience ? (
-              <p className="mt-1 text-[11px]" style={{ color: 'var(--muted)' }}>
-                {isAr ? `${consultant.profile.yearsExperience} سنة خبرة` : `${consultant.profile.yearsExperience} years experience`}
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        <div
-          className="flex items-center gap-2 self-start rounded-xl px-3 py-2 text-xs font-bold sm:self-center"
-          style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+        <button
+          type="button"
+          onClick={closeModal}
+          aria-label={isAr ? 'إغلاق' : 'Close'}
+          className="absolute top-3 flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+          style={{ insetInlineStart: '0.75rem', background: 'var(--surface-2)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
         >
-          <Star size={14} />
-          {typeof consultant?.profile?.rating === 'number'
-            ? consultant.profile.rating.toFixed(1)
-            : isAr
-              ? 'مستشار معتمد'
-              : 'Verified consultant'}
-        </div>
-      </section>
+          <X size={18} />
+        </button>
 
-      {errorMessage && (
-        <div
-          className="mb-5 flex items-start gap-2 rounded-xl border p-3 text-sm font-semibold"
-          style={{ background: 'var(--error-subtle)', borderColor: 'var(--error)', color: 'var(--error)' }}
-          role="alert"
-        >
-          <AlertCircle size={17} className="mt-0.5 shrink-0" />
-          <span className="break-words">{errorMessage}</span>
-        </div>
-      )}
-
-      <div className="space-y-5">
-        <section className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <StepTitle number={1}>{isAr ? 'اختر المدة' : 'Choose a duration'}</StepTitle>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {DURATION_OPTIONS.map((option) => {
-              const active = duration === option
-              const optionPrice = Math.round((basePrice * option) / baseDuration)
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setDuration(option)}
-                  aria-pressed={active}
-                  className="rounded-xl border p-3 text-center transition-all duration-150 hover:-translate-y-px"
-                  style={{
-                    borderColor: active ? 'var(--primary)' : 'var(--border)',
-                    background: active ? 'var(--primary-subtle)' : 'var(--surface)',
-                    color: 'var(--foreground)',
-                    boxShadow: active ? '0 4px 14px var(--primary-subtle)' : 'none',
-                  }}
-                >
-                  <span className="block text-sm font-black" style={{ color: active ? 'var(--primary)' : 'var(--foreground)' }}>
-                    {option} {isAr ? 'دقيقة' : 'min'}
-                  </span>
-                  <span className="mt-1 block text-xs font-bold" style={{ color: active ? 'var(--accent)' : 'var(--muted)' }}>
-                    {optionPrice > 0 ? money(optionPrice) : isAr ? 'مجاني' : 'Free'}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <StepTitle number={2}>{isAr ? 'اختر التاريخ' : 'Choose a date'}</StepTitle>
-          <StayPicker
-            value={selectedDate}
-            onChange={(next) => {
-              setSelectedDate(next)
-              setErrorMessage(null)
-            }}
-            isDayUnavailable={isDayUnavailable}
-            minDate={todayKey}
-            locale={isAr ? 'ar' : 'en'}
-          />
-          <p className="mt-3 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--muted)' }}>
-            <CalendarDays size={13} />
-            {isAr ? 'الأيام المظللة بالخطوط محجوزة بالكامل' : 'Hatched days are fully booked'}
+        <header className="mb-5 pe-0 ps-12">
+          <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
+            {isAr ? 'حجز جلسة استشارية' : 'Consulting session booking'}
           </p>
-        </section>
+          <h1 className="text-xl font-black sm:text-2xl" style={{ fontFamily: 'var(--font-madinet)' }}>
+            {isAr ? 'حجز جلسة مع' : 'Book a session with'} {displayName || (isAr ? 'المستشار' : 'the consultant')}
+          </h1>
+        </header>
 
-        <section className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <StepTitle number={3}>{isAr ? 'اختر الوقت' : 'Choose a time'}</StepTitle>
+        {errorMessage && (
+          <div
+            className="mb-4 flex items-start gap-2 rounded-xl border p-3 text-sm font-semibold"
+            style={{ background: 'var(--error-subtle)', borderColor: 'var(--error)', color: 'var(--error)' }}
+            role="alert"
+          >
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span className="break-words">{errorMessage}</span>
+          </div>
+        )}
 
-          {loadingSlots ? (
-            <div className="flex items-center gap-2 py-6 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              <Loader2 size={16} className="animate-spin" />
-              {isAr ? 'جاري تحميل الأوقات...' : 'Loading times...'}
-            </div>
-          ) : slots.length === 0 ? (
-            <p className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--muted)' }}>
-              {isAr ? 'لا توجد أوقات متاحة في هذا اليوم، اختر يوماً آخر.' : 'No times available on this day. Pick another date.'}
-            </p>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                {slots.map((slot) => {
-                  const active = selectedSlot === slot.time
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+          {/* Steps */}
+          <div className="min-w-0 space-y-4">
+            <section className={card} style={cardStyle}>
+              <StepTitle number={1}>{isAr ? 'اختر المدة' : 'Choose a duration'}</StepTitle>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {DURATION_OPTIONS.map((option) => {
+                  const active = duration === option
+                  const optionPrice = Math.round((basePrice * option) / baseDuration)
                   return (
                     <button
-                      key={slot.time}
+                      key={option}
                       type="button"
-                      disabled={!slot.available}
-                      onClick={() => slot.available && setSelectedSlot(slot.time)}
+                      onClick={() => setDuration(option)}
                       aria-pressed={active}
-                      className="rounded-xl border px-2 py-2.5 text-xs font-bold transition-all duration-150"
+                      className="rounded-xl border p-3 text-center transition-all duration-150 hover:-translate-y-px"
                       style={{
                         borderColor: active ? 'var(--primary)' : 'var(--border)',
-                        background: !slot.available
-                          ? 'var(--surface)'
-                          : active
-                            ? 'var(--primary)'
-                            : 'var(--surface)',
-                        color: !slot.available
-                          ? 'var(--muted)'
-                          : active
-                            ? 'var(--primary-foreground)'
-                            : 'var(--foreground)',
-                        cursor: slot.available ? 'pointer' : 'not-allowed',
-                        opacity: slot.available ? 1 : 0.55,
-                        textDecoration: slot.available ? 'none' : 'line-through',
-                        boxShadow: active ? '0 4px 12px var(--primary-subtle)' : 'none',
+                        background: active ? 'var(--primary-subtle)' : 'var(--surface-2)',
+                        color: 'var(--foreground)',
+                        borderWidth: active ? 2 : 1,
                       }}
                     >
-                      {formatTimeOnly(slot.time, locale)}
-                      {!slot.available && (
-                        <span className="mt-0.5 block text-[9px] font-bold" style={{ textDecoration: 'none' }}>
-                          {isAr ? 'محجوز' : 'Booked'}
-                        </span>
-                      )}
+                      <span className="block text-sm font-black" style={{ color: active ? 'var(--primary)' : 'var(--foreground)' }}>
+                        {option} {isAr ? 'دقيقة' : 'min'}
+                      </span>
+                      <span className="mt-1 block text-xs font-bold" style={{ color: active ? 'var(--accent)' : 'var(--muted)' }}>
+                        {optionPrice > 0 ? money(optionPrice) : isAr ? 'مجاني' : 'Free'}
+                      </span>
                     </button>
                   )
                 })}
               </div>
-              <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
-                {isAr
-                  ? `${freeSlots} من ${slots.length} وقت متاح`
-                  : `${freeSlots} of ${slots.length} times available`}
+            </section>
+
+            <section className={card} style={cardStyle}>
+              <StepTitle number={2}>{isAr ? 'اختر التاريخ' : 'Choose a date'}</StepTitle>
+              <StayPicker
+                value={selectedDate}
+                onChange={(next) => {
+                  setSelectedDate(next)
+                  setErrorMessage(null)
+                }}
+                isDayUnavailable={isDayUnavailable}
+                minDate={todayKey}
+                locale={isAr ? 'ar' : 'en'}
+              />
+              <p className="mt-3 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--muted)' }}>
+                <CalendarDays size={13} />
+                {isAr ? 'الأيام المظللة بالخطوط محجوزة بالكامل' : 'Hatched days are fully booked'}
               </p>
-            </>
-          )}
-        </section>
+            </section>
 
-        <section className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <StepTitle number={4}>{isAr ? 'تفاصيل الجلسة' : 'Session details'}</StepTitle>
+            <section className={card} style={cardStyle}>
+              <StepTitle number={3}>{isAr ? 'اختر الوقت' : 'Choose a time'}</StepTitle>
 
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }} htmlFor="session-topic">
-            <MessageSquareText size={13} />
-            {isAr ? 'موضوع الجلسة' : 'Session topic'}
-          </label>
-          <input
-            id="session-topic"
-            value={topic}
-            onChange={(event) => setTopic(event.target.value)}
-            maxLength={160}
-            className="mb-4 w-full rounded-xl border p-3 text-sm outline-none transition-colors"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-            placeholder={isAr ? 'مثال: مناقشة مسار التطوير' : 'e.g. Discuss my development path'}
-          />
+              {loadingSlots ? (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="skeleton-shimmer h-10 rounded-xl" />
+                  ))}
+                </div>
+              ) : slots.length === 0 ? (
+                <p className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', color: 'var(--muted)' }}>
+                  {isAr ? 'لا توجد أوقات متاحة في هذا اليوم، اختر يوماً آخر.' : 'No times available on this day. Pick another date.'}
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {slots.map((slot) => {
+                      const active = selectedSlot === slot.time
+                      return (
+                        <button
+                          key={slot.time}
+                          type="button"
+                          disabled={!slot.available}
+                          onClick={() => slot.available && setSelectedSlot(slot.time)}
+                          aria-pressed={active}
+                          className="rounded-xl border px-2 py-2.5 text-xs font-bold transition-all duration-150"
+                          style={{
+                            borderColor: active ? 'var(--primary)' : 'var(--border)',
+                            background: active ? 'var(--primary)' : 'transparent',
+                            color: !slot.available ? 'var(--muted)' : active ? 'var(--primary-foreground)' : 'var(--foreground)',
+                            cursor: slot.available ? 'pointer' : 'not-allowed',
+                            opacity: slot.available ? 1 : 0.5,
+                            textDecoration: slot.available ? 'none' : 'line-through',
+                          }}
+                        >
+                          {formatTimeOnly(slot.time, locale)}
+                          {!slot.available && (
+                            <span className="mt-0.5 block text-[9px] font-bold" style={{ textDecoration: 'none' }}>
+                              {isAr ? 'محجوز' : 'Booked'}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
+                    {isAr ? `${freeSlots} من ${slots.length} وقت متاح` : `${freeSlots} of ${slots.length} times available`}
+                  </p>
+                </>
+              )}
+            </section>
 
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }} htmlFor="session-notes">
-            <StickyNote size={13} />
-            {isAr ? 'ملاحظات' : 'Notes'}
-          </label>
-          <textarea
-            id="session-notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            rows={3}
-            maxLength={1000}
-            className="w-full resize-y rounded-xl border p-3 text-sm outline-none transition-colors"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-            placeholder={isAr ? 'أخبر المستشار بما تحتاج مساعدة فيه' : 'Tell the consultant what you need help with'}
-          />
-        </section>
+            <section className={card} style={cardStyle}>
+              <StepTitle number={4}>{isAr ? 'تفاصيل الجلسة' : 'Session details'}</StepTitle>
 
-        <section
-          className="rounded-2xl border p-4 sm:p-5"
-          style={{ background: 'var(--card)', borderColor: 'var(--primary-border)' }}
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="mb-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                {isAr ? 'ملخص الحجز' : 'Booking summary'}
-              </p>
-              <p className="text-sm font-black" style={{ color: 'var(--foreground)' }}>
-                {selectedSlot ? (
-                  <>
-                    {summaryDate} {isAr ? 'الساعة' : 'at'} {summaryTime} — {duration} {isAr ? 'دقيقة' : 'min'} —{' '}
-                    <span style={{ color: 'var(--primary)' }}>
-                      {price > 0 ? money(price) : isAr ? 'مجاني' : 'Free'}
-                    </span>
-                  </>
-                ) : (
-                  <span style={{ color: 'var(--muted)' }}>{isAr ? 'اختر التاريخ والوقت أولاً' : 'Select a date and time first'}</span>
-                )}
-              </p>
-            </div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }} htmlFor="session-topic">
+                <MessageSquareText size={13} />
+                {isAr ? 'موضوع الجلسة' : 'Session topic'}
+              </label>
+              <input
+                id="session-topic"
+                value={topic}
+                onChange={(event) => setTopic(event.target.value)}
+                maxLength={160}
+                className="mb-4 w-full rounded-xl border p-3 text-sm outline-none transition-colors"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                placeholder={isAr ? 'مثال: مناقشة مسار التطوير' : 'e.g. Discuss my development path'}
+              />
 
-            <div
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold"
-              style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-            >
-              <Clock size={14} />
-              {isAr ? 'تأكيد المستشار مطلوب' : 'Consultant approval required'}
-            </div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }} htmlFor="session-notes">
+                <StickyNote size={13} />
+                {isAr ? 'ملاحظات' : 'Notes'}
+              </label>
+              <textarea
+                id="session-notes"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={3}
+                maxLength={1000}
+                className="w-full resize-y rounded-xl border p-3 text-sm outline-none transition-colors"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                placeholder={isAr ? 'أخبر المستشار بما تحتاج مساعدة فيه' : 'Tell the consultant what you need help with'}
+              />
+            </section>
           </div>
 
-          <button
-            type="button"
-            onClick={handleBook}
-            disabled={!canSubmit}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-all duration-150"
-            style={{
-              background: canSubmit ? 'var(--primary)' : 'var(--surface-2)',
-              color: canSubmit ? 'var(--primary-foreground)' : 'var(--muted)',
-              cursor: canSubmit ? 'pointer' : 'not-allowed',
-              border: '1px solid var(--primary-border)',
-            }}
-          >
-            {booking ? <Loader2 size={17} className="animate-spin" /> : <Check size={17} />}
-            {booking
-              ? isAr
-                ? 'جاري إرسال الطلب...'
-                : 'Sending request...'
-              : isAr
-                ? 'تأكيد الحجز'
-                : 'Confirm booking'}
-          </button>
-        </section>
-      </div>
+          {/* Summary (below the steps on mobile, sticky side panel on desktop) */}
+          <aside className="min-w-0 lg:sticky lg:top-0 lg:self-start">
+            <div className={card} style={{ ...cardStyle, borderColor: 'var(--primary-border)' }}>
+              <div className="flex items-center gap-3">
+                {consultant?.profile?.avatar ? (
+                  <img src={consultant.profile.avatar} alt={displayName} className="h-12 w-12 shrink-0 rounded-full object-cover" style={{ border: '1px solid var(--border)' }} />
+                ) : (
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-black"
+                    style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+                  >
+                    {displayName ? displayName.charAt(0) : <User size={20} />}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="truncate text-sm font-black">{displayName || (isAr ? 'مستشار' : 'Consultant')}</h2>
+                    {consultant?.isVerified && <BadgeCheck size={15} style={{ color: 'var(--accent)' }} aria-label={isAr ? 'موثّق' : 'Verified'} />}
+                  </div>
+                  <p className="truncate text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                    {consultant?.profile?.speciality || (isAr ? 'استشارات مهنية' : 'Career consulting')}
+                  </p>
+                </div>
+              </div>
 
-      {loadingConsultant && (
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs" style={{ color: 'var(--muted)' }}>
-          <Loader2 size={14} className="animate-spin" />
-          {isAr ? 'جاري تحميل بيانات المستشار...' : 'Loading consultant...'}
+              <dl className="mt-4 space-y-2.5 border-t pt-4 text-xs" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex justify-between gap-2">
+                  <dt style={{ color: 'var(--muted)' }}>{isAr ? 'المدة' : 'Duration'}</dt>
+                  <dd className="font-bold">{duration} {isAr ? 'دقيقة' : 'min'}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</dt>
+                  <dd className="font-bold">{summaryDate}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt style={{ color: 'var(--muted)' }}>{isAr ? 'الوقت' : 'Time'}</dt>
+                  <dd className="font-bold">{summaryTime || '—'}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                  <dt className="font-bold">{isAr ? 'الإجمالي' : 'Total'}</dt>
+                  <dd className="text-lg font-black" style={{ color: 'var(--primary)' }}>
+                    {price > 0 ? money(price) : isAr ? 'مجاني' : 'Free'}
+                  </dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                onClick={handleBook}
+                disabled={!canSubmit}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-all duration-150"
+                style={{
+                  background: canSubmit ? 'var(--primary)' : 'var(--surface-2)',
+                  color: canSubmit ? 'var(--primary-foreground)' : 'var(--muted)',
+                  cursor: canSubmit ? 'pointer' : 'not-allowed',
+                  border: '1px solid var(--primary-border)',
+                }}
+              >
+                {booking ? <Loader2 size={17} className="animate-spin" /> : <Check size={17} />}
+                {booking ? (isAr ? 'جاري إرسال الطلب...' : 'Sending request...') : isAr ? 'تأكيد الحجز' : 'Confirm booking'}
+              </button>
+
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
+                <Clock size={13} />
+                {isAr ? 'تأكيد المستشار مطلوب' : 'Consultant approval required'}
+              </p>
+            </div>
+          </aside>
         </div>
-      )}
+
+        {loadingConsultant && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs" style={{ color: 'var(--muted)' }}>
+            <Loader2 size={14} className="animate-spin" />
+            {isAr ? 'جاري تحميل بيانات المستشار...' : 'Loading consultant...'}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

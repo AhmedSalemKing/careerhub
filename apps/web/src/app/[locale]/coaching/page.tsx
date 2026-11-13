@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import {
   Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
-  PenLine, UserRound, ShieldCheck, Loader2, Lock, Mail, KeyRound, FileText, MapPin, Briefcase, Clock, Languages, MessageSquare,
+  PenLine, UserRound, ShieldCheck, Lock, Mail, KeyRound, FileText, MapPin, Briefcase, Clock, Languages, MessageSquare,
 } from 'lucide-react'
 import { get } from '@/lib/api'
+import { useMarket } from '../../contexts/MarketContext'
+import { formatCurrency } from '../../../lib/formatCurrency'
+import { toMarketAmount } from '../../../lib/marketConfig'
 
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
 
@@ -276,9 +279,13 @@ interface ConsultantProfile {
   country?: string | null
   languages?: string[] | null
   avatar?: string | null
+  yearsExperience?: number | null
+  sessionPrice?: number | string | null
+  sessionDuration?: number | null
 }
 interface Consultant {
   id: string
+  hourlyRate?: number | string | null
   profile?: ConsultantProfile | null
 }
 
@@ -292,6 +299,7 @@ function initials(c: Consultant): string {
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const { market } = useMarket()
 
   const [showCoaches, setShowCoaches] = useState(false)
   const [coaches, setCoaches] = useState<Consultant[]>([])
@@ -489,7 +497,11 @@ export default function CoachingPage() {
 
           {showCoaches && (
             <div className="cch-coaches">
-              {coachesLoading && <p className="cch-state"><Loader2 size={20} className="cch-spin" aria-hidden="true" />جارٍ التحميل…</p>}
+              {coachesLoading && (
+                <div className="cch-grid" aria-busy="true">
+                  {[0, 1, 2].map((i) => <div key={i} className="cch-coach skeleton-shimmer" style={{ minHeight: 220 }} />)}
+                </div>
+              )}
               {coachesError && !coachesLoading && (
                 <p className="cch-state">
                   تعذّر تحميل المرشدين.{' '}
@@ -501,19 +513,29 @@ export default function CoachingPage() {
                 <div className="cch-grid">
                   {coaches.map((c) => {
                     const name = `${c.profile?.firstName ?? ''} ${c.profile?.lastName ?? ''}`.trim() || 'مرشد'
-                    const langs = c.profile?.languages ?? []
+                    const years = Number(c.profile?.yearsExperience) || 0
+                    const rate = Number(c.profile?.sessionPrice ?? c.hourlyRate ?? 0) || 0
+                    const mins = Number(c.profile?.sessionDuration) || 60
+                    const href = `/${locale}/coaching/${c.id}/book`
                     return (
-                      <a key={c.id} className="cch-coach" href={`/${locale}/coaching/${c.id}/book`}>
+                      <article key={c.id} className="cch-coach">
                         {c.profile?.avatar
                           ? <img className="cch-av" src={c.profile.avatar} alt="" />
                           : <span className="cch-av">{initials(c)}</span>}
                         <h3>{name}</h3>
-                        {c.profile?.speciality && <p className="cch-spec">{c.profile.speciality}</p>}
-                        <div className="cch-tags">
-                          {c.profile?.country && <span className="cch-tag">{c.profile.country}</span>}
-                          {langs.map((l) => (<span key={l} className="cch-tag soft">{l}</span>))}
+                        <span className="cch-spec">{c.profile?.speciality || 'استشارات مهنية'}</span>
+                        {years > 0 && <p className="cch-meta">{years} سنة خبرة</p>}
+                        {rate > 0 && (
+                          <p className="cch-price">
+                            <strong>{formatCurrency(toMarketAmount(rate, market), market, 'ar')}</strong>
+                            <span> / {mins} دقيقة</span>
+                          </p>
+                        )}
+                        <div className="cch-btns">
+                          <a className="cch-cta ghost" href={href}>تفاصيل</a>
+                          <a className="cch-cta primary" href={href}>احجز الآن</a>
                         </div>
-                      </a>
+                      </article>
                     )
                   })}
                 </div>
@@ -599,12 +621,17 @@ const CSS = `
 .cch-coaches { margin-top: 28px; }
 .cch-state { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 28px 0; color: var(--ink-2); font-size: 14px; }
 .cch-link { border: 0; background: none; padding: 0; color: var(--brand); font: inherit; text-decoration: underline; cursor: pointer; }
-.cch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.cch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .cch-coach { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 20px 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: inherit; text-decoration: none; transition: box-shadow .2s, transform .2s; }
+.cch-meta { margin: 0; font-size: 12px; color: var(--ink-2); }
+.cch-price { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+.cch-price strong { color: var(--brand); font-size: 18px; font-weight: 800; }
+.cch-btns { display: flex; gap: 8px; width: 100%; margin-top: auto; padding-top: 12px; }
+.cch-btns .cch-cta { flex: 1; padding: 9px 10px; font-size: 13px; }
 .cch-coach:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 .cch-coach h3 { margin: 8px 0 0; font-size: 15px; }
-.cch-av { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; background: var(--wash); color: var(--brand); font-size: 22px; font-weight: 700; object-fit: cover; }
-.cch-spec { margin: 0; font-size: 13px; color: var(--ink-2); }
+.cch-av { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--wash), var(--lavender)); color: var(--brand); font-size: 22px; font-weight: 700; object-fit: cover; }
+.cch-spec { margin: 0; padding: 3px 10px; border-radius: 99px; background: var(--wash); color: var(--brand); font-size: 12px; font-weight: 600; }
 .cch-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 4px; }
 .cch-tag { padding: 3px 10px; border-radius: 99px; background: var(--brand); color: var(--on-brand); font-size: 11px; font-weight: 500; }
 .cch-tag.soft { background: var(--wash); color: var(--brand); }
