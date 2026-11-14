@@ -1197,7 +1197,7 @@ function StudentOverview() {
         onClose={() => setCareerPathOpen(false)}
         tracks={userTracks}
         enrolledProgress={enrolledProgress}
-        continueHref={`/${locale}/dashboard/my-courses`}
+        continueHref={`/${locale}/dashboard`}
       />
 
       {bookingOpen && (
