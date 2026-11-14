@@ -1703,6 +1703,8 @@ body { font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', Taho
 .dw2-sec-sub { font-size: 13px; color: var(--ink-2); margin: 0 }
 .dw2-view-all { font-size: 13px; color: var(--brand); white-space: nowrap; text-decoration: none; padding: 8px 0; flex-shrink: 0 }
 .dw2-view-all:hover { text-decoration: underline }
+.load-more-btn { padding: 10px 28px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 14px; cursor: pointer; transition: all 0.15s }
+.load-more-btn:hover { border-color: var(--brand); color: var(--brand) }
 .course-filter-tabs { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; margin-bottom: 16px }
 .filter-tab { padding: 6px 14px; border-radius: 999px; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: all 0.15s; white-space: nowrap }
 .filter-tab:hover { border-color: var(--brand); color: var(--ink) }

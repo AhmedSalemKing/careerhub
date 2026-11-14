@@ -113,6 +113,7 @@ function parseVision(raw: unknown): string[] {
   } catch { return [] }
 }
 
+const PAGE_SIZE = 6
 const PERSONA_CAST: string[][] = [['sa2', 'eg1'], ['eg2', 'sa3'], ['sa1', 'eg3']]
 const TILE_ICONS: (keyof typeof ICON)[] = ['compass', 'eye', 'route', 'mentor']
 
@@ -130,6 +131,8 @@ export default function HomePage() {
   const [current, setCurrent] = useState<{ title: string; progress: number; courseId: string } | null>(null)
   const [allCourses, setAllCourses] = useState<any[] | null>(null)
   const [allLoading, setAllLoading] = useState(false)
+  const [wantAll, setWantAll] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [sortBy, setSortBy] = useState<'all' | 'newest' | 'popular' | 'price-asc' | 'price-desc'>('all')
   const [enrolledCount, setEnrolledCount] = useState(0)
   const [enrollLoaded, setEnrollLoaded] = useState(false)
@@ -202,7 +205,7 @@ export default function HomePage() {
 
   // A sort tab other than "all" ranks every recorded course, not just the 6 shown on the homepage
   useEffect(() => {
-    if (sortBy === 'all' || allCourses) return
+    if ((sortBy === 'all' && !wantAll) || allCourses) return
     let cancelled = false
     setAllLoading(true)
     get('/courses', { params: { limit: 100, type: 'recorded' } })
@@ -220,6 +223,11 @@ export default function HomePage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, wantAll])
+
+  // A new tab starts again from the first page
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
   }, [sortBy])
 
   // Signed-in learners see their own progress in the hero card
@@ -266,7 +274,7 @@ export default function HomePage() {
   const firstName = (authUser as { profile?: { firstName?: string } } | null)?.profile?.firstName ?? ''
 
   const sortedCourses = useMemo(() => {
-    const list = [...(sortBy === 'all' ? courses : (allCourses ?? courses))]
+    const list = [...(allCourses ?? courses)]
     const stamp = (c: any) => (c.createdAt ? new Date(c.createdAt).getTime() : 0)
     const enrolls = (c: any) => c._count?.enrollments ?? c.enrollmentCount ?? c.studentsCount ?? 0
     switch (sortBy) {
@@ -277,7 +285,13 @@ export default function HomePage() {
       default: return list
     }
   }, [courses, allCourses, sortBy])
-  const displayedCourses = sortBy === 'all' ? courses.slice(0, 6) : sortedCourses
+  const displayedCourses = sortedCourses.slice(0, visibleCount)
+  // On "all" the homepage only preloads 6, so there may be more on the server than are loaded yet
+  const hasMore = visibleCount < sortedCourses.length || (sortBy === 'all' && !allCourses && courses.length >= PAGE_SIZE)
+  const handleLoadMore = () => {
+    if (sortBy === 'all') setWantAll(true)
+    setVisibleCount((n) => n + PAGE_SIZE)
+  }
   const sortTabs: { value: typeof sortBy; label: string }[] = isAr
     ? [
         { value: 'all', label: 'الكل' }, { value: 'newest', label: 'الأحدث' }, { value: 'popular', label: 'الأكثر اشتراكًا' },
@@ -500,15 +514,22 @@ export default function HomePage() {
                 )
               })}
             </div>
-            {sortBy !== 'all' && (
+            {allLoading && (
               <p className="dw2-sec-sub" style={{ textAlign: 'center', marginTop: 16 }} aria-live="polite">
-                {allLoading
-                  ? (isAr ? 'جارٍ التحميل...' : 'Loading...')
-                  : (isAr ? `عرض ${displayedCourses.length} دورة` : `Showing ${displayedCourses.length} courses`)}
+                {isAr ? 'جارٍ التحميل...' : 'Loading...'}
               </p>
             )}
-            {sortBy === 'all' && (
+            {hasMore && !allLoading && (
               <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <button type="button" className="load-more-btn" onClick={handleLoadMore}>
+                  {isAr
+                    ? (allCourses ? `عرض المزيد (${sortedCourses.length - visibleCount} كورس)` : 'عرض المزيد')
+                    : (allCourses ? `Show more (${sortedCourses.length - visibleCount} courses)` : 'Show more')}
+                </button>
+              </div>
+            )}
+            {sortBy === 'all' && (
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <a href={`/${locale}/courses`} className="dw2-btn-outline">{t('coursesAll')}</a>
               </div>
             )}
