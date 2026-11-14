@@ -108,7 +108,6 @@ function InstructorOverview() {
   const actions = [
     { Icon: Plus, label: isAr ? 'إنشاء كورس جديد' : 'Create New Course', href: `/${locale}/dashboard/create-course`, primary: true },
     { Icon: BookOpen, label: isAr ? 'كورساتي' : 'My Courses', href: `/${locale}/dashboard/my-courses`, primary: false },
-    { Icon: CalendarClock, label: isAr ? 'الجدول الزمني' : 'Schedule', href: `/${locale}/dashboard/schedule`, primary: false },
     { Icon: DollarSign, label: isAr ? 'الإيرادات' : 'Revenue', href: `/${locale}/dashboard/revenue`, primary: false },
     { Icon: BarChart2, label: isAr ? 'الإحصائيات' : 'Analytics', href: `/${locale}/dashboard/analytics`, primary: false },
     { Icon: Settings, label: isAr ? 'الإعدادات' : 'Settings', href: `/${locale}/dashboard/settings`, primary: false },
@@ -820,6 +819,10 @@ function StudentOverview() {
           <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
           <h1>{userName}</h1>
         </div>
+        <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-light dw-btn-sm">
+          <BookOpen size={15} aria-hidden="true" />
+          {isAr ? 'كورساتي' : 'My courses'}
+        </Link>
       </div>
 
       <div className="dw2-dash-body">

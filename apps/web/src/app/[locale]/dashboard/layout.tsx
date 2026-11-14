@@ -49,7 +49,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
       { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New', href: `/${locale}/dashboard/create-course` },
-      { icon: CalendarClock, labelAr: 'الجدول الزمني', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: BarChart2, labelAr: 'إحصائيات', labelEn: 'Stats', href: `/${locale}/dashboard/analytics` },
       { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
