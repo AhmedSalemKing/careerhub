@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
-  BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
+  BookOpen, Package as PackageIcon, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
   CheckCircle, Award, Bookmark, CreditCard, Settings,
   TrendingUp, DollarSign, BarChart2, Plus, Bell, CalendarClock, Clock, CheckCircle2,
 } from 'lucide-react'
@@ -611,38 +611,58 @@ function StudentOverview() {
   const safePathIdx = selectedPaths.length ? ((pathIdx % selectedPaths.length) + selectedPaths.length) % selectedPaths.length : 0
   const selectedPathRaw: any = selectedPaths[safePathIdx]
 
-  const { data: pathCoursesData = [] } = useQuery({
-    queryKey: ['dash-path-courses', selectedPathRaw?.slug, locale],
+  // Track detail (package + curated courses), the plain course list and the package purchases load in parallel.
+  // The track detail shares its cache key with the career-path panel and the careers page.
+  const slugKey: string | undefined = selectedPathRaw?.slug
+  const { data: trackDetail, isLoading: trackLoading } = useQuery({
+    queryKey: ['career-track', slugKey, locale],
+    queryFn: () => fetchTrack(slugKey as string, locale),
+    enabled: !!slugKey, staleTime: 60000, retry: 0,
+  })
+  const { data: listCourses = [], isLoading: listLoading } = useQuery({
+    queryKey: ['dash-path-courses', slugKey, locale],
     queryFn: async () => {
-      const res = await get('/courses', {
-        params: { page: 1, limit: 100, language: locale === 'ar' ? 'ar' : 'en', careerPath: selectedPathRaw.slug },
-      })
+      const res = await get('/courses', { params: { page: 1, limit: 100, language: locale === 'ar' ? 'ar' : 'en', careerPath: slugKey } })
       const d = (res?.data as any)
       const arr = d?.data?.courses ?? d?.data ?? d ?? []
-      const list: any[] = Array.isArray(arr) ? [...arr] : []
-      // Courses of the track's package / curated list, so admin-built tracks are covered too
-      try {
-        const track = await fetchTrack(selectedPathRaw.slug, locale)
-        const ids = new Set<string>(list.map((c: any) => c.id))
-        const extra: string[] = [...(track?.package?.courseIds ?? []), ...((track?.courses ?? []).map((c) => c.courseId).filter(Boolean) as string[])]
-        for (const id of Array.from(new Set(extra))) {
-          if (ids.has(id)) continue
-          try {
-            const r = await get(`/courses/${id}`)
-            const c = (r?.data as any)?.data?.course ?? (r?.data as any)?.data
-            if (c?.id) { list.push(c); ids.add(c.id) }
-          } catch {}
-        }
-        // Courses the admin typed in by hand (no platform course behind them) still belong to the track
-        for (const c of track?.courses ?? []) {
-          if (!c.courseId && c.title) list.push({ id: undefined, title: c.title, weeks: c.weeks, provider: c.provider, manual: true })
-        }
-      } catch {}
-      return list
+      return (Array.isArray(arr) ? arr : []) as any[]
     },
-    enabled: !!selectedPathRaw?.slug,
-    retry: 1, staleTime: 60000,
+    enabled: !!slugKey, retry: 1, staleTime: 60000,
   })
+  // Package / curated course ids the plain list does not already cover, fetched all at once
+  const extraIds = Array.from(new Set([
+    ...(trackDetail?.package?.courseIds ?? []),
+    ...((trackDetail?.courses ?? []).map((c) => c.courseId).filter(Boolean) as string[]),
+  ])).filter((id) => !listCourses.some((c: any) => c.id === id))
+  const { data: extraCourses = [], isLoading: extraLoading } = useQuery({
+    queryKey: ['dash-path-extra', extraIds.join(',')],
+    queryFn: async () => {
+      const rs = await Promise.all(extraIds.map(async (id) => {
+        try {
+          const r = await get(`/courses/${id}`)
+          const c = (r?.data as any)?.data?.course ?? (r?.data as any)?.data
+          return c?.id ? c : null
+        } catch { return null }
+      }))
+      return rs.filter(Boolean) as any[]
+    },
+    enabled: !listLoading && extraIds.length > 0, staleTime: 60000,
+  })
+  // Courses the admin typed in by hand (no platform course behind them) still belong to the track
+  const manualCourses = (trackDetail?.courses ?? []).filter((c) => !c.courseId && c.title).map((c) => ({ id: undefined, title: c.title, weeks: c.weeks, provider: c.provider, manual: true }))
+  const pathCoursesData: any[] = [...listCourses, ...extraCourses, ...manualCourses]
+  const pathCoursesLoading = !!slugKey && (trackLoading || listLoading || extraLoading)
+  const { data: purchasedPackageIds = [] } = useQuery({
+    queryKey: ['dash-purchased-packages'],
+    queryFn: async () => {
+      const res = await get('/packages/my/purchased')
+      const d = (res?.data as any)?.data
+      return (Array.isArray(d) ? d : []) as string[]
+    },
+    enabled: !!user, staleTime: 60000, retry: 0,
+  })
+  const trackPackage = trackDetail?.package ?? null
+  const packageBought = !!trackPackage && purchasedPackageIds.includes(trackPackage.id)
 
   const enrollments = enrollmentData ?? []
   const certificates = certData ?? []
@@ -939,8 +959,25 @@ function StudentOverview() {
                 })()}
 
                 {/* Section 2: all courses of this path, enrolled or not */}
-                <p className="dw-section-label" style={{ marginTop: '20px' }}>كورسات المسار</p>
-                {pathCourses.length === 0 ? (
+                <p className="dw-section-label" style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  كورسات المسار
+                  {packageBought && <span className="dw-status done" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><PackageIcon size={12} aria-hidden="true" />باكدج مجمّع</span>}
+                </p>
+                {trackPackage && !packageBought && (
+                  <Link href={`/${locale}/careers/${selectedPathRaw?.slug}`} className="dw-btn dw-btn-ghost dw-btn-sm" style={{ marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <PackageIcon size={14} aria-hidden="true" />باكدج متاح لهذا المسار
+                  </Link>
+                )}
+                {pathCoursesLoading ? (
+                  <div className="dw-clist" style={{ marginTop: 0 }} aria-busy="true">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="dw-crow todo" style={{ pointerEvents: 'none' }}>
+                        <span className="skeleton-shimmer" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+                        <span className="dw-crow-info"><span className="skeleton-shimmer" style={{ display: 'block', height: 12, width: '60%', borderRadius: 6 }} /></span>
+                      </div>
+                    ))}
+                  </div>
+                ) : pathCourses.length === 0 ? (
                   <div className="dw2-empty-courses">
                     <p>لا توجد كورسات مرتبطة بهذا المسار بعد.</p>
                     <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-primary dw-btn-sm">تصفح كل الكورسات</a>
@@ -949,14 +986,15 @@ function StudentOverview() {
                   <div className="dw-clist dw2-scroll" style={{ marginTop: 0 }}>
                     {pathCourses.map((c: any, i: number) => {
                       const isEnrolled = !!c.id && !!enrollmentFor(c)
+                      const inPackage = packageBought && !!c.id && !!trackPackage?.courseIds.includes(c.id)
                       const meta = [c.provider, c.weeks > 0 ? (isAr ? `${c.weeks} أسبوع` : `${c.weeks} weeks`) : ''].filter(Boolean).join(' · ')
                       const Row: any = c.id ? 'a' : 'div'
                       return (
-                        <Row key={c.id ?? `m${i}`} {...(c.id ? { href: learnCourseLink(c.id, locale) } : {})} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
+                        <Row key={c.id ?? `m${i}`} {...(c.id ? { href: learnCourseLink(c.id, locale) } : {})} className={`dw-crow ${isEnrolled || inPackage ? 'doing' : 'todo'}`}>
                           <span className="dw-dot">{i + 1}</span>
                           <span className="dw-crow-info"><h4>{c.name}</h4>{meta && <small>{meta}</small>}</span>
-                          <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
-                            {isEnrolled ? 'مشترك' : 'غير مشترك'}
+                          <span className={`dw-status ${isEnrolled || inPackage ? 'doing' : 'todo'}`}>
+                            {isEnrolled ? 'مشترك' : inPackage ? 'مشمول في الباكدج' : 'غير مشترك'}
                           </span>
                         </Row>
                       )

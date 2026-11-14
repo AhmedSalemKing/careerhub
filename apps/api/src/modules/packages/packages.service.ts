@@ -8,6 +8,15 @@ export class PackagesService implements OnModuleInit {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Package payments are recorded with itemType PACKAGE and the package id as itemId. */
+  async purchasedIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.payment.findMany({
+      where: { userId, itemType: 'PACKAGE', status: { in: ['SUCCESS', 'COMPLETED'] } },
+      select: { itemId: true },
+    });
+    return Array.from(new Set(rows.map((r) => r.itemId).filter((x): x is string => !!x)));
+  }
+
   /** Same idea as the tracks table: additive and repeatable, safe next to `prisma migrate deploy`. */
   async onModuleInit() {
     try {

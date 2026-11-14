@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards, ValidationPipe,
+  Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, UseGuards, ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,6 +19,13 @@ export class PackagesController {
   @Get()
   async findAll(@Query('pathId') pathId?: string) {
     return { success: true, data: await this.packages.findAll(pathId) };
+  }
+
+  /** Ids of the packages the signed-in user has paid for. */
+  @Get('my/purchased')
+  @UseGuards(JwtAuthGuard)
+  async myPurchased(@Request() req: any) {
+    return { success: true, data: await this.packages.purchasedIds(req.user.id) };
   }
 
   @Get('admin/all')
