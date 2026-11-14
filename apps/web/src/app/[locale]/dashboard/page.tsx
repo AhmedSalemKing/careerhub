@@ -24,7 +24,7 @@ import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
-import { formatCoursePrice, formatMoney } from '../../../lib/market'
+import { formatCoursePrice, formatMoney, formatSarAmount } from '../../../lib/market'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -44,7 +44,7 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number): strin
     }, 0)
     return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
   }
-  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  return formatSarAmount(rawTotal ?? 0)
 }
 
 /* ════════════════════════════════════════════════════════
@@ -94,7 +94,7 @@ function InstructorOverview() {
     {
       Icon: DollarSign, color: 'var(--warning)',
       label: isAr ? 'الإيرادات' : 'Revenue',
-      value: stats?.revenueDisplay ?? `${Number(stats?.revenue ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`,
+      value: stats?.revenueDisplay ?? formatSarAmount(Number(stats?.revenue ?? 0)),
       href: `/${locale}/dashboard/revenue`,
     },
     {

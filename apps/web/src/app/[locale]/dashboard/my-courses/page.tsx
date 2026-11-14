@@ -10,7 +10,7 @@ import { AuthGate } from "../../../components/AuthGate";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
-import { formatCoursePrice } from "../../../../lib/market";
+import { formatCoursePrice, formatSarAmount } from "../../../../lib/market";
 
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
@@ -22,7 +22,7 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number): strin
     }, 0)
     return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
   }
-  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  return formatSarAmount(rawTotal ?? 0)
 }
 
 function getTitle(c: any, locale: string) {

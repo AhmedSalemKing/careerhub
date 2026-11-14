@@ -74,6 +74,17 @@ export function isEgyptClient(): boolean {
 // ── RENDERING ────────────────────────────────────────────────────────────────
 
 /**
+ * Raw amounts are stored in SAR. When the API sent no pre-formatted *Display value, format the SAR amount
+ * in the currency of the market the visitor picked in the navbar (cookie), never always as SAR.
+ */
+export function formatSarAmount(amountSar: number, fractionDigits = 2): string {
+  const egp = getCountryClient() === 'EG'
+  const value = egp ? amountSar * 15 : amountSar
+  const opts = { minimumFractionDigits: egp ? 0 : fractionDigits, maximumFractionDigits: egp ? 0 : fractionDigits }
+  return egp ? `${value.toLocaleString('ar-EG', opts)} ج.م` : `${value.toLocaleString('ar-SA', opts)} ر.س`
+}
+
+/**
  * Format a course price for display.
  * Always prefer priceDisplay from the API — it's already formatted correctly.
  *
@@ -91,10 +102,7 @@ export function formatCoursePrice(course: {
   if (!course.price || course.price === 0) return 'مجاني'
 
   // 3. Fallback: raw price in SAR (should rarely happen if API is correct)
-  return `${Number(course.price).toLocaleString('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ر.س`
+  return formatSarAmount(Number(course.price))
 }
 
 /**
@@ -110,11 +118,7 @@ export function formatMoney(
   displayValue?: string | null
 ): string {
   if (displayValue) return displayValue
-  const num = Number(amount) || 0
-  return `${num.toLocaleString('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ر.س`
+  return formatSarAmount(Number(amount) || 0)
 }
 
 // ── AI CONTEXT ───────────────────────────────────────────────────────────────
