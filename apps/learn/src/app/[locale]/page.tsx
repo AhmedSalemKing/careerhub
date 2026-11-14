@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Rocket, Star } from 'lucide-react'
 import { get } from '../../lib/api'
@@ -126,6 +126,7 @@ export default function HomePage() {
   const [tracksLoaded, setTracksLoaded] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   const [current, setCurrent] = useState<{ title: string; progress: number; courseId: string } | null>(null)
+  const [sortBy, setSortBy] = useState<'all' | 'newest' | 'popular' | 'price-asc' | 'price-desc'>('all')
   const [enrolledCount, setEnrolledCount] = useState(0)
   const [enrollLoaded, setEnrollLoaded] = useState(false)
 
@@ -237,6 +238,28 @@ export default function HomePage() {
   const heroLoading = (!!authToken && !authUser) || (!!authUser && !enrollLoaded)
   const isEnrolled = enrolledCount > 0
   const firstName = (authUser as { profile?: { firstName?: string } } | null)?.profile?.firstName ?? ''
+
+  const sortedCourses = useMemo(() => {
+    const list = [...courses]
+    const stamp = (c: any) => (c.createdAt ? new Date(c.createdAt).getTime() : 0)
+    const enrolls = (c: any) => c._count?.enrollments ?? c.enrollmentCount ?? c.studentsCount ?? 0
+    switch (sortBy) {
+      case 'newest': return list.sort((a, b) => stamp(b) - stamp(a))
+      case 'popular': return list.sort((a, b) => enrolls(b) - enrolls(a))
+      case 'price-asc': return list.sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+      case 'price-desc': return list.sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
+      default: return list
+    }
+  }, [courses, sortBy])
+  const sortTabs: { value: typeof sortBy; label: string }[] = isAr
+    ? [
+        { value: 'all', label: 'الكل' }, { value: 'newest', label: 'الأحدث' }, { value: 'popular', label: 'الأكثر اشتراكًا' },
+        { value: 'price-asc', label: 'الأقل سعرًا' }, { value: 'price-desc', label: 'الأعلى سعرًا' },
+      ]
+    : [
+        { value: 'all', label: 'All' }, { value: 'newest', label: 'Newest' }, { value: 'popular', label: 'Most Enrolled' },
+        { value: 'price-asc', label: 'Lowest Price' }, { value: 'price-desc', label: 'Highest Price' },
+      ]
 
   const ksa = t('flagKsa')
   const eg = t('flagEg')
@@ -411,8 +434,22 @@ export default function HomePage() {
               </div>
               <a href={`/${locale}/courses`} className="dw2-view-all">{t('coursesAllArrow')}</a>
             </div>
+            <div className="course-filter-tabs" role="tablist" aria-label={isAr ? 'ترتيب الدورات' : 'Sort courses'}>
+              {sortTabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={sortBy === tab.value}
+                  className={`filter-tab${sortBy === tab.value ? ' active' : ''}`}
+                  onClick={() => setSortBy(tab.value)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <div className="dw2-courses-grid">
-              {courses.map((course: any) => {
+              {sortedCourses.map((course: any) => {
                 const title = (isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr) || course.title || ''
                 const instructor = instructorDisplayName(course.instructor, '')
                 const students = course._count?.enrollments ?? course.studentsCount ?? 0

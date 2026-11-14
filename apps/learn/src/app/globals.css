@@ -1703,6 +1703,10 @@ body { font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', Taho
 .dw2-sec-sub { font-size: 13px; color: var(--ink-2); margin: 0 }
 .dw2-view-all { font-size: 13px; color: var(--brand); white-space: nowrap; text-decoration: none; padding: 8px 0; flex-shrink: 0 }
 .dw2-view-all:hover { text-decoration: underline }
+.course-filter-tabs { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; margin-bottom: 16px }
+.filter-tab { padding: 6px 14px; border-radius: 999px; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: all 0.15s; white-space: nowrap }
+.filter-tab:hover { border-color: var(--brand); color: var(--ink) }
+.filter-tab.active { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600 }
 .dw2-courses-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px }
 @media (max-width: 768px) { .dw2-courses-grid { grid-template-columns: 1fr } }
 .dw2-course-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r, 14px); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.2s }
