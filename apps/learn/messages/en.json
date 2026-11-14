@@ -194,6 +194,10 @@
     "privacy": "Privacy Policy"
   },
   "learnHome": {
+    "welcomeBack": "Welcome back, {name}",
+    "continueCta": "Continue from here",
+    "continueLine": "Pick up where you left off in \"{title}\"",
+    "valueProp": "Answer a few questions, get your career path with the reasons behind each recommendation.",
     "eyebrow": "For learners",
     "title": "For learners",
     "lede": "Everything you need to choose a direction and follow it, in one place.",

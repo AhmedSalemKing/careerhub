@@ -120,7 +120,9 @@ export default function HomePage() {
   const [tracks, setTracks] = useState<TrackCard[]>([])
   const [tracksLoaded, setTracksLoaded] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
-  const [current, setCurrent] = useState<{ title: string; progress: number } | null>(null)
+  const [current, setCurrent] = useState<{ title: string; progress: number; courseId: string } | null>(null)
+  const [enrolledCount, setEnrolledCount] = useState(0)
+  const [enrollLoaded, setEnrollLoaded] = useState(false)
 
   const assessmentHref = `${MAIN_SITE_URL}/${locale}/dashboard/assessment`
 
@@ -192,6 +194,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!authUser) {
       setCurrent(null)
+      setEnrolledCount(0)
+      setEnrollLoaded(false)
       return
     }
     let cancelled = false
@@ -202,18 +206,32 @@ export default function HomePage() {
         const list = Array.isArray(data) ? data : []
         const first = list[0]
         const course = first?.course || first
+        if (!cancelled) setEnrolledCount(list.length)
         if (!first || !course) return
         const title = (isAr ? course.titleAr : course.titleEn) || course.titleAr || course.titleEn || course.title || ''
-        const progress = Math.max(0, Math.min(100, Math.round(Number(first.progress ?? 0) || 0)))
-        if (!cancelled) setCurrent({ title, progress })
+        // The stored enrollment.progress is only refreshed when a lesson is completed, so derive the value
+        // from the lesson counts the endpoint also returns, and fall back to the stored one.
+        const done = Number(first.completedLessons)
+        const total = Number(first.totalLessons)
+        const raw = total > 0 && Number.isFinite(done) ? (done / total) * 100 : Number(first.progress ?? 0)
+        const progress = Math.max(0, Math.min(100, Math.round(raw || 0)))
+        if (!cancelled) setCurrent({ title, progress, courseId: String(course.id ?? first.courseId ?? '') })
       })
       .catch(() => {
         if (!cancelled) setCurrent(null)
+      })
+      .finally(() => {
+        if (!cancelled) setEnrollLoaded(true)
       })
     return () => {
       cancelled = true
     }
   }, [authUser, isAr])
+
+  // Never flash the new-user hero at a returning learner: wait for the session and the enrollments.
+  const heroLoading = (!!authToken && !authUser) || (!!authUser && !enrollLoaded)
+  const isEnrolled = enrolledCount > 0
+  const firstName = (authUser as { profile?: { firstName?: string } } | null)?.profile?.firstName ?? ''
 
   const ksa = t('flagKsa')
   const eg = t('flagEg')
@@ -232,25 +250,49 @@ export default function HomePage() {
         <div className="wrap phero-grid">
           <div className="phero-copy">
             <span className="eyebrow">{t('eyebrow')}</span>
-            <h1>{t('title')}</h1>
-            <p className="lede">{t('lede')}</p>
-            <div className="hero-ctas">
-              <a className="btn btn-primary" href={assessmentHref}>
-                {t('ctaAssessment')}
-                <Icon name="arrow" className="go" flip={isAr} />
-              </a>
-              <a className="btn btn-ghost" href={`/${locale}/my-courses`}>{t('ctaLearning')}</a>
-            </div>
+            {heroLoading ? (
+              <div aria-busy="true" aria-label="loading">
+                <div style={{ height: 40, width: '70%', borderRadius: 'var(--radius)', background: 'var(--line)', opacity: 0.6 }} />
+                <div style={{ height: 18, width: '90%', margin: '16px 0 24px', borderRadius: 'var(--radius)', background: 'var(--line)', opacity: 0.4 }} />
+                <div style={{ height: 44, width: 200, borderRadius: 'var(--radius)', background: 'var(--line)', opacity: 0.5 }} />
+              </div>
+            ) : isEnrolled ? (
+              <>
+                <h1>{t('welcomeBack', { name: firstName || (isAr ? 'متعلّمنا' : 'learner') })}</h1>
+                {current?.title && <p className="lede">{t('continueLine', { title: current.title })}</p>}
+                <div className="hero-ctas">
+                  <a className="btn btn-primary" href={current?.courseId ? `/${locale}/courses/${current.courseId}/learn` : `/${locale}/my-courses`}>
+                    {t('continueCta')}
+                    <Icon name="arrow" className="go" flip={isAr} />
+                  </a>
+                  <a className="btn btn-ghost" href={`/${locale}/my-courses`}>{t('ctaLearning')}</a>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1>{t('title')}</h1>
+                <p className="lede">{t('valueProp')}</p>
+                <div className="hero-ctas">
+                  <a className="btn btn-primary" href={assessmentHref}>
+                    {t('ctaAssessment')}
+                    <Icon name="arrow" className="go" flip={isAr} />
+                  </a>
+                  <a className="btn btn-ghost" href={`/${locale}/my-courses`}>{t('ctaLearning')}</a>
+                </div>
+              </>
+            )}
           </div>
           <div className="phero-media">
             <Scene ids={['sa4', 'eg1']} label={t('title')} ksa={ksa} eg={eg} />
-            <div className="float f-fit">
-              <Ring pct={current ? current.progress : 64} />
-              <div>
-                <p>{t('sceneProgress')}</p>
-                <strong>{current ? current.title : t('sceneTrack')}</strong>
+            {!heroLoading && isEnrolled && current && (
+              <div className="float f-fit">
+                {current.progress > 0 && <Ring pct={current.progress} />}
+                <div>
+                  <p>{t('sceneProgress')}</p>
+                  <strong>{current.title}</strong>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
