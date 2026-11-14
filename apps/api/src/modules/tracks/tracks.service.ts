@@ -160,11 +160,20 @@ export class TracksService implements OnModuleInit {
     return country ? { isActive: true, country: { in: [country, 'BOTH'] } } : { isActive: true };
   }
 
+  /**
+   * Public lists hide leftover test tracks: no courses AND a placeholder name ("تيست" / "test").
+   * There is no published flag on Track (only isActive), so admins should also deactivate such rows.
+   * Real tracks that simply have no courses yet stay visible.
+   */
+  private isPlaceholder(t: { courseCount: number; name: string }): boolean {
+    return t.courseCount === 0 && /تيست|test/i.test(t.name || '');
+  }
+
   async list(countryParam?: string, lang = 'ar') {
     const country = this.normaliseCountry(countryParam);
     try {
       const rows = await this.prisma.track.findMany({ where: this.marketFilter(country), orderBy: { createdAt: 'asc' } });
-      return rows.map((t) => this.localise(t, lang, country));
+      return rows.map((t) => this.localise(t, lang, country)).filter((t) => !this.isPlaceholder(t));
     } catch (e: any) {
       // The public site must keep working (it falls back to its static cards) even if the table is unavailable.
       this.logger.error(`[Tracks] list failed: ${e?.message ?? e}`);
