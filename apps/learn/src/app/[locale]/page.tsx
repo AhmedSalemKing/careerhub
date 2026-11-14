@@ -44,8 +44,13 @@ function Scene({ ids, cls = '', label, ksa, eg, children }: { ids: string[]; cls
         {ids.map((id, i) => (
           <span key={id} className="duo-p" style={{ ['--i' as string]: i } as React.CSSProperties}>
             <span className="char-wrap" dangerouslySetInnerHTML={{ __html: CHARS[id] ?? '' }} />
-            <em className={`duo-flag ${id.startsWith('sa') ? 'sa' : 'eg'}`}>{id.startsWith('sa') ? ksa : eg}</em>
           </span>
+        ))}
+      </div>
+      {/* one row for the country pills so they sit side by side instead of overlapping */}
+      <div className="duo-flags">
+        {Array.from(new Set(ids.map((id) => (id.startsWith('sa') ? 'sa' : 'eg')))).map((c) => (
+          <em key={c} className={`duo-flag ${c}`}>{c === 'sa' ? ksa : eg}</em>
         ))}
       </div>
       {children}
