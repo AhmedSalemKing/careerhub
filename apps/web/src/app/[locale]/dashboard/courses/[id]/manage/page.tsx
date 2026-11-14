@@ -1889,7 +1889,7 @@ export default function ManageCoursePage() {
               الطلاب ({course._count?.enrollments ?? 0})
             </h2>
             {(course.enrollments ?? []).length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-10 text-center">
+              <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-6 text-center">
                 <Users className="h-10 w-10 mx-auto opacity-20 mb-3" />
                 <p className="text-sm text-[color:var(--ink-2)]">لا يوجد طلاب مسجلون بعد</p>
               </div>

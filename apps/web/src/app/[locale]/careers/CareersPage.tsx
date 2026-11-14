@@ -226,7 +226,7 @@ export default function CareersPage() {
           ? 'linear-gradient(180deg, rgba(81,32,200,0.12) 0%, transparent 100%)'
           : 'linear-gradient(180deg, rgba(81,32,200,0.05) 0%, transparent 100%)',
         borderBottom: `1px solid ${border}`,
-        padding: '60px 24px 40px',
+        padding: '32px 24px 24px',
         textAlign: 'center',
       }}>
         <div style={{ maxWidth:800, margin:'0 auto' }}>

@@ -179,14 +179,14 @@ export default function InvoicesPage() {
         }}
       >
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
             <Loader2 className="animate-spin" size={28} style={{ color: '#5120C8' }} />
             <p className="text-sm text-[color:var(--ink-2)]">
               {isAr ? 'جاري التحميل...' : 'Loading...'}
             </p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
             <p className="text-sm text-[color:var(--error)]">{error}</p>
             <button
               onClick={() => fetchInvoices(page)}
@@ -201,7 +201,7 @@ export default function InvoicesPage() {
             </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
             <div style={{
               width: '56px', height: '56px', borderRadius: '50%',
               background: 'rgba(81,32,200,0.08)',

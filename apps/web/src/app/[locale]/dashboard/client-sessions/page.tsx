@@ -435,7 +435,7 @@ export default function ClientSessionsPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border px-6 py-16 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
+          <div className="rounded-2xl border px-6 py-10 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
             <span style={{ color: 'var(--ink-2)', opacity: 0.4, display: 'block', margin: '0 auto 14px', width: 'fit-content' }}><Ic.users size={44} /></span>
             <h3 className="mb-2 text-base font-black">{isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}</h3>
             <p className="text-xs" style={{ color: 'var(--ink-2)' }}>
