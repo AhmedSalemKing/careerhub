@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { LEARN_URL } from '@/lib/constants'
+import { Loader2 } from 'lucide-react'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
@@ -1020,10 +1021,10 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   }
   useEffect(() => clearAdvance, [])
 
-  // Progress copy while the analysis runs: a new step every ~3s, holding on the last one until the answer arrives
+  // Progress copy while the analysis runs: a new step every ~3s, looping until the answer arrives
   useEffect(() => {
     if (!isAnalyzing) { setAnalysisStep(0); return }
-    const t = setInterval(() => setAnalysisStep((n) => Math.min(n + 1, 2)), 3000)
+    const t = setInterval(() => setAnalysisStep((n) => (n + 1) % 4), 3000)
     return () => clearInterval(t)
   }, [isAnalyzing])
 
@@ -1201,15 +1202,18 @@ ${trackList}
   }
 
   if (isAnalyzing) {
+    const msgs = ['جارٍ تحليل إجاباتك...', 'نحدد نقاط قوّتك...', 'نرتّب المسارات المناسبة لك...', 'نكمل التقرير المهني...']
     return (
-      <div dir="rtl" className="dw-assess">
-        <div className="dw-as-center">
+      <div dir="rtl" role="status" aria-live="polite" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--ink)', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 360 }}>
           <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
-          <h2>{['جارٍ تحليل إجاباتك...', 'نحدد نقاط قوّتك...', 'نرتّب المسارات المناسبة...'][analysisStep]}</h2>
-          <p>رشيد يدرس الأنماط ويجهز تقريرك المخصص</p>
-          <div role="progressbar" aria-label="analysis progress" style={{ width: 220, height: 6, margin: '16px auto 0', borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}>
-            <div style={{ width: `${(analysisStep + 1) * 30}%`, height: '100%', background: 'var(--brand)', transition: 'width 1s ease' }} />
+          <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)', margin: '16px auto 0' }} aria-hidden="true" />
+          <h2 style={{ margin: '14px 0 6px', fontSize: 20, fontWeight: 800 }}>{msgs[analysisStep]}</h2>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>رشيد يدرس الأنماط ويجهز تقريرك المخصص</p>
+          <div style={{ width: 240, height: 6, margin: '18px auto 0', borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}>
+            <div className="dw-ov-fill" />
           </div>
+          <style>{'@keyframes dw-ov-fill{from{width:4%}to{width:94%}}.dw-ov-fill{height:100%;border-radius:999px;background:var(--brand);animation:dw-ov-fill 90s cubic-bezier(.1,.6,.3,1) forwards}'}</style>
         </div>
       </div>
     )
