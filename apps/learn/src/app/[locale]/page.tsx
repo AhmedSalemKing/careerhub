@@ -284,9 +284,9 @@ export default function HomePage() {
           </div>
           <div className="phero-media">
             <Scene ids={['sa4', 'eg1']} label={t('title')} ksa={ksa} eg={eg} />
-            {!heroLoading && isEnrolled && current && (
+            {!heroLoading && isEnrolled && current && current.progress > 0 && (
               <div className="float f-fit">
-                {current.progress > 0 && <Ring pct={current.progress} />}
+                <Ring pct={current.progress} />
                 <div>
                   <p>{t('sceneProgress')}</p>
                   <strong>{current.title}</strong>
