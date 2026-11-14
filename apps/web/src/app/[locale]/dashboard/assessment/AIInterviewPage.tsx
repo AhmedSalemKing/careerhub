@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
+import { LEARN_URL } from '@/lib/constants'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
@@ -904,7 +905,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
         </p>
 
         <div className="rc-bottom">
-          <button type="button" className="btn btn-primary" onClick={() => router.push(`/${locale}/dashboard/my-courses`)}>
+          <button type="button" className="btn btn-primary" onClick={() => { window.location.href = `${LEARN_URL.replace(/[/]+$/, '')}/${locale}` }}>
             افتح «تعلّمي»
           </button>
           <button type="button" className="btn btn-ghost" onClick={onRestart}>

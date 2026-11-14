@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { RasheedAvatar } from '@/app/components/CharacterDuo'
 import { useAuthStore } from '@/stores/authStore'
+import { LEARN_URL } from '@/lib/constants'
 import { useMarket } from '@/app/contexts/MarketContext'
 import { MARKET_CONFIG, toLang } from '@/lib/marketConfig'
 import { formatCurrency } from '@/lib/formatCurrency'
@@ -364,7 +365,7 @@ export default function AssessmentResultPage() {
         </p>
         <div className="rs-cta">
           <button type="button" className="btn btn-ghost" onClick={retake}><RotateCcw size={16} aria-hidden="true" /> أعد التقييم</button>
-          <Link className="btn btn-primary" href={`/${locale}/dashboard/my-courses`}>افتح «تعلّمي» <ArrowLeft size={16} aria-hidden="true" /></Link>
+          <a className="btn btn-primary" href={`${LEARN_URL.replace(/[/]+$/, '')}/${locale}`}>افتح «تعلّمي» <ArrowLeft size={16} aria-hidden="true" /></a>
         </div>
       </div>
     </div>
