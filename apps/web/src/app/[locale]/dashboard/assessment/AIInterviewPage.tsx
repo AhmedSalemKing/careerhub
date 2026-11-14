@@ -999,6 +999,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const [insight,         setInsight]         = useState('')
   const [isLoadingInsight,setIsLoadingInsight]= useState(false)
   const [isAnalyzing,     setIsAnalyzing]     = useState(false)
+  const [analysisStep,    setAnalysisStep]    = useState(0)
   const [result,          setResult]          = useState<QuizResult | null>(null)
   const [analysisError,   setAnalysisError]   = useState(false)
   const router = useRouter()
@@ -1018,6 +1019,13 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
     if (advanceTimerRef.current) { clearTimeout(advanceTimerRef.current); advanceTimerRef.current = null }
   }
   useEffect(() => clearAdvance, [])
+
+  // Progress copy while the analysis runs: a new step every ~3s, holding on the last one until the answer arrives
+  useEffect(() => {
+    if (!isAnalyzing) { setAnalysisStep(0); return }
+    const t = setInterval(() => setAnalysisStep((n) => Math.min(n + 1, 2)), 3000)
+    return () => clearInterval(t)
+  }, [isAnalyzing])
 
   const callChat = async (prompt: string, maxOutputTokens?: number, ctx?: string, timeoutMs = 26_000): Promise<string> => {
     const token = getToken()
@@ -1099,6 +1107,16 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
       const { market: aiMarket, locale: aiLocale } = aiMarketPayload()
       const targetMarket = MARKET_CONFIG[aiMarket].aiTargetMarket[aiLocale]
 
+      // Same answers and market as the saved result: reuse it instead of asking the model again
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('assessmentResult') || 'null')
+        if (saved?.result && saved.market === aiMarket && JSON.stringify(saved.answers) === JSON.stringify(finalAnswers)) {
+          router.push(`/${locale}/dashboard/assessment/result`)
+          setIsAnalyzing(false)
+          return
+        }
+      } catch { /* no usable cache */ }
+
       try {
         const text = await callChat(
 `أنت رشيد، مرشد مهني. بناءً على إجابات المستخدم التالية على أسئلة التقييم المهني، قدّم توصيات مسارات مهنية مخصصة:
@@ -1107,6 +1125,7 @@ ${qaText}
 
 السوق المستهدف: ${targetMarket}
 اربط التوصيات بسوق العمل هذا، وأي راتب تذكره يكون بعملته.
+اكتب باختصار: كل سبب جملة أو جملتان فقط، وكل قائمة 2-3 عناصر قصيرة.
 
 حلّل هذه الإجابات بعمق (لاحظ الأنماط وأي تناقضات بين الإجابات، ولا تحلل كل سؤال على حدة) وقدّم 3 مسارات مهنية مرتبة حسب التوافق مع أسباب واضحة لكل مسار.
 اختر المسارات من هذه القائمة فقط${platformTracks.length ? '، وأعد الـ slug كما هو في الحقل trackSlug' : ''}:
@@ -1133,7 +1152,7 @@ ${trackList}
   "personalNote": "ملاحظة شخصية من رشيد تشجيعية ومحددة ليه"
 }
 [/QUIZ_RESULT]`,
-          4096,
+          3000,
           'analysis',
           58_000,
         )
@@ -1186,8 +1205,11 @@ ${trackList}
       <div dir="rtl" className="dw-assess">
         <div className="dw-as-center">
           <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
-          <h2>رشيد بيحلل إجاباتك...</h2>
-          <p>بيدرس الأنماط ويجهز تقريرك المخصص</p>
+          <h2>{['جارٍ تحليل إجاباتك...', 'نحدد نقاط قوّتك...', 'نرتّب المسارات المناسبة...'][analysisStep]}</h2>
+          <p>رشيد يدرس الأنماط ويجهز تقريرك المخصص</p>
+          <div role="progressbar" aria-label="analysis progress" style={{ width: 220, height: 6, margin: '16px auto 0', borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}>
+            <div style={{ width: `${(analysisStep + 1) * 30}%`, height: '100%', background: 'var(--brand)', transition: 'width 1s ease' }} />
+          </div>
         </div>
       </div>
     )
