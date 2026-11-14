@@ -1270,7 +1270,7 @@ ${trackList}
           {/* Question area */}
           <div className="a-main">
             <div className="a-progress">
-              <span>القسم {currentPhaseIdx + 1} من {PHASES.length} · السؤال {currentIndex + 1} من {ALL_QUESTIONS.length}</span>
+              <span>{phaseLabel}</span>
               <span className="a-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
                 <span style={{ width: `${progressPercent}%` }} />
               </span>
@@ -1307,16 +1307,12 @@ ${trackList}
               </div>
 
               <div className="a-nav">
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0}
-                  className="btn btn-secondary"
-                  style={{ opacity: currentIndex === 0 ? 0.4 : 1 }}
-                >
-                  <svg className="icon go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                  السابق
-                </button>
+                {currentIndex > 0 ? (
+                  <button type="button" onClick={handlePrev} className="btn btn-secondary">
+                    <svg className="icon go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    السابق
+                  </button>
+                ) : <span aria-hidden="true" />}
                 <button
                   type="button"
                   onClick={handleNext}

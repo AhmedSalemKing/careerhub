@@ -69,6 +69,20 @@ const HOURS_BY_OPTION: Record<string, number> = {
   'أكثر من 10 ساعات': 11,
 }
 
+/** The model sometimes repeats the user's name ("Ahmed، يا أهلاً بيك يا Ahmed"): the greeting shows it once. */
+function cleanGreeting(name: string, note: string): string {
+  let text = note.trim()
+  const n = name.trim()
+  if (n) {
+    // The page already prefixes "name، ": drop a leading copy and a trailing "يا name" vocative.
+    for (const sep of ['،', ',']) {
+      if (text.startsWith(`${n}${sep}`)) text = text.slice(n.length + 1).trim()
+    }
+    text = text.split(` يا ${n}`).join('')
+  }
+  return text
+}
+
 const fmtK = (n: number) => (n / 1000).toLocaleString('ar-EG', { maximumFractionDigits: 1 })
 
 function MatchRing({ value, index }: { value: number; index: number }) {
@@ -226,7 +240,7 @@ export default function AssessmentResultPage() {
           <div>
             <p className="rs-who"><b>رشيد</b> · مرشد DeveWay المهني بالذكاء الاصطناعي</p>
             <p className="rs-sub">هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.</p>
-            {data.personalityNote && <p className="rs-note">{data.userName ? `${data.userName}، ` : ''}{data.personalityNote}</p>}
+            {data.personalityNote && <p className="rs-note">{data.userName ? `${data.userName}، ` : ''}{cleanGreeting(data.userName, data.personalityNote)}</p>}
             {data.motivationalNote && <p className="rs-motive">{data.motivationalNote}</p>}
           </div>
         </section>
@@ -330,17 +344,12 @@ export default function AssessmentResultPage() {
                   )}
                   <span className="rs-actions">
                     {hasSlug ? (
-                      <Link className="btn btn-ghost btn-sm" href={href}>عرض المسار</Link>
-                    ) : (
-                      <button type="button" className="btn btn-ghost btn-sm" disabled>عرض المسار</button>
-                    )}
-                    {hasSlug ? (
                       <Link className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} href={href}>
-                        ابدأ هذا المسار <ArrowLeft size={15} aria-hidden="true" />
+                        {featured ? 'ابدأ هذا المسار' : 'عرض المسار'} <ArrowLeft size={15} aria-hidden="true" />
                       </Link>
                     ) : (
                       <button type="button" className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} disabled>
-                        ابدأ هذا المسار <ArrowLeft size={15} aria-hidden="true" />
+                        {featured ? 'ابدأ هذا المسار' : 'عرض المسار'} <ArrowLeft size={15} aria-hidden="true" />
                       </button>
                     )}
                   </span>
@@ -348,6 +357,13 @@ export default function AssessmentResultPage() {
               </article>
             )
           })}
+        </div>
+
+        {/* Next step */}
+        <div className="rs-next">
+          <p>خطوتك القادمة</p>
+          <h3>اختر مسارك وابدأ أول كورس</h3>
+          <Link href={`/${locale}/careers`}>تصفّح المسارات المهنية</Link>
         </div>
 
         {/* Footer */}
