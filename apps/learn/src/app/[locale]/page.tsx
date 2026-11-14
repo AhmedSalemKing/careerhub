@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Rocket, Star } from 'lucide-react'
 import { get } from '../../lib/api'
@@ -50,7 +50,9 @@ function Scene({ ids, cls = '', label, ksa, eg, children }: { ids: string[]; cls
       {/* one row for the country pills so they sit side by side instead of overlapping */}
       <div className="duo-flags">
         {Array.from(new Set(ids.map((id) => (id.startsWith('sa') ? 'sa' : 'eg')))).map((c) => (
-          <em key={c} className={`duo-flag ${c}`}>{c === 'sa' ? ksa : eg}</em>
+          <Fragment key={c}>
+            <em className={`duo-flag ${c}`}>{c === 'sa' ? ksa : eg}</em>{' '}
+          </Fragment>
         ))}
       </div>
       {children}
@@ -126,6 +128,8 @@ export default function HomePage() {
   const [tracksLoaded, setTracksLoaded] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   const [current, setCurrent] = useState<{ title: string; progress: number; courseId: string } | null>(null)
+  const [allCourses, setAllCourses] = useState<any[] | null>(null)
+  const [allLoading, setAllLoading] = useState(false)
   const [sortBy, setSortBy] = useState<'all' | 'newest' | 'popular' | 'price-asc' | 'price-desc'>('all')
   const [enrolledCount, setEnrolledCount] = useState(0)
   const [enrollLoaded, setEnrollLoaded] = useState(false)
@@ -196,6 +200,28 @@ export default function HomePage() {
     }
   }, [])
 
+  // A sort tab other than "all" ranks every recorded course, not just the 6 shown on the homepage
+  useEffect(() => {
+    if (sortBy === 'all' || allCourses) return
+    let cancelled = false
+    setAllLoading(true)
+    get('/courses', { params: { limit: 100, type: 'recorded' } })
+      .then((res: any) => {
+        const d = res?.data?.data?.courses ?? res?.data?.data ?? res?.data?.courses ?? []
+        if (!cancelled) setAllCourses(Array.isArray(d) ? d : [])
+      })
+      .catch(() => {
+        if (!cancelled) setAllCourses(courses)
+      })
+      .finally(() => {
+        if (!cancelled) setAllLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy])
+
   // Signed-in learners see their own progress in the hero card
   useEffect(() => {
     if (!authUser) {
@@ -240,7 +266,7 @@ export default function HomePage() {
   const firstName = (authUser as { profile?: { firstName?: string } } | null)?.profile?.firstName ?? ''
 
   const sortedCourses = useMemo(() => {
-    const list = [...courses]
+    const list = [...(sortBy === 'all' ? courses : (allCourses ?? courses))]
     const stamp = (c: any) => (c.createdAt ? new Date(c.createdAt).getTime() : 0)
     const enrolls = (c: any) => c._count?.enrollments ?? c.enrollmentCount ?? c.studentsCount ?? 0
     switch (sortBy) {
@@ -250,7 +276,8 @@ export default function HomePage() {
       case 'price-desc': return list.sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
       default: return list
     }
-  }, [courses, sortBy])
+  }, [courses, allCourses, sortBy])
+  const displayedCourses = sortBy === 'all' ? courses.slice(0, 6) : sortedCourses
   const sortTabs: { value: typeof sortBy; label: string }[] = isAr
     ? [
         { value: 'all', label: 'الكل' }, { value: 'newest', label: 'الأحدث' }, { value: 'popular', label: 'الأكثر اشتراكًا' },
@@ -398,7 +425,7 @@ export default function HomePage() {
                     {p.description && <p className="t-desc">{p.description}</p>}
                     {p.roles.length > 0 && (
                       <div className="roles">
-                        {p.roles.map((r) => <span key={r}>{r}</span>)}
+                        {p.roles.map((r) => <Fragment key={r}><span>{r}</span>{' '}</Fragment>)}
                       </div>
                     )}
                     {/* Only the selected market's Vision 2030 badge, never both */}
@@ -449,7 +476,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="dw2-courses-grid">
-              {sortedCourses.map((course: any) => {
+              {displayedCourses.map((course: any) => {
                 const title = (isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr) || course.title || ''
                 const instructor = instructorDisplayName(course.instructor, '')
                 const students = course._count?.enrollments ?? course.studentsCount ?? 0
@@ -473,9 +500,18 @@ export default function HomePage() {
                 )
               })}
             </div>
-            <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <a href={`/${locale}/courses`} className="dw2-btn-outline">{t('coursesAll')}</a>
-            </div>
+            {sortBy !== 'all' && (
+              <p className="dw2-sec-sub" style={{ textAlign: 'center', marginTop: 16 }} aria-live="polite">
+                {allLoading
+                  ? (isAr ? 'جارٍ التحميل...' : 'Loading...')
+                  : (isAr ? `عرض ${displayedCourses.length} دورة` : `Showing ${displayedCourses.length} courses`)}
+              </p>
+            )}
+            {sortBy === 'all' && (
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <a href={`/${locale}/courses`} className="dw2-btn-outline">{t('coursesAll')}</a>
+              </div>
+            )}
           </div>
         </section>
       )}
