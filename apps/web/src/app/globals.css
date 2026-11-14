@@ -191,10 +191,10 @@ input:-webkit-autofill:active {
 	--ring: rgba(81, 32, 200, 0.25);
 
 	/* ── Component Tokens ── */
-	--input-bg: #ffffff;
-	--card-bg: #ffffff;
-	--code-bg: #f2f2f7;
-	--skeleton: #e5e5ea;
+	--input-bg: var(--surface);
+	--card-bg: var(--surface);
+	--code-bg: var(--bg-2);
+	--skeleton: var(--line);
 
 	/* ── Progress ── */
 	--progress-fill: #5120c8;
@@ -302,10 +302,10 @@ input:-webkit-autofill:active {
 	--ring: rgba(81, 32, 200, 0.4);
 
 	/* ── Component Tokens ── */
-	--input-bg: #2c2c2e;
-	--card-bg: #1c1c1e;
-	--code-bg: #2c2c2e;
-	--skeleton: #38383a;
+	--input-bg: var(--surface);
+	--card-bg: var(--surface);
+	--code-bg: var(--bg-2);
+	--skeleton: var(--line);
 
 	/* ── Progress ── */
 	--progress-fill: #5120c8;
@@ -761,8 +761,8 @@ input,
 textarea,
 select {
 	background-color: var(--input-bg) !important;
-	border-color: var(--border) !important;
-	color: var(--foreground) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
 	border-radius: var(--radius-md);
 }
 
@@ -787,14 +787,14 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-	color: var(--muted-foreground) !important;
+	color: var(--ink-3) !important;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-	border-color: var(--primary) !important;
-	box-shadow: 0 0 0 3px var(--ring) !important;
+	border-color: var(--brand) !important;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 20%, transparent) !important;
 	outline: none;
 }
 
