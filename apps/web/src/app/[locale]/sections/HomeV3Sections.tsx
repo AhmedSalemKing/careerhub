@@ -248,7 +248,6 @@ export function MentorsSection() {
             <Link href={`/${locale}/coaching`} className="btn btn-ghost">
               {t('mentors.joinCta')}
             </Link>
-            <span className="pill">{t('mentors.comingSoon')}</span>
           </div>
         </div>
         <div className="mentor-types">

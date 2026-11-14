@@ -10,6 +10,7 @@ import { CharacterScene, CharacterAvatar, CharacterCast, RasheedAvatar } from '.
 export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }) {
   const t = useTranslations('hero')
   const th = useTranslations('homeV2')
+  const tv3 = useTranslations('homeV3')
   const locale = useLocale()
   const { user } = useAuthStore()
   const [mounted, setMounted] = useState(false)
@@ -78,6 +79,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
           </div>
 
           <div className="dw-float dw-f-ai">
+            <span className="dw-f-sample">{tv3('why.sample')}</span>
             <div className="dw-ring-wrap">
               <svg className="dw-ring-svg" viewBox="0 0 56 56">
                 <defs>
