@@ -40,16 +40,17 @@ interface ChoiceDraft {
 
 const emptyChoice = (): ChoiceDraft => ({ text: '', isCorrect: false })
 
-const TYPE_META: Record<QType, { label: string }> = {
-  MCQ: { label: 'اختيار من متعدد' },
-  SHORT_ANSWER: { label: 'سؤال مقالي' },
-  FILE_UPLOAD: { label: 'رفع ملف' },
+const TYPE_META: Record<QType, { label: string; labelEn: string }> = {
+  MCQ: { label: 'اختيار من متعدد', labelEn: 'Multiple choice' },
+  SHORT_ANSWER: { label: 'سؤال مقالي', labelEn: 'Essay question' },
+  FILE_UPLOAD: { label: 'رفع ملف', labelEn: 'File upload' },
 }
 
 export default function QuizBuilderPage() {
   const params = useParams()
   const router = useRouter()
   const locale = (params.locale as string) || 'ar'
+  const isAr = locale === 'ar'
   const courseId = params.id as string
   const quizId = params.quizId as string
   const qc = useQueryClient()
@@ -147,7 +148,7 @@ export default function QuizBuilderPage() {
         setSaveState('saved')
       } catch (e: any) {
         setSaveState('idle')
-        toast.error(e?.response?.data?.message ?? 'تعذر حفظ الإعدادات')
+        toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر حفظ الإعدادات' : 'Could not save the settings'))
       }
     }, 600)
     return () => clearTimeout(t)
@@ -250,22 +251,22 @@ export default function QuizBuilderPage() {
 
   const saveQuestion = async () => {
     if (!qForm.questionText.trim()) {
-      toast.error('اكتب نص السؤال')
+      toast.error((isAr ? 'اكتب نص السؤال' : 'Write the question text'))
       return
     }
     if (qForm.type === 'MCQ') {
       const filled = qForm.choices.filter((c) => c.text.trim())
       if (filled.length < 2) {
-        toast.error('أضف خيارين على الأقل للسؤال')
+        toast.error((isAr ? 'أضف خيارين على الأقل للسؤال' : 'Add at least two choices to the question'))
         return
       }
       const correctCount = filled.filter((c) => c.isCorrect).length
       if (correctCount < 1) {
-        toast.error('حدد إجابة صحيحة واحدة على الأقل')
+        toast.error((isAr ? 'حدد إجابة صحيحة واحدة على الأقل' : 'Select at least one correct answer'))
         return
       }
       if (!qForm.allowMultipleAnswers && correctCount !== 1) {
-        toast.error('للسؤال أحادي الإجابة اختر إجابة واحدة صحيحة فقط')
+        toast.error((isAr ? 'للسؤال أحادي الإجابة اختر إجابة واحدة صحيحة فقط' : 'For a single-answer question choose only one correct answer'))
         return
       }
     }
@@ -287,15 +288,15 @@ export default function QuizBuilderPage() {
     try {
       if (editId === '__new__') {
         await post(`/quizzes/${quizId}/questions`, payload)
-        toast.success('تمت إضافة السؤال')
+        toast.success((isAr ? 'تمت إضافة السؤال' : 'Question added'))
       } else {
         await patch(`/quizzes/${quizId}/questions/${editId}`, payload)
-        toast.success('تم حفظ تعديلات السؤال')
+        toast.success((isAr ? 'تم حفظ تعديلات السؤال' : 'Question changes saved'))
       }
       qc.invalidateQueries({ queryKey: ['instructor-quiz', quizId] })
       setEditorOpen(false)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر حفظ السؤال')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر حفظ السؤال' : 'Could not save the question'))
     } finally {
       setSavingQuestion(false)
     }
@@ -305,11 +306,11 @@ export default function QuizBuilderPage() {
     if (!deleteQuestion) return
     try {
       await del(`/quizzes/${quizId}/questions/${deleteQuestion.id}`)
-      toast.success('تم حذف السؤال')
+      toast.success((isAr ? 'تم حذف السؤال' : 'Question deleted'))
       qc.invalidateQueries({ queryKey: ['instructor-quiz', quizId] })
       if (editId === deleteQuestion.id) setEditorOpen(false)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر حذف السؤال')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر حذف السؤال' : 'Could not delete the question'))
     } finally {
       setDeleteQuestion(null)
     }
@@ -324,7 +325,7 @@ export default function QuizBuilderPage() {
       await post(`/quizzes/${quizId}/reorder`, { order: next.map((q) => q.id) })
       qc.invalidateQueries({ queryKey: ['instructor-quiz', quizId] })
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر إعادة الترتيب')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر إعادة الترتيب' : 'Could not reorder'))
     }
   }
 
@@ -332,10 +333,10 @@ export default function QuizBuilderPage() {
     try {
       const action = status === 'PUBLISHED' ? 'publish' : 'unpublish'
       await post(`/quizzes/${quizId}/${action}`)
-      toast.success(status === 'PUBLISHED' ? 'تم نشر الاختبار' : 'تم إيقاف الاختبار')
+      toast.success(status === 'PUBLISHED' ? (isAr ? 'تم نشر الاختبار' : 'Quiz published') : (isAr ? 'تم إيقاف الاختبار' : 'Quiz unpublished'))
       qc.invalidateQueries({ queryKey: ['instructor-quiz', quizId] })
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر تنفيذ العملية')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر تنفيذ العملية' : 'Could not complete the action'))
     }
   }
 
@@ -361,7 +362,7 @@ export default function QuizBuilderPage() {
   if (!quiz) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--ink-2)]">الاختبار غير موجود</p>
+        <p className="text-[color:var(--ink-2)]">{isAr ? 'الاختبار غير موجود' : 'Quiz not found'}</p>
       </div>
     )
   }
@@ -379,20 +380,20 @@ export default function QuizBuilderPage() {
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-bold font-madinet text-[var(--ink)]">{settings.title || quiz.title || 'الاختبار'}</h1>
+            <h1 className="truncate text-xl font-bold font-madinet text-[var(--ink)]">{settings.title || quiz.title || (isAr ? 'الاختبار' : 'Quiz')}</h1>
             <span data-tour="quiz-status-badge"><StatusBadge status={quiz.status} /></span>
           </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--ink-2)]">
-            <span>{questions.length} سؤال</span>
+            <span>{questions.length} {isAr ? 'سؤال' : 'question'}</span>
             <span className="text-[color:var(--line)]">•</span>
-            <span>{totalPoints} نقطة</span>
+            <span>{totalPoints} {isAr ? 'نقطة' : 'point'}</span>
             <span className="text-[color:var(--line)]">•</span>
             {saveState === 'saving' ? (
-              <span className="text-[color:var(--ink-2)]">جارٍ الحفظ...</span>
+              <span className="text-[color:var(--ink-2)]">{isAr ? 'جارٍ الحفظ...' : 'Saving...'}</span>
             ) : saveState === 'saved' ? (
               <span className="flex items-center gap-1 text-[#10b981]">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                تم الحفظ
+                {isAr ? 'تم الحفظ' : 'Saved'}
               </span>
             ) : null}
           </div>
@@ -403,7 +404,7 @@ export default function QuizBuilderPage() {
             onClick={() => publish('DRAFT')}
             className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
           >
-            إيقاف النشر
+            {isAr ? 'إيقاف النشر' : 'Unpublish'}
           </button>
         ) : (
           <button
@@ -412,7 +413,7 @@ export default function QuizBuilderPage() {
             className="flex items-center gap-2 rounded-[10px] bg-[#10b981] px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-all duration-150"
           >
             <Send className="h-4 w-4" />
-            نشر الاختبار
+            {isAr ? 'نشر الاختبار' : 'Publish quiz'}
           </button>
         )}
       </div>
@@ -421,7 +422,7 @@ export default function QuizBuilderPage() {
         <div className="space-y-5 min-w-0">
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-bold text-[var(--ink)]">الأسئلة</h2>
+              <h2 className="font-bold text-[var(--ink)]">{isAr ? 'الأسئلة' : 'Questions'}</h2>
               <button
                 type="button"
                 onClick={openNew}
@@ -429,14 +430,14 @@ export default function QuizBuilderPage() {
                 className="flex items-center gap-2 rounded-[10px] bg-primary px-3 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all duration-150"
               >
                 <Plus className="h-4 w-4" />
-                إضافة سؤال
+                {isAr ? 'إضافة سؤال' : 'Add question'}
               </button>
             </div>
 
             {orderedQuestions.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-10 text-center">
                 <ListChecks className="mx-auto mb-3 h-8 w-8 text-[color:var(--ink-2)]" />
-                <p className="text-sm text-[color:var(--ink-2)]">لا توجد أسئلة بعد. أضف أول سؤال لبدء بناء الاختبار.</p>
+                <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'لا توجد أسئلة بعد. أضف أول سؤال لبدء بناء الاختبار.' : 'No questions yet. Add the first question to start building the quiz.'}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -452,9 +453,9 @@ export default function QuizBuilderPage() {
                             {index + 1}
                           </span>
                           <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--ink-2)] border border-[color:var(--line)]">
-                            {TYPE_META[(q.type as QType) ?? 'MCQ']?.label ?? q.type}
+                            {(isAr ? TYPE_META[(q.type as QType) ?? 'MCQ']?.label : TYPE_META[(q.type as QType) ?? 'MCQ']?.labelEn) ?? q.type}
                           </span>
-                          <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} نقطة</span>
+                          <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} {isAr ? 'نقطة' : 'point'}</span>
                         </div>
                         <p className="mt-2 text-sm font-medium text-[var(--ink)]">{q.questionText}</p>
                         {q.type === 'MCQ' && (
@@ -492,7 +493,7 @@ export default function QuizBuilderPage() {
                           onClick={() => openEdit(q)}
                           className="flex items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                         >
-                          تحرير
+                          {isAr ? 'تحرير' : 'Edit'}
                         </button>
                         <button
                           type="button"
@@ -514,7 +515,7 @@ export default function QuizBuilderPage() {
           {editorOpen && (
             <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold text-[var(--ink)]">{editId === '__new__' ? 'سؤال جديد' : 'تعديل السؤال'}</h2>
+                <h2 className="font-bold text-[var(--ink)]">{editId === '__new__' ? (isAr ? 'سؤال جديد' : 'New question') : (isAr ? 'تعديل السؤال' : 'Edit question')}</h2>
                 <button
                   type="button"
                   onClick={() => setEditorOpen(false)}
@@ -526,11 +527,11 @@ export default function QuizBuilderPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className={labelCls}>نوع السؤال</label>
+                  <label className={labelCls}>{isAr ? 'نوع السؤال' : 'Question type'}</label>
                   <SegmentedControl
                     options={[
                       { value: 'MCQ', label: 'اختيار من متعدد' },
-                      { value: 'SHORT_ANSWER', label: 'مقالي' },
+                      { value: 'SHORT_ANSWER', label: (isAr ? 'مقالي' : 'Essay') },
                       { value: 'FILE_UPLOAD', label: 'رفع ملف' },
                     ]}
                     value={qForm.type}
@@ -539,23 +540,23 @@ export default function QuizBuilderPage() {
                 </div>
 
                 <div>
-                  <label className={labelCls}>نص السؤال</label>
+                  <label className={labelCls}>{isAr ? 'نص السؤال' : 'Question text'}</label>
                   <textarea
                     className={`${inputCls} min-h-[80px] resize-y`}
                     value={qForm.questionText}
                     onChange={(e) => setQForm((f) => ({ ...f, questionText: e.target.value }))}
-                    placeholder="اكتب السؤال هنا"
+                    placeholder={isAr ? 'اكتب السؤال هنا' : 'Write the question here'}
                   />
                 </div>
 
                 <div>
-                  <label className={labelCls}>صورة السؤال (اختياري)</label>
+                  <label className={labelCls}>{isAr ? 'صورة السؤال (اختياري)' : 'Question image (optional)'}</label>
                   <div className="flex gap-2">
                     <input
                       className={inputCls}
                       value={qForm.questionImage}
                       onChange={(e) => setQForm((f) => ({ ...f, questionImage: e.target.value }))}
-                      placeholder="رابط الصورة"
+                      placeholder={isAr ? 'رابط الصورة' : 'Image link'}
                     />
                     <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150">
                       {uploadingImg ? (
@@ -578,23 +579,23 @@ export default function QuizBuilderPage() {
                   {qForm.questionImage && (
                     <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--ink-2)]">
                       <ImageIcon className="h-3.5 w-3.5" />
-                      تم إرفاق صورة
+                      {isAr ? 'تم إرفاق صورة' : 'Image attached'}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className={labelCls}>ملاحظة للطالب</label>
+                  <label className={labelCls}>{isAr ? 'ملاحظة للطالب' : 'Note for the student'}</label>
                   <input
                     className={inputCls}
                     value={qForm.note}
                     onChange={(e) => setQForm((f) => ({ ...f, note: e.target.value }))}
-                    placeholder="تظهر فوق الخيارات / حقل الإجابة"
+                    placeholder={isAr ? 'تظهر فوق الخيارات / حقل الإجابة' : 'Appears above the choices / answer field'}
                   />
                 </div>
 
                 <div data-tour="quiz-question-points">
-                  <label className={labelCls}>الدرجة</label>
+                  <label className={labelCls}>{isAr ? 'الدرجة' : 'Score'}</label>
                   <input
                     className={inputCls}
                     type="number"
@@ -607,21 +608,21 @@ export default function QuizBuilderPage() {
                 {qForm.type === 'MCQ' && (
                   <div className="rounded-[12px] border border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-bold text-[var(--ink)]">الخيارات</h3>
+                      <h3 className="text-sm font-bold text-[var(--ink)]">{isAr ? 'الخيارات' : 'Choices'}</h3>
                       <button
                         type="button"
                         onClick={addChoice}
                         className="flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-xs font-bold text-[#5120c8] bg-[#5120c8]/10 hover:bg-[#5120c8]/20 transition-colors duration-150"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        إضافة خيار
+                        {isAr ? 'إضافة خيار' : 'Add choice'}
                       </button>
                     </div>
 
                     <ToggleSwitch
                       checked={qForm.allowMultipleAnswers}
                       onChange={(v) => setQForm((f) => ({ ...f, allowMultipleAnswers: v }))}
-                      label="إجابات متعددة صحيحة"
+                      label={isAr ? 'إجابات متعددة صحيحة' : 'Multiple correct answers'}
                     />
 
                     <div className="mt-3 space-y-2">
@@ -629,7 +630,7 @@ export default function QuizBuilderPage() {
                         <div key={idx} className="flex items-center gap-2">
                           <button
                             type="button"
-                            title={qForm.allowMultipleAnswers ? 'تبديل الصحة' : 'الإجابة الصحيحة'}
+                            title={qForm.allowMultipleAnswers ? (isAr ? 'تبديل الصحة' : 'Toggle correctness') : (isAr ? 'الإجابة الصحيحة' : 'Correct answer')}
                             onClick={() => (qForm.allowMultipleAnswers ? toggleCorrect(idx) : setSingleCorrect(idx))}
                             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
                               c.isCorrect
@@ -643,7 +644,7 @@ export default function QuizBuilderPage() {
                             className={inputCls}
                             value={c.text}
                             onChange={(e) => updateChoice(idx, e.target.value)}
-                            placeholder={`الخيار ${idx + 1}`}
+                            placeholder={(isAr ? `الخيار ${idx + 1}` : `Choice ${idx + 1}`)}
                           />
                           <button
                             type="button"
@@ -658,21 +659,21 @@ export default function QuizBuilderPage() {
                     </div>
                     <p className="mt-2 text-xs text-[color:var(--ink-2)]">
                       {qForm.allowMultipleAnswers
-                        ? 'حدد كل الإجابات الصحيحة. يتطابق الاختيار معها كاملاً للمطابقة.'
-                        : 'حدد إجابة صحيحة واحدة (زر دائري).'}
+                        ? (isAr ? 'حدد كل الإجابات الصحيحة. يتطابق الاختيار معها كاملاً للمطابقة.' : 'Select all the correct answers. The selection must match them completely.')
+                        : (isAr ? 'حدد إجابة صحيحة واحدة (زر دائري).' : 'Select one correct answer (radio button).')}
                     </p>
                   </div>
                 )}
 
                 {qForm.type === 'SHORT_ANSWER' && (
                   <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--ink-2)]">
-                    سؤال مقالي: يكتب الطالب إجابته نصياً، وتُصحَّح يدوياً من صفحة المحاولات.
+                    {isAr ? 'سؤال مقالي: يكتب الطالب إجابته نصياً، وتُصحَّح يدوياً من صفحة المحاولات.' : 'Essay question: the student writes the answer as text, and it is graded manually from the attempts page.'}
                   </p>
                 )}
 
                 {qForm.type === 'FILE_UPLOAD' && (
                   <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--ink-2)]">
-                    سؤال رفع ملفات: يرفع الطالب ملفاً كإجابة، وتُصحَّح يدوياً من صفحة المحاولات.
+                    {isAr ? 'سؤال رفع ملفات: يرفع الطالب ملفاً كإجابة، وتُصحَّح يدوياً من صفحة المحاولات.' : 'File upload question: the student uploads a file as the answer, and it is graded manually from the attempts page.'}
                   </p>
                 )}
 
@@ -687,25 +688,25 @@ export default function QuizBuilderPage() {
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {editId === '__new__' ? 'إضافة السؤال' : 'حفظ التعديلات'}
+                  {editId === '__new__' ? (isAr ? 'إضافة السؤال' : 'Add question') : (isAr ? 'حفظ التعديلات' : 'Save changes')}
                 </button>
               </div>
             </div>
           )}
 
           <div data-tour="quiz-settings-panel" className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-[var(--ink)]">إعدادات الاختبار</h2>
+            <h2 className="mb-4 font-bold text-[var(--ink)]">{isAr ? 'إعدادات الاختبار' : 'Quiz settings'}</h2>
             <div className="space-y-4">
               <div>
-                <label className={labelCls}>عنوان الاختبار (عربي)</label>
+                <label className={labelCls}>{isAr ? 'عنوان الاختبار (عربي)' : 'Quiz title (Arabic)'}</label>
                 <input className={inputCls} value={settings.title} onChange={(e) => setS('title', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>العنوان بالإنجليزية</label>
+                <label className={labelCls}>{isAr ? 'العنوان بالإنجليزية' : 'Title in English'}</label>
                 <input className={inputCls} value={settings.titleAr} onChange={(e) => setS('titleAr', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>الوصف</label>
+                <label className={labelCls}>{isAr ? 'الوصف' : 'Description'}</label>
                 <textarea
                   className={`${inputCls} min-h-[70px] resize-y`}
                   value={settings.description}
@@ -714,37 +715,37 @@ export default function QuizBuilderPage() {
               </div>
               <div className="grid gap-4 grid-cols-2">
                 <div data-tour="quiz-duration">
-                  <label className={labelCls}>المدة (دقيقة)</label>
+                  <label className={labelCls}>{isAr ? 'المدة (دقيقة)' : 'Duration (minutes)'}</label>
                   <input className={inputCls} type="number" min={1} value={settings.durationMinutes} onChange={(e) => setS('durationMinutes', e.target.value)} />
                 </div>
                 <div data-tour="quiz-passing-score">
-                  <label className={labelCls}>درجة النجاح (%)</label>
+                  <label className={labelCls}>{isAr ? 'درجة النجاح (%)' : 'Passing score (%)'}</label>
                   <input className={inputCls} type="number" min={0} max={100} value={settings.passingScore} onChange={(e) => setS('passingScore', e.target.value)} />
                 </div>
                 <div data-tour="quiz-attempts">
-                  <label className={labelCls}>عدد المحاولات</label>
+                  <label className={labelCls}>{isAr ? 'عدد المحاولات' : 'Number of attempts'}</label>
                   <input className={inputCls} type="number" min={1} value={settings.maxAttempts} onChange={(e) => setS('maxAttempts', e.target.value)} />
                 </div>
               </div>
               <div data-tour="quiz-shuffle" className="grid gap-4 sm:grid-cols-2">
-                <ToggleSwitch checked={settings.shuffleQuestions} onChange={(v) => setS('shuffleQuestions', v)} label="خلط الأسئلة" />
-                <ToggleSwitch checked={settings.shuffleChoices} onChange={(v) => setS('shuffleChoices', v)} label="خلط الخيارات" />
-                <ToggleSwitch checked={settings.allowRetake} onChange={(v) => setS('allowRetake', v)} label="السماح بالإعادة" />
-                <ToggleSwitch checked={settings.showResults} onChange={(v) => setS('showResults', v)} label="إظهار النتيجة بعد التسليم" />
+                <ToggleSwitch checked={settings.shuffleQuestions} onChange={(v) => setS('shuffleQuestions', v)} label={isAr ? 'خلط الأسئلة' : 'Shuffle questions'} />
+                <ToggleSwitch checked={settings.shuffleChoices} onChange={(v) => setS('shuffleChoices', v)} label={isAr ? 'خلط الخيارات' : 'Shuffle choices'} />
+                <ToggleSwitch checked={settings.allowRetake} onChange={(v) => setS('allowRetake', v)} label={isAr ? 'السماح بالإعادة' : 'Allow retake'} />
+                <ToggleSwitch checked={settings.showResults} onChange={(v) => setS('showResults', v)} label={isAr ? 'إظهار النتيجة بعد التسليم' : 'Show result after submission'} />
               </div>
 
               <details className="mt-4 rounded-[12px] border border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-4">
-                <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">سياسة إعادة المحاولة</summary>
+                <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">{isAr ? 'سياسة إعادة المحاولة' : 'Retake policy'}</summary>
                 <div className="mt-4 space-y-4">
                   <ToggleSwitch
                     checked={settings.unlimitedRetakes}
                     onChange={(v) => setS('unlimitedRetakes', v)}
-                    label="محاولات غير محدودة"
+                    label={isAr ? 'محاولات غير محدودة' : 'Unlimited attempts'}
                   />
 
                   {!settings.unlimitedRetakes && (
                     <div>
-                      <label className={labelCls}>عدد المحاولات</label>
+                      <label className={labelCls}>{isAr ? 'عدد المحاولات' : 'Number of attempts'}</label>
                       <input
                         className={inputCls}
                         type="number"
@@ -757,7 +758,7 @@ export default function QuizBuilderPage() {
                   )}
 
                   <div>
-                    <label className={labelCls}>حد إعادة المحاولة — {retakeThresholdNum}%</label>
+                    <label className={labelCls}>{isAr ? 'حد إعادة المحاولة —' : 'Retake limit —'} {retakeThresholdNum}%</label>
                     <input
                       type="range"
                       min={0}
@@ -768,15 +769,15 @@ export default function QuizBuilderPage() {
                     />
                     {thresholdInvalid && (
                       <p className="mt-1 text-xs font-semibold text-[#ef4444]">
-                        حد إعادة المحاولة يجب ألا يتجاوز درجة النجاح ({passingNum}%).
+                        {isAr ? 'حد إعادة المحاولة يجب ألا يتجاوز درجة النجاح (' : 'The retake limit must not exceed the passing score ('}{passingNum}%).
                       </p>
                     )}
                   </div>
 
                   <p className="rounded-[10px] bg-[color:var(--surface)] p-3 text-xs leading-5 text-[color:var(--ink-2)]">
                     {settings.unlimitedRetakes
-                      ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${retakeThresholdNum}%.`
-                      : `الطالب يقدّر يعيد المحاولة حتى ${maxAttemptsNum} مرة إذا كانت درجته أقل من ${retakeThresholdNum}%.`}
+                      ? (isAr ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${retakeThresholdNum}%.` : `The student can retake without a limit if their score is below ${retakeThresholdNum}%.`)
+                      : (isAr ? `الطالب يقدّر يعيد المحاولة حتى ${maxAttemptsNum} مرة إذا كانت درجته أقل من ${retakeThresholdNum}%.` : `The student can retake up to ${maxAttemptsNum} times if their score is below ${retakeThresholdNum}%.`)}
                   </p>
                 </div>
               </details>
@@ -787,10 +788,10 @@ export default function QuizBuilderPage() {
 
       <ConfirmModal
         isOpen={!!deleteQuestion}
-        title="حذف السؤال"
-        message="سيتم حذف السؤال من الاختبار نهائياً."
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
+        title={isAr ? 'حذف السؤال' : 'Delete question'}
+        message={isAr ? 'سيتم حذف السؤال من الاختبار نهائياً.' : 'The question will be permanently deleted from the quiz.'}
+        confirmLabel={isAr ? 'حذف' : 'Delete'}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
         confirmDestructive
         onConfirm={confirmDeleteQuestion}
         onCancel={() => setDeleteQuestion(null)}

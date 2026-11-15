@@ -1,10 +1,13 @@
 'use client'
 
+import { useLocale } from 'next-intl'
+
 export default function ReviewsPage() {
+  const isAr = useLocale() === 'ar'
   return (
-    <div className="p-6" dir="rtl">
-      <h1 className="text-3xl font-bold font-madinet text-[var(--ink)] mb-2">التقييمات</h1>
-      <p className="text-[color:var(--ink-2)]">قريباً...</p>
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
+      <h1 className="text-3xl font-bold font-madinet text-[var(--ink)] mb-2">{isAr ? 'التقييمات' : 'Reviews'}</h1>
+      <p className="text-[color:var(--ink-2)]">{isAr ? 'قريباً...' : 'Coming soon...'}</p>
     </div>
   )
 }

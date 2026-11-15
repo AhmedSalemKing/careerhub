@@ -151,7 +151,7 @@ function SearchableSelect({
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder={searchPlaceholder || 'بحث...'}
+                placeholder={searchPlaceholder || (isRtl ? 'بحث...' : 'Search...')}
                 dir={isRtl ? 'rtl' : 'ltr'}
                 style={{
                   width: '100%',
@@ -567,14 +567,14 @@ export default function CreateCoursePage() {
                     <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
                       className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
                     <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--ink-2)] ${isAr ? 'left-3' : 'right-3'}`}>
-                      {getCountryClient() === 'EG' ? 'ج.م' : 'ر.س'}
+                      {getCountryClient() === 'EG' ? (isAr ? 'ج.م' : 'EGP') : (isAr ? 'ر.س' : 'SAR')}
                     </span>
                   </div>
                   <p className="mt-1 text-xs" style={{ color: 'var(--ink-2)' }}>
                     {isAr
                       ? (getCountryClient() === 'EG'
-                          ? 'السعر بالجنيه المصري. سيتم احتساب المكافئ بالدولار عند الحفظ.'
-                          : 'السعر بالريال السعودي. سيتم تحويله للجنيه المصري والدولار عند الحفظ.')
+                          ? (isAr ? 'السعر بالجنيه المصري. سيتم احتساب المكافئ بالدولار عند الحفظ.' : 'Price in Egyptian pounds. The US dollar equivalent is calculated when you save.')
+                          : (isAr ? 'السعر بالريال السعودي. سيتم تحويله للجنيه المصري والدولار عند الحفظ.' : 'Price in Saudi riyals. It is converted to Egyptian pounds and US dollars when you save.'))
                       : 'Price will be converted to all currencies automatically on save.'}
                   </p>
                 </div>
@@ -732,7 +732,7 @@ export default function CreateCoursePage() {
                 <input
                   type="number"
                   min={1}
-                  placeholder="مثال: 90"
+                  placeholder={isAr ? 'مثال: 90' : 'Example: 90'}
                   value={form.liveDuration}
                   onChange={(e) => set('liveDuration', Number(e.target.value))}
                   style={{
@@ -749,14 +749,14 @@ export default function CreateCoursePage() {
                   }}
                 />
                 <p style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.78rem', margin: '6px 0 0' }}>
-                  المدة تقريبية للطلاب فقط — البث لا يُوقف تلقائياً عند انتهائها
+                  {isAr ? 'المدة تقريبية للطلاب فقط — البث لا يُوقف تلقائياً عند انتهائها' : 'The duration is approximate for students only — the stream is not stopped automatically when it ends'}
                 </p>
               </div>
 
               <div className="rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] p-3">
                 <p className="text-xs text-[color:var(--ink-2)] leading-relaxed">
                   {isAr
-                    ? 'يمكنك تسجيل البث يدوياً من خلال زر التسجيل أثناء البث المباشر.'
+                    ? (isAr ? 'يمكنك تسجيل البث يدوياً من خلال زر التسجيل أثناء البث المباشر.' : 'You can record the stream manually with the record button during the live stream.')
                     : 'You can manually record the stream using the recording button during the live session.'}
                 </p>
               </div>
@@ -765,7 +765,7 @@ export default function CreateCoursePage() {
                 <Radio size={16} color="#dc2626" className="shrink-0 mt-0.5" />
                 <p className="text-xs text-red-400 leading-relaxed">
                   {isAr
-                    ? 'ستتمكن من بدء البث من داشبورد المحاضر. سيتم إرسال إشعارات للطلاب عند بدء البث.'
+                    ? (isAr ? 'ستتمكن من بدء البث من داشبورد المحاضر. سيتم إرسال إشعارات للطلاب عند بدء البث.' : 'You will be able to start the stream from the instructor dashboard. Students are notified when the stream starts.')
                     : 'You can start the live from your instructor dashboard. Students will be notified when you go live.'}
                 </p>
               </div>

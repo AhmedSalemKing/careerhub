@@ -29,6 +29,9 @@ type MediaType = 'video' | 'file' | 'image' | null
 
 // ─── Upload Functions ──────────────────────────────────────────────────────
 
+/** Module-level helper: the page language is read from the URL (/ar/... or /en/...). */
+const uploadAr = () => typeof window === 'undefined' || /^\/ar(\/|$)/.test(window.location.pathname)
+
 async function uploadMedia(
   file: File, 
   onProgress: (p: number) => void, 
@@ -55,7 +58,7 @@ async function uploadMedia(
             type: type
           })
         } catch {
-          reject(new Error('استجابة غير صالحة من الخادم'))
+          reject(new Error(uploadAr() ? 'استجابة غير صالحة من الخادم' : 'Invalid response from the server'))
         }
       } else {
         let errorMsg = ''
@@ -63,13 +66,13 @@ async function uploadMedia(
           const errData = JSON.parse(xhr.responseText)
           errorMsg = errData?.message || errData?.error || ''
         } catch {}
-        const uploadErr: Error & { status?: number } = new Error(errorMsg || `فشل رفع ${type}`)
+        const uploadErr: Error & { status?: number } = new Error(errorMsg || (uploadAr() ? `فشل رفع ${type}` : `Failed to upload ${type}`))
         uploadErr.status = xhr.status
         reject(uploadErr)
       }
     }
     
-    xhr.onerror = () => reject(new Error('تعذر الاتصال بالخادم، تحقق من اتصالك'))
+    xhr.onerror = () => reject(new Error(uploadAr() ? 'تعذر الاتصال بالخادم، تحقق من اتصالك' : 'Could not reach the server, check your connection'))
     xhr.open('POST', `${API_URL}/upload/${type}`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
@@ -117,6 +120,7 @@ function AddLectureModal({
   
   const [lessonType, setLessonType] = useState<'VIDEO' | 'LIVE'>('VIDEO')
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const [liveDate, setLiveDate] = useState('')
   const [liveDuration, setLiveDuration] = useState(60)
   // The recording preferences are ON by default: they only store the
@@ -167,7 +171,7 @@ function AddLectureModal({
       set('videoUrl', result.url)
     } catch (err) {
       console.error('Video upload error:', err)
-      setError(getUploadErrorMessage(err, { kind: 'video', isAr: true, maxMB: 500 }))
+      setError(getUploadErrorMessage(err, { kind: 'video', isAr, maxMB: 500 }))
     } finally {
       setUploading(false)
       setUploadType(null)
@@ -186,7 +190,7 @@ function AddLectureModal({
       set('fileName', result.name)
     } catch (err) {
       console.error('File upload error:', err)
-      setError(getUploadErrorMessage(err, { kind: 'file', isAr: true, maxMB: 50 }))
+      setError(getUploadErrorMessage(err, { kind: 'file', isAr, maxMB: 50 }))
     } finally {
       setUploading(false)
       setUploadType(null)
@@ -204,7 +208,7 @@ function AddLectureModal({
       set('imageUrl', result.url)
     } catch (err) {
       console.error('Image upload error:', err)
-      setError(getUploadErrorMessage(err, { kind: 'image', isAr: true, maxMB: 10 }))
+      setError(getUploadErrorMessage(err, { kind: 'image', isAr, maxMB: 10 }))
     } finally {
       setUploading(false)
       setUploadType(null)
@@ -220,17 +224,17 @@ function AddLectureModal({
   // ─── Save Handler ───────────────────────────────────────────────────────
   
   async function handleSave() {
-    if (!form.title.trim()) { setError('اسم المحاضرة مطلوب'); return }
-    if (!form.sectionId) { setError('اختر القسم'); return }
+    if (!form.title.trim()) { setError((isAr ? 'اسم المحاضرة مطلوب' : 'Lecture name is required')); return }
+    if (!form.sectionId) { setError((isAr ? 'اختر القسم' : 'Choose a section')); return }
     
     if (lessonType === 'VIDEO') {
       if (!form.videoUrl && !form.fileUrl && !form.imageUrl) {
-        setError('يجب رفع فيديو أو ملف أو صورة واحدة على الأقل')
+        setError((isAr ? 'يجب رفع فيديو أو ملف أو صورة واحدة على الأقل' : 'Upload at least one video, file or image'))
         return
       }
     } else {
       if (!liveDate) {
-        setError('اختر تاريخ ووقت البث المباشر')
+        setError((isAr ? 'اختر تاريخ ووقت البث المباشر' : 'Choose the live stream date and time'))
         return
       }
     }
@@ -276,7 +280,7 @@ function AddLectureModal({
       onClose()
     } catch (e: any) {
       console.error('Save error:', e)
-      setError(e?.response?.data?.message || e?.message || 'حدث خطأ أثناء الحفظ')
+      setError(e?.response?.data?.message || e?.message || (isAr ? 'حدث خطأ أثناء الحفظ' : 'An error occurred while saving'))
     } finally {
       setSaving(false)
     }
@@ -290,7 +294,7 @@ function AddLectureModal({
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold font-madinet text-[var(--ink)] flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            إضافة محاضرة جديدة
+            {isAr ? 'إضافة محاضرة جديدة' : 'Add a new lecture'}
           </h2>
           <button onClick={onClose} className="rounded-full p-1.5 hover:bg-[color:var(--surface-2)] transition-colors">
             <X className="h-4 w-4 text-[color:var(--ink-2)]" />
@@ -305,8 +309,8 @@ function AddLectureModal({
             borderRadius: '10px', padding: '4px',
           }}>
             {[
-              { value: 'VIDEO' as const, labelAr: 'محاضرة مسجلة' },
-              { value: 'LIVE' as const, labelAr: 'بث مباشر' },
+              { value: 'VIDEO' as const, labelAr: (isAr ? 'محاضرة مسجلة' : 'Recorded lecture') },
+              { value: 'LIVE' as const, labelAr: (isAr ? 'بث مباشر' : 'Live stream') },
             ].map(type => (
               <button
                 key={type.value}
@@ -355,30 +359,30 @@ function AddLectureModal({
 
           {/* Title Input */}
           <div>
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">اسم المحاضرة *</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'اسم المحاضرة *' : 'Lecture name *'}</label>
             <input
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
-              placeholder="مثال: مقدمة في البرمجة"
+              placeholder={isAr ? 'مثال: مقدمة في البرمجة' : 'Example: Introduction to programming'}
               className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">وصف (اختياري)</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'وصف (اختياري)' : 'Description (optional)'}</label>
             <textarea
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               rows={2}
-              placeholder="وصف مختصر للمحتوى..."
+              placeholder={isAr ? 'وصف مختصر للمحتوى...' : 'A short description of the content...'}
               className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors resize-none"
             />
           </div>
 
           {/* Section Select */}
           <div>
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">القسم *</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'القسم *' : 'Section *'}</label>
             <select
               value={form.sectionId}
               onChange={(e) => set('sectionId', e.target.value)}
@@ -396,15 +400,15 @@ function AddLectureModal({
               <div className="space-y-4 pt-2 border-t border-[color:var(--line)]">
                 <label className="block text-sm font-bold text-[var(--ink)] flex items-center gap-2">
                   <Upload className="h-4 w-4 text-primary" />
-                  الوسائط التعليمية
-                  <span className="text-xs font-normal text-[color:var(--ink-2)]">(يمكن رفع أكثر من نوع)</span>
+                  {isAr ? 'الوسائط التعليمية' : 'Learning materials'}
+                  <span className="text-xs font-normal text-[color:var(--ink-2)]">{isAr ? '(يمكن رفع أكثر من نوع)' : '(you can upload more than one type)'}</span>
                 </label>
                 
                 {/* Video Upload */}
                 <div className="relative">
                   <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <Video className="h-3.5 w-3.5" />
-                    فيديو (اختياري)
+                    {isAr ? 'فيديو (اختياري)' : 'Video (optional)'}
                   </label>
                   
                   {form.videoUrl ? (
@@ -414,8 +418,8 @@ function AddLectureModal({
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-green-400">تم رفع الفيديو</p>
-                          <p className="text-xs text-[color:var(--ink-2)]">جاهز للعرض</p>
+                          <p className="text-sm font-medium text-green-400">{isAr ? 'تم رفع الفيديو' : 'Video uploaded'}</p>
+                          <p className="text-xs text-[color:var(--ink-2)]">{isAr ? 'جاهز للعرض' : 'Ready to play'}</p>
                         </div>
                       </div>
                       <button
@@ -438,7 +442,7 @@ function AddLectureModal({
                         <div className="w-full space-y-2">
                           <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
-                            <span className="text-sm">جارٍ رفع الفيديو... {progress}%</span>
+                            <span className="text-sm">{isAr ? 'جارٍ رفع الفيديو...' : 'Uploading video...'} {progress}%</span>
                           </div>
                           <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
@@ -450,8 +454,8 @@ function AddLectureModal({
                       ) : (
                         <>
                           <Video className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
-                          <p className="text-xs text-[color:var(--ink-2)] text-center">MP4, WebM — حد أقصى 500MB</p>
-                          <span className="text-xs text-primary font-medium">اضغط لرفع الفيديو</span>
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">{isAr ? 'MP4, WebM — حد أقصى 500MB' : 'MP4, WebM — max 500MB'}</p>
+                          <span className="text-xs text-primary font-medium">{isAr ? 'اضغط لرفع الفيديو' : 'Click to upload a video'}</span>
                         </>
                       )}
                     </div>
@@ -472,7 +476,7 @@ function AddLectureModal({
                 <div className="relative">
                   <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" />
-                    ملف PDF أو مستند (اختياري)
+                    {isAr ? 'ملف PDF أو مستند (اختياري)' : 'PDF file or document (optional)'}
                   </label>
                   
                   {form.fileUrl ? (
@@ -483,7 +487,7 @@ function AddLectureModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white truncate max-w-[200px]">{form.fileName}</p>
-                          <p className="text-xs text-[color:var(--ink-2)] flex items-center gap-1">ملف مرفوع <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></p>
+                          <p className="text-xs text-[color:var(--ink-2)] flex items-center gap-1">{isAr ? 'ملف مرفوع' : 'File uploaded'} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></p>
                         </div>
                       </div>
                       <button
@@ -506,7 +510,7 @@ function AddLectureModal({
                         <div className="w-full space-y-2">
                           <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
-                            <span className="text-sm">جارٍ رفع الملف... {progress}%</span>
+                            <span className="text-sm">{isAr ? 'جارٍ رفع الملف...' : 'Uploading file...'} {progress}%</span>
                           </div>
                           <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
@@ -518,8 +522,8 @@ function AddLectureModal({
                       ) : (
                         <>
                           <FileText className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
-                          <p className="text-xs text-[color:var(--ink-2)] text-center">PDF, Word, PowerPoint, Excel — حد أقصى 100MB</p>
-                          <span className="text-xs text-white font-medium">اضغط لرفع الملف</span>
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">{isAr ? 'PDF, Word, PowerPoint, Excel — حد أقصى 100MB' : 'PDF, Word, PowerPoint, Excel — max 100MB'}</p>
+                          <span className="text-xs text-white font-medium">{isAr ? 'اضغط لرفع الملف' : 'Click to upload a file'}</span>
                         </>
                       )}
                     </div>
@@ -540,7 +544,7 @@ function AddLectureModal({
                 <div className="relative">
                   <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <Image className="h-3.5 w-3.5" />
-                    صورة (اختياري)
+                    {isAr ? 'صورة (اختياري)' : 'Image (optional)'}
                   </label>
                   
                   {form.imageUrl ? (
@@ -554,8 +558,8 @@ function AddLectureModal({
                           />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-purple-400">تم رفع الصورة</p>
-                          <p className="text-xs text-[color:var(--ink-2)]">جاهزة للعرض</p>
+                          <p className="text-sm font-medium text-purple-400">{isAr ? 'تم رفع الصورة' : 'Image uploaded'}</p>
+                          <p className="text-xs text-[color:var(--ink-2)]">{isAr ? 'جاهزة للعرض' : 'Ready to display'}</p>
                         </div>
                       </div>
                       <button
@@ -578,7 +582,7 @@ function AddLectureModal({
                         <div className="w-full space-y-2">
                           <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
-                            <span className="text-sm">جارٍ رفع الصورة... {progress}%</span>
+                            <span className="text-sm">{isAr ? 'جارٍ رفع الصورة...' : 'Uploading image...'} {progress}%</span>
                           </div>
                           <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
@@ -590,8 +594,8 @@ function AddLectureModal({
                       ) : (
                         <>
                           <Image className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
-                          <p className="text-xs text-[color:var(--ink-2)] text-center">JPG, PNG, WebP, GIF — حد أقصى 10MB</p>
-                          <span className="text-xs text-purple-500 font-medium">اضغط لرفع الصورة</span>
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">{isAr ? 'JPG, PNG, WebP, GIF — حد أقصى 10MB' : 'JPG, PNG, WebP, GIF — max 10MB'}</p>
+                          <span className="text-xs text-purple-500 font-medium">{isAr ? 'اضغط لرفع الصورة' : 'Click to upload an image'}</span>
                         </>
                       )}
                     </div>
@@ -612,21 +616,21 @@ function AddLectureModal({
               {/* Content Type Indicator */}
               {(form.videoUrl || form.fileUrl || form.imageUrl) && (
                 <div className="rounded-xl bg-[color:var(--surface-2)] p-3 flex items-center gap-2">
-                  <span className="text-xs text-[color:var(--ink-2)]">نوع المحتوى:</span>
+                  <span className="text-xs text-[color:var(--ink-2)]">{isAr ? 'نوع المحتوى:' : 'Content type:'}</span>
                   <div className="flex gap-2">
                     {form.videoUrl && (
                       <span className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-400 flex items-center gap-1">
-                        <Video className="h-3 w-3" /> فيديو
+                        <Video className="h-3 w-3" /> {isAr ? 'فيديو' : 'Video'}
                       </span>
                     )}
                     {form.fileUrl && (
                       <span className="text-xs px-2 py-1 rounded-full bg-[#5120c8]/10 text-white flex items-center gap-1">
-                        <FileText className="h-3 w-3" /> ملف
+                        <FileText className="h-3 w-3" /> {isAr ? 'ملف' : 'File'}
                       </span>
                     )}
                     {form.imageUrl && (
                       <span className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-400 flex items-center gap-1">
-                        <Image className="h-3 w-3" /> صورة
+                        <Image className="h-3 w-3" /> {isAr ? 'صورة' : 'Image'}
                       </span>
                     )}
                   </div>
@@ -642,7 +646,7 @@ function AddLectureModal({
               <div>
                 <label style={{ display: 'block', marginBottom: '6px',
                   fontSize: '0.875rem', color: 'var(--ink)' }}>
-                  تاريخ البث المباشر *
+                  {isAr ? 'تاريخ البث المباشر *' : 'Live stream date *'}
                 </label>
                 <input
                   type="datetime-local"
@@ -664,7 +668,7 @@ function AddLectureModal({
               <div>
                 <label style={{ display: 'block', marginBottom: '6px',
                   fontSize: '0.875rem', color: 'var(--ink)' }}>
-                  المدة المتوقعة
+                  {isAr ? 'المدة المتوقعة' : 'Expected duration'}
                 </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[30, 60, 90, 120].map(d => (
@@ -685,7 +689,7 @@ function AddLectureModal({
                         fontFamily: 'inherit',
                       }}
                     >
-                      {d} دقيقة
+                      {d} {isAr ? 'دقيقة' : 'min'}
                     </button>
                   ))}
                 </div>
@@ -694,9 +698,9 @@ function AddLectureModal({
               {/* Save recording + auto publish toggles */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {[
-                  { key: 'saveRecording', labelAr: 'حفظ التسجيل بعد الانتهاء',
+                  { key: 'saveRecording', labelAr: (isAr ? 'حفظ التسجيل بعد الانتهاء' : 'Save the recording after it ends'),
                     value: saveRecording, set: setSaveRecording },
-                  { key: 'autoPublish', labelAr: 'نشر التسجيل تلقائيا',
+                  { key: 'autoPublish', labelAr: (isAr ? 'نشر التسجيل تلقائيا' : 'Publish the recording automatically'),
                     value: autoPublish, set: setAutoPublish },
                 ].map(toggle => (
                   <label key={toggle.key}
@@ -742,8 +746,7 @@ function AddLectureModal({
               }}>
                 <p style={{ color: '#9999b8', fontSize: '0.82rem',
                   margin: 0, lineHeight: 1.6 }}>
-                  سيظهر موعد البث في محتوى الكورس. يمكنك بدء البث من لوحة التحكم
-                  في الوقت المحدد. سيتم إرسال إشعار للطلاب عند بدء البث.
+                  {isAr ? 'سيظهر موعد البث في محتوى الكورس. يمكنك بدء البث من لوحة التحكم في الوقت المحدد. سيتم إرسال إشعار للطلاب عند بدء البث.' : 'The stream time will appear in the course content. You can start the stream from the dashboard at the scheduled time. Students will be notified when the stream starts.'}
                 </p>
               </div>
             </div>
@@ -752,8 +755,8 @@ function AddLectureModal({
           {/* Free Toggle */}
           <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-2)] px-4 py-3">
             <div>
-              <div className="text-sm font-medium text-[var(--ink)]">محاضرة مجانية؟</div>
-              <div className="text-xs text-[color:var(--ink-2)]">تُعرض للطلاب غير المشتركين</div>
+              <div className="text-sm font-medium text-[var(--ink)]">{isAr ? 'محاضرة مجانية؟' : 'Free lecture?'}</div>
+              <div className="text-xs text-[color:var(--ink-2)]">{isAr ? 'تُعرض للطلاب غير المشتركين' : 'Shown to students who are not enrolled'}</div>
             </div>
             <button
               type="button"
@@ -782,7 +785,7 @@ function AddLectureModal({
             onClick={onClose}
             className="flex-1 rounded-xl border border-[color:var(--line)] py-2.5 text-sm font-medium text-[var(--ink)] hover:bg-[color:var(--surface-2)] transition-colors"
           >
-            إلغاء
+            {isAr ? 'إلغاء' : 'Cancel'}
           </button>
           <button
             type="button"
@@ -793,12 +796,12 @@ function AddLectureModal({
             {saving ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                جاري الحفظ...
+                {isAr ? 'جاري الحفظ...' : 'Saving...'}
               </>
             ) : (
               <>
                 <CheckCircle className="h-4 w-4" />
-                حفظ المحاضرة
+                {isAr ? 'حفظ المحاضرة' : 'Save lecture'}
               </>
             )}
           </button>
@@ -811,6 +814,7 @@ function AddLectureModal({
 // ─── Start Live Button ────────────────────────────────────────────────────────
 
 function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarted }: { lessonId: string; courseId: string; isLive: boolean; isEnded?: boolean; onStarted: () => void }) {
+  const isAr = useLocale() === 'ar'
   const [loading, setLoading] = useState(false)
   const [ending, setEnding] = useState(false)
   const [endedLocally, setEndedLocally] = useState(false)
@@ -837,7 +841,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
   }
 
   async function handleEnd() {
-    if (!window.confirm('هل تريد إنهاء البث المباشر؟')) return
+    if (!window.confirm((isAr ? 'هل تريد إنهاء البث المباشر؟' : 'Do you want to end the live stream?'))) return
     setEnding(true)
     try {
       await post(`/live/end/${courseId}`, {})
@@ -865,7 +869,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
             <line x1="15" y1="9" x2="9" y2="15" />
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
-          البث منتهي
+          {isAr ? 'البث منتهي' : 'Stream ended'}
         </div>
         <button
           type="button"
@@ -885,7 +889,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
             <polyline points="23 4 23 10 17 10" />
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
           </svg>
-          بث جديد
+          {isAr ? 'بث جديد' : 'New stream'}
         </button>
       </div>
     )
@@ -913,7 +917,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
         ) : (
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
         )}
-        بدء البث
+        {isAr ? 'بدء البث' : 'Start stream'}
       </button>
 
       <button
@@ -932,7 +936,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
         }}
       >
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
-        {ending ? '...' : 'إنهاء البث'}
+        {ending ? '...' : (isAr ? 'إنهاء البث' : 'End stream')}
       </button>
     </div>
   )
@@ -941,6 +945,7 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
 // ─── Live Course Manage View ─────────────────────────────────────────────────
 
 function LiveManageView({ courseId, locale }: { courseId: string; locale: string }) {
+  const isAr = locale === 'ar'
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
   const [copied, setCopied] = useState(false)
@@ -990,7 +995,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
   const viewerCount = Number(session?.viewerCount ?? 0)
   const enrollmentsCount = Number(course?.enrollmentsCount ?? 0)
 
-  const tabs = ['عامة نظرة', 'التسجيل', 'المحاضرين', `الاشتراكات (${enrollmentsCount})`, 'الإعدادات']
+  const tabs = [(isAr ? 'عامة نظرة' : 'Overview'), (isAr ? 'التسجيل' : 'Recording'), (isAr ? 'المحاضرين' : 'Presenters'), (isAr ? `الاشتراكات (${enrollmentsCount})` : `Subscriptions (${enrollmentsCount})`), (isAr ? 'الإعدادات' : 'Settings')]
 
   if (isLoading) {
     return (
@@ -1009,7 +1014,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             <path d="M21 12a9 9 0 11-6.219-8.56" />
           </svg>
           <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-          جارٍ تحميل بيانات البث...
+          {isAr ? 'جارٍ تحميل بيانات البث...' : 'Loading stream data...'}
         </div>
       </div>
     )
@@ -1125,15 +1130,15 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
     }}>
       {/* Breadcrumb */}
       <div style={{ color: '#9ca3af', fontSize: '0.8rem', fontWeight: 300, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>لوحة التحكم</span>
+        <span>{isAr ? 'لوحة التحكم' : 'Dashboard'}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
-        <span>الكورسات</span>
+        <span>{isAr ? 'الكورسات' : 'Courses'}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
-        <span>إدارة اللايف</span>
+        <span>{isAr ? 'إدارة اللايف' : 'Live management'}</span>
       </div>
 
       {/* Page header */}
@@ -1146,15 +1151,15 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               borderRadius: 999, padding: '3px 12px', fontSize: '0.78rem', fontWeight: 500,
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-              {publishStatus === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+              {publishStatus === 'PUBLISHED' ? (isAr ? 'منشور' : 'Published') : (isAr ? 'مسودة' : 'Draft')}
             </span>
           </div>
           <h1 style={{ fontWeight: 700, fontSize: '1.8rem', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
-            إدارة البث المباشر
+            {isAr ? 'إدارة البث المباشر' : 'Live stream management'}
             <SvgRadio />
           </h1>
           <p style={{ fontWeight: 300, color: '#9ca3af', margin: '4px 0 0', fontSize: '0.9rem' }}>
-            تابع تفاصيل البث المباشر وأدر التسجيل الخاص به
+            {isAr ? 'تابع تفاصيل البث المباشر وأدر التسجيل الخاص به' : 'Follow the live stream details and manage its recording'}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -1171,7 +1176,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             }}
           >
             <Share2 size={14} />
-            {copied ? 'تم النسخ' : 'مشاركة رابط البث'}
+            {copied ? (isAr ? 'تم النسخ' : 'Copied') : (isAr ? 'مشاركة رابط البث' : 'Share stream link')}
           </button>
           <button
             onClick={() => router.push(`/${locale}/dashboard/my-courses`)}
@@ -1184,7 +1189,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             }}
           >
             <SvgBackArrow />
-            العودة إلى الكورسات
+            {isAr ? 'العودة إلى الكورسات' : 'Back to courses'}
           </button>
         </div>
       </div>
@@ -1224,13 +1229,13 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               {course?.title}
             </h2>
             <p style={{ fontWeight: 300, color: '#9ca3af', margin: '0 0 12px', fontSize: '0.85rem' }}>
-              {course?.description || 'كورس تجريبي'}
+              {course?.description || (isAr ? 'كورس تجريبي' : 'Sample course')}
             </p>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
               {[
-                { icon: <SvgCalendar />, label: 'تاريخ البث', value: liveDate },
-                { icon: <SvgClock />, label: 'الوقت', value: liveTime },
-                { icon: <SvgHourglass />, label: 'المدة', value: `${duration} دقيقة` },
+                { icon: <SvgCalendar />, label: (isAr ? 'تاريخ البث' : 'Stream date'), value: liveDate },
+                { icon: <SvgClock />, label: (isAr ? 'الوقت' : 'Time'), value: liveTime },
+                { icon: <SvgHourglass />, label: (isAr ? 'المدة' : 'Duration'), value: (isAr ? `${duration} دقيقة` : `${duration} min`) },
               ].map(({ icon, label, value }) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: '0.85rem', color: '#7c3aed' }}>{icon}</span>
@@ -1259,10 +1264,10 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             </div>
             <div>
               <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                {liveStatus === 'LIVE' ? 'مباشر الآن'
-                  : liveStatus === 'ENDED' ? 'انتهى البث'
-                    : liveStatus === 'FAILED' ? 'تعذّر البث'
-                      : 'مجدول'}
+                {liveStatus === 'LIVE' ? (isAr ? 'مباشر الآن' : 'Live now')
+                  : liveStatus === 'ENDED' ? (isAr ? 'انتهى البث' : 'Stream ended')
+                    : liveStatus === 'FAILED' ? (isAr ? 'تعذّر البث' : 'Stream failed')
+                      : (isAr ? 'مجدول' : 'Scheduled')}
               </div>
               {liveStatus === 'ENDED' && endedAt && (
                 <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.75rem' }}>
@@ -1280,7 +1285,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
                 <SvgPlay />
-                مشاهدة التسجيل
+                {isAr ? 'مشاهدة التسجيل' : 'Watch the recording'}
               </button>
               <button onClick={() => navigator.clipboard.writeText(recUrl)} style={{
                 background: 'transparent', color: '#9ca3af',
@@ -1290,7 +1295,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
                 <SvgCopy />
-                نسخ رابط التسجيل
+                {isAr ? 'نسخ رابط التسجيل' : 'Copy the recording link'}
               </button>
             </div>
           )}
@@ -1327,26 +1332,26 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             borderRadius: 14, padding: 20,
           }}>
             <h3 style={{ fontWeight: 500, fontSize: '1rem', margin: '0 0 16px', textAlign: 'right' }}>
-              تفاصيل البث
+              {isAr ? 'تفاصيل البث' : 'Stream details'}
             </h3>
             {[
               {
-                label: 'حالة البث',
+                label: (isAr ? 'حالة البث' : 'Stream status'),
                 badge: liveStatus === 'ENDED'
-                  ? { text: 'تم الانتهاء', bg: '#10b981', color: '#fff' }
+                  ? { text: (isAr ? 'تم الانتهاء' : 'Ended'), bg: '#10b981', color: '#fff' }
                   : liveStatus === 'LIVE'
-                    ? { text: 'مباشر الآن', bg: '#ef4444', color: '#fff' }
-                    : { text: 'مجدول', bg: '#f59e0b22', color: '#f59e0b' }
+                    ? { text: (isAr ? 'مباشر الآن' : 'Live now'), bg: '#ef4444', color: '#fff' }
+                    : { text: (isAr ? 'مجدول' : 'Scheduled'), bg: '#f59e0b22', color: '#f59e0b' }
               },
-              { label: 'تاريخ البث', value: liveDate },
-              { label: 'وقت البدء', value: liveTime },
-              { label: 'المدة الفعلية', value: `${duration} دقيقة` },
-              { label: 'المشاهدون أثناء البث', value: String(viewerCount) },
+              { label: (isAr ? 'تاريخ البث' : 'Stream date'), value: liveDate },
+              { label: (isAr ? 'وقت البدء' : 'Start time'), value: liveTime },
+              { label: (isAr ? 'المدة الفعلية' : 'Actual duration'), value: (isAr ? `${duration} دقيقة` : `${duration} min`) },
+              { label: (isAr ? 'المشاهدون أثناء البث' : 'Viewers during the stream'), value: String(viewerCount) },
               {
-                label: 'حالة التسجيل',
+                label: (isAr ? 'حالة التسجيل' : 'Recording status'),
                 badge: recUrl
-                  ? { text: 'جاهز للمشاهدة', bg: '#7c3aed22', color: '#a78bfa' }
-                  : { text: 'جارٍ التجهيز', bg: '#f59e0b22', color: '#f59e0b' }
+                  ? { text: (isAr ? 'جاهز للمشاهدة' : 'Ready to watch'), bg: '#7c3aed22', color: '#a78bfa' }
+                  : { text: (isAr ? 'جارٍ التجهيز' : 'Processing'), bg: '#f59e0b22', color: '#f59e0b' }
               },
             ].map(({ label, value, badge }) => (
               <div key={label} style={{
@@ -1361,9 +1366,9 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                     fontSize: '0.78rem', fontWeight: 500,
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}>
-                    {badge.text === 'جارٍ التجهيز' && <Loader2 size={12} className="animate-spin" />}
+                    {badge.text === (isAr ? 'جارٍ التجهيز' : 'Processing') && <Loader2 size={12} className="animate-spin" />}
                     {badge.text}
-                    {badge.text === 'تم الانتهاء' && <SvgCheck />}
+                    {badge.text === (isAr ? 'تم الانتهاء' : 'Ended') && <SvgCheck />}
                   </span>
                 ) : (
                   <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{value}</div>
@@ -1377,7 +1382,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             }}>
               <SvgInfo />
               <span style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.78rem' }}>
-                يمكنك مشاهدة تسجيل البث المباشر أو مشاركته مع طلابك من خلال صفحة الكورس.
+                {isAr ? 'يمكنك مشاهدة تسجيل البث المباشر أو مشاركته مع طلابك من خلال صفحة الكورس.' : 'You can watch the live stream recording or share it with your students through the course page.'}
               </span>
             </div>
 
@@ -1387,7 +1392,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               padding: '10px 0', borderTop: '1px solid #1e2333', marginTop: 12,
             }}>
               <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.82rem', flex: 1 }}>
-                المحاضر
+                {isAr ? 'المحاضر' : 'Presenter'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {instructor?.avatar ? (
@@ -1424,7 +1429,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 display: 'flex', alignItems: 'center', gap: 8, textAlign: 'right',
               }}>
                 <SvgCamera />
-                التسجيل
+                {isAr ? 'التسجيل' : 'Recording'}
               </h3>
               {recUrl ? (
                 <>
@@ -1450,10 +1455,10 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                     </div>
                   </div>
                   <h4 style={{ fontWeight: 500, fontSize: '0.95rem', margin: '0 0 4px' }}>
-                    تسجيل البث المباشر
+                    {isAr ? 'تسجيل البث المباشر' : 'Live stream recording'}
                   </h4>
                   <p style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.8rem', margin: '0 0 12px' }}>
-                    التسجيل متاح الآن بجودة عالية لمراجعة المحتوى في أي وقت.
+                    {isAr ? 'التسجيل متاح الآن بجودة عالية لمراجعة المحتوى في أي وقت.' : 'The recording is now available in high quality to review the content at any time.'}
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => window.open(recUrl, '_blank')} style={{
@@ -1463,7 +1468,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}>
                       <SvgExternal />
-                      فتح التسجيل
+                      {isAr ? 'فتح التسجيل' : 'Open the recording'}
                     </button>
                     <button onClick={() => navigator.clipboard.writeText(recUrl)} style={{
                       flex: 1, background: 'transparent', color: '#9ca3af',
@@ -1473,7 +1478,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}>
                       <SvgCopy />
-                      مشاركة التسجيل
+                      {isAr ? 'مشاركة التسجيل' : 'Share the recording'}
                     </button>
                   </div>
                 </>
@@ -1485,12 +1490,12 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                     <SvgHourglass />
                   </div>
                   <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                    {liveStatus === 'ENDED' ? 'جارٍ تجهيز التسجيل...' : 'التسجيل غير متاح بعد'}
+                    {liveStatus === 'ENDED' ? (isAr ? 'جارٍ تجهيز التسجيل...' : 'Preparing the recording...') : (isAr ? 'التسجيل غير متاح بعد' : 'Recording not available yet')}
                   </div>
                   <div style={{ fontWeight: 300, fontSize: '0.8rem' }}>
                     {liveStatus === 'ENDED'
-                      ? 'قد يستغرق ذلك بضع دقائق بعد انتهاء البث.'
-                      : 'التسجيل يكون متاحاً بعد انتهاء البث المباشر.'}
+                      ? (isAr ? 'قد يستغرق ذلك بضع دقائق بعد انتهاء البث.' : 'This may take a few minutes after the stream ends.')
+                      : (isAr ? 'التسجيل يكون متاحاً بعد انتهاء البث المباشر.' : 'The recording is available after the live stream ends.')}
                   </div>
                 </div>
               )}
@@ -1504,10 +1509,10 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             }}>
               <div>
                 <div style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: 3 }}>
-                  الانتقال إلى صفحة الكورس
+                  {isAr ? 'الانتقال إلى صفحة الكورس' : 'Go to the course page'}
                 </div>
                 <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.78rem' }}>
-                  يمكنك مشاهدة التسجيل داخل صفحة الكورس
+                  {isAr ? 'يمكنك مشاهدة التسجيل داخل صفحة الكورس' : 'You can watch the recording inside the course page'}
                 </div>
               </div>
               <button
@@ -1524,7 +1529,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 }}
               >
                 <SvgGradCap />
-                الذهاب إلى الكورس
+                {isAr ? 'الذهاب إلى الكورس' : 'Go to the course'}
               </button>
             </div>
           </div>
@@ -1544,9 +1549,9 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               <div style={{ marginBottom: 12 }}>
                 <SvgCamera />
               </div>
-              <div style={{ fontWeight: 500, marginBottom: 6 }}>لا يوجد تسجيل بعد</div>
+              <div style={{ fontWeight: 500, marginBottom: 6 }}>{isAr ? 'لا يوجد تسجيل بعد' : 'No recording yet'}</div>
               <div style={{ fontWeight: 300, fontSize: '0.85rem' }}>
-                يظهر التسجيل هنا بعد انتهاء البث المباشر ومعالجته.
+                {isAr ? 'يظهر التسجيل هنا بعد انتهاء البث المباشر ومعالجته.' : 'The recording appears here after the live stream ends and is processed.'}
               </div>
             </div>
           )}
@@ -1560,7 +1565,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
           borderRadius: 14, padding: 40, textAlign: 'center', color: '#9ca3af',
         }}>
           <div style={{ fontWeight: 300, fontSize: '0.9rem' }}>
-            قريباً — سيتم إضافة هذا القسم في تحديث قادم.
+            {isAr ? 'قريباً — سيتم إضافة هذا القسم في تحديث قادم.' : 'Coming soon — this section will be added in an upcoming update.'}
           </div>
         </div>
       )}
@@ -1572,6 +1577,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
 // ─── Main Manage Page ─────────────────────────────────────────────────────────
 
 export default function ManageCoursePage() {
+  const isAr = useLocale() === 'ar'
   const params = useParams()
   const router = useRouter()
   const locale = useLocale()
@@ -1605,11 +1611,11 @@ export default function ManageCoursePage() {
   }
 
   const tabs: { key: Tab; label: string; icon: typeof BookOpen }[] = [
-    { key: 'content', label: 'المحتوى', icon: BookOpen },
-    { key: 'lectures', label: 'المحاضرات', icon: Video },
-    { key: 'quizzes', label: 'الاختبارات', icon: FileQuestion },
-    { key: 'students', label: 'الطلاب', icon: Users },
-    { key: 'settings', label: 'الإعدادات', icon: Settings },
+    { key: 'content', label: (isAr ? 'المحتوى' : 'Content'), icon: BookOpen },
+    { key: 'lectures', label: (isAr ? 'المحاضرات' : 'Lectures'), icon: Video },
+    { key: 'quizzes', label: (isAr ? 'الاختبارات' : 'Quizzes'), icon: FileQuestion },
+    { key: 'students', label: (isAr ? 'الطلاب' : 'Students'), icon: Users },
+    { key: 'settings', label: (isAr ? 'الإعدادات' : 'Settings'), icon: Settings },
   ]
 
   if (isLoading) {
@@ -1624,7 +1630,7 @@ export default function ManageCoursePage() {
   if (!course) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--ink-2)]">الكورس غير موجود أو ليس لديك صلاحية إدارته.</p>
+        <p className="text-[color:var(--ink-2)]">{isAr ? 'الكورس غير موجود أو ليس لديك صلاحية إدارته.' : 'The course does not exist or you do not have permission to manage it.'}</p>
       </div>
     )
   }
@@ -1658,13 +1664,13 @@ export default function ManageCoursePage() {
                   : 'bg-amber-500/20 text-amber-400'
               }`}
             >
-              {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+              {course.status === 'PUBLISHED' ? (isAr ? 'منشور' : 'Published') : (isAr ? 'مسودة' : 'Draft')}
             </span>
           </div>
           <div className="mt-2 flex gap-4 text-sm text-[color:var(--ink-2)]">
-            <span>{course._count?.enrollments ?? 0} مستخدم</span>
+            <span>{course._count?.enrollments ?? 0} {isAr ? 'مستخدم' : 'User'}</span>
             <span>·</span>
-            <span>{sections.length} قسم</span>
+            <span>{sections.length} {isAr ? 'قسم' : 'sections'}</span>
           </div>
         </div>
 
@@ -1697,10 +1703,10 @@ export default function ManageCoursePage() {
         {/* ── Tab: Content ── */}
         {activeTab === 'content' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">أقسام الكورس</h2>
+            <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">{isAr ? 'أقسام الكورس' : 'Course sections'}</h2>
             {sections.length === 0 && (
               <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-8 text-center text-sm text-[color:var(--ink-2)]">
-                لا توجد أقسام بعد. أضف قسماً أولاً.
+                {isAr ? 'لا توجد أقسام بعد. أضف قسماً أولاً.' : 'No sections yet. Add a section first.'}
               </div>
             )}
             {sections.map((sec, i) => (
@@ -1711,7 +1717,7 @@ export default function ManageCoursePage() {
                   </span>
                   <h3 className="font-semibold text-[var(--ink)]">{sec.title}</h3>
                   <span className="text-xs text-[color:var(--ink-2)] mr-auto">
-                    {sec.lessons?.length ?? 0} محاضرة
+                    {sec.lessons?.length ?? 0} {isAr ? 'محاضرة' : 'lectures'}
                   </span>
                 </div>
                 {sec.lessons?.length > 0 && (
@@ -1749,24 +1755,24 @@ export default function ManageCoursePage() {
                                 width: '5px', height: '5px', borderRadius: '50%',
                                 background: isLiveStatus(lesson.liveStatus, 'live') ? '#ef4444' : '#f87171',
                               }}/>
-                              {isLiveStatus(lesson.liveStatus, 'live') ? 'جار البث' :
-                               isLiveStatus(lesson.liveStatus, 'ended') ? 'انتهى البث' :
-                               lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : 'بث مباشر'}
+                              {isLiveStatus(lesson.liveStatus, 'live') ? (isAr ? 'جار البث' : 'Live') :
+                               isLiveStatus(lesson.liveStatus, 'ended') ? (isAr ? 'انتهى البث' : 'Stream ended') :
+                               lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : (isAr ? 'بث مباشر' : 'Live stream')}
                             </span>
                           )}
                           {lesson.videoUrl && (
-                            <span className="text-xs rounded-full bg-red-500/10 text-red-400 px-1.5 py-0.5">فيديو</span>
+                            <span className="text-xs rounded-full bg-red-500/10 text-red-400 px-1.5 py-0.5">{isAr ? 'فيديو' : 'Video'}</span>
                           )}
                           {lesson.fileUrl && (
-                            <span className="text-xs rounded-full bg-[#5120c8]/10 text-white px-1.5 py-0.5">ملف</span>
+                            <span className="text-xs rounded-full bg-[#5120c8]/10 text-white px-1.5 py-0.5">{isAr ? 'ملف' : 'File'}</span>
                           )}
                           {lesson.imageUrl && (
-                            <span className="text-xs rounded-full bg-purple-500/10 text-purple-400 px-1.5 py-0.5">صورة</span>
+                            <span className="text-xs rounded-full bg-purple-500/10 text-purple-400 px-1.5 py-0.5">{isAr ? 'صورة' : 'Image'}</span>
                           )}
                         </div>
                         
                         {lesson.isFree && (
-                          <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5">مجانية</span>
+                          <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5">{isAr ? 'مجانية' : 'Free'}</span>
                         )}
                       </div>
                     ))}
@@ -1781,7 +1787,7 @@ export default function ManageCoursePage() {
                 value={addSectionTitle}
                 onChange={(e) => setAddSectionTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
-                placeholder="اسم القسم الجديد"
+                placeholder={isAr ? 'اسم القسم الجديد' : 'New section name'}
                 className="flex-1 rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
               />
               <button
@@ -1796,7 +1802,7 @@ export default function ManageCoursePage() {
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                إضافة قسم
+                {isAr ? 'إضافة قسم' : 'Add section'}
               </button>
             </div>
           </div>
@@ -1806,7 +1812,7 @@ export default function ManageCoursePage() {
         {activeTab === 'lectures' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">المحاضرات</h2>
+              <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">{isAr ? 'المحاضرات' : 'Lectures'}</h2>
               {sections.length > 0 && (
                 <button
                   type="button"
@@ -1814,14 +1820,14 @@ export default function ManageCoursePage() {
                   className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all"
                 >
                   <Plus className="h-4 w-4" />
-                  إضافة محاضرة
+                  {isAr ? 'إضافة محاضرة' : 'Add lecture'}
                 </button>
               )}
             </div>
 
             {sections.length === 0 && (
               <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-8 text-center text-sm text-[color:var(--ink-2)]">
-                أضف أقسام للكورس أولاً من تبويب "المحتوى"، ثم أضف المحاضرات.
+                {isAr ? 'أضف أقسام للكورس أولاً من تبويب' : 'Add sections to the course first from the tab'} (isAr ? 'المحتوى' : 'Content'){isAr ? '، ثم أضف المحاضرات.' : ', then add the lectures.'}
               </div>
             )}
 
@@ -1830,7 +1836,7 @@ export default function ManageCoursePage() {
                 <div className="flex items-center gap-3 px-5 py-3 bg-[color:var(--surface-2)] border-b border-[color:var(--line)]">
                   <BookOpen className="h-4 w-4 text-primary" />
                   <h3 className="font-semibold text-[var(--ink)] text-sm">{sec.title}</h3>
-                  <span className="text-xs text-[color:var(--ink-2)] mr-auto">{sec.lessons?.length ?? 0} محاضرة</span>
+                  <span className="text-xs text-[color:var(--ink-2)] mr-auto">{sec.lessons?.length ?? 0} {isAr ? 'محاضرة' : 'lectures'}</span>
                 </div>
                 {sec.lessons?.length > 0 ? (
                   <div className="divide-y divide-[color:var(--line)]">
@@ -1880,31 +1886,31 @@ export default function ManageCoursePage() {
                                   width: '5px', height: '5px', borderRadius: '50%',
                                   background: isLiveStatus(lesson.liveStatus, 'live') ? '#ef4444' : '#f87171',
                                 }}/>
-                                {isLiveStatus(lesson.liveStatus, 'live') ? 'جار البث الآن' :
-                                 isLiveStatus(lesson.liveStatus, 'ended') ? 'انتهى البث' :
-                                 lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : 'بث مباشر'}
+                                {isLiveStatus(lesson.liveStatus, 'live') ? (isAr ? 'جار البث الآن' : 'Live now') :
+                                 isLiveStatus(lesson.liveStatus, 'ended') ? (isAr ? 'انتهى البث' : 'Stream ended') :
+                                 lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : (isAr ? 'بث مباشر' : 'Live stream')}
                               </span>
                             )}
                             {lesson.videoUrl && (
                               <span className="text-xs text-green-400 flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> فيديو
+                                <CheckCircle className="h-3 w-3" /> {isAr ? 'فيديو' : 'Video'}
                               </span>
                             )}
                             {lesson.fileUrl && (
                               <span className="text-xs text-white flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> {lesson.fileName || 'ملف'}
+                                <CheckCircle className="h-3 w-3" /> {lesson.fileName || (isAr ? 'ملف' : 'File')}
                               </span>
                             )}
                             {lesson.imageUrl && (
                               <span className="text-xs text-purple-400 flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> صورة
+                                <CheckCircle className="h-3 w-3" /> {isAr ? 'صورة' : 'Image'}
                               </span>
                             )}
                           </div>
                         </div>
                         
                         {lesson.isFree && (
-                          <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
+                          <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">{isAr ? 'مجانية' : 'Free'}</span>
                         )}
                         {(lesson.type === 'LIVE') && (
                           <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={isLiveStatus(lesson.liveStatus, 'live')} isEnded={isLiveStatus(lesson.liveStatus, 'ended')} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
@@ -1913,7 +1919,7 @@ export default function ManageCoursePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="px-5 py-4 text-sm text-[color:var(--ink-2)]">لا توجد محاضرات في هذا القسم بعد.</div>
+                  <div className="px-5 py-4 text-sm text-[color:var(--ink-2)]">{isAr ? 'لا توجد محاضرات في هذا القسم بعد.' : 'There are no lectures in this section yet.'}</div>
                 )}
               </div>
             ))}
@@ -1924,12 +1930,12 @@ export default function ManageCoursePage() {
         {activeTab === 'students' && (
           <div className="space-y-4">
             <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">
-              الطلاب ({course._count?.enrollments ?? 0})
+              {isAr ? 'الطلاب (' : 'Students ('}{course._count?.enrollments ?? 0})
             </h2>
             {(course.enrollments ?? []).length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-6 text-center">
                 <Users className="h-10 w-10 mx-auto opacity-20 mb-3" />
-                <p className="text-sm text-[color:var(--ink-2)]">لا يوجد طلاب مسجلون بعد</p>
+                <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'لا يوجد طلاب مسجلون بعد' : 'No students enrolled yet'}</p>
               </div>
             ) : (
               <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] overflow-hidden">
@@ -1937,7 +1943,7 @@ export default function ManageCoursePage() {
                   {course.enrollments.map((en: any) => {
                     const firstName = en.user?.profile?.firstName ?? ''
                     const lastName = en.user?.profile?.lastName ?? ''
-                    const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || '؟'
+                    const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || (isAr ? '؟' : '?')
                     return (
                       <div key={en.id} className="flex items-center gap-3 px-5 py-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
@@ -1950,7 +1956,7 @@ export default function ManageCoursePage() {
                           <div className="text-xs text-[color:var(--ink-2)]">{en.user?.email}</div>
                         </div>
                         <div className="mr-auto text-xs text-[color:var(--ink-2)]">
-                          تقدم: {Math.round(en.progress ?? 0)}%
+                          {isAr ? 'تقدم:' : 'Progress:'} {Math.round(en.progress ?? 0)}%
                         </div>
                       </div>
                     )
@@ -2110,21 +2116,21 @@ function CourseSettingsTab({
     }
   }
 
-  const isAr = true
+  const isAr = useLocale() === 'ar'
 
   const LEVELS = [
-    { value: 'BEGINNER', label: 'مبتدئ' },
-    { value: 'INTERMEDIATE', label: 'متوسط' },
-    { value: 'ADVANCED', label: 'متقدم' },
+    { value: 'BEGINNER', label: (isAr ? 'مبتدئ' : 'Beginner') },
+    { value: 'INTERMEDIATE', label: (isAr ? 'متوسط' : 'Intermediate') },
+    { value: 'ADVANCED', label: (isAr ? 'متقدم' : 'Advanced') },
   ]
 
   return (
     <div className="max-w-lg space-y-5">
-      <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">إعدادات الكورس</h2>
+      <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">{isAr ? 'إعدادات الكورس' : 'Course settings'}</h2>
 
       {[
-        { label: 'العنوان', key: 'title' as const },
-        { label: 'العنوان بالعربية', key: 'titleAr' as const },
+        { label: (isAr ? 'العنوان' : 'Title'), key: 'title' as const },
+        { label: (isAr ? 'العنوان بالعربية' : 'Title in Arabic'), key: 'titleAr' as const },
       ].map((field) => (
         <div key={field.key}>
           <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{field.label}</label>
@@ -2137,7 +2143,7 @@ function CourseSettingsTab({
       ))}
 
       <div>
-        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">الوصف</label>
+        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'الوصف' : 'Description'}</label>
         <textarea
           value={form.description}
           onChange={(e) => setF('description', e.target.value)}
@@ -2149,12 +2155,12 @@ function CourseSettingsTab({
       {/* Price and level are managed by admin only — hidden from instructor */}
 
       <div>
-        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">الحالة</label>
+        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'الحالة' : 'Status'}</label>
         <div className="flex gap-3">
           {[
-            { value: 'DRAFT', label: 'مسودة' },
-            { value: 'PUBLISHED', label: 'منشور' },
-            { value: 'ARCHIVED', label: 'مؤرشف' },
+            { value: 'DRAFT', label: (isAr ? 'مسودة' : 'Draft') },
+            { value: 'PUBLISHED', label: (isAr ? 'منشور' : 'Published') },
+            { value: 'ARCHIVED', label: (isAr ? 'مؤرشف' : 'Archived') },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -2183,15 +2189,15 @@ function CourseSettingsTab({
           }}
         >
           <label className="block text-sm font-medium text-[var(--ink)] mb-1">
-            المسارات المهنية
+            {isAr ? 'المسارات المهنية' : 'Career paths'}
           </label>
           <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
-            يظهر الكورس فقط في المسارات المحددة. اترك القائمة فارغة لإزالته من كل المسارات.
+            {isAr ? 'يظهر الكورس فقط في المسارات المحددة. اترك القائمة فارغة لإزالته من كل المسارات.' : 'The course appears only in the selected paths. Leave the list empty to remove it from all paths.'}
           </p>
           <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
             {(careerPathOptions as any[]).length === 0 ? (
               <div style={{ fontSize: '0.8rem', color: 'var(--ink-2)' }}>
-                لا توجد مسارات متاحة
+                {isAr ? 'لا توجد مسارات متاحة' : 'No paths available'}
               </div>
             ) : (
               (careerPathOptions as any[]).map((p: any) => {
@@ -2220,8 +2226,8 @@ function CourseSettingsTab({
           </div>
           <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
             {careerPaths.length > 0
-              ? `المحدد (${careerPaths.length}): ${careerPaths.join('، ')}`
-              : 'لا مسارات محددة'}
+              ? (isAr ? `المحدد (${careerPaths.length}): ${careerPaths.join('، ')}` : `Selected (${careerPaths.length}): ${careerPaths.join(', ')}`)
+              : (isAr ? 'لا مسارات محددة' : 'No paths selected')}
           </p>
         </div>
       )}
@@ -2236,9 +2242,9 @@ function CourseSettingsTab({
         {saved ? (
           <span className="flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            تم الحفظ
+            {isAr ? 'تم الحفظ' : 'Saved'}
           </span>
-        ) : 'حفظ التغييرات'}
+        ) : (isAr ? 'حفظ التغييرات' : 'Save changes')}
       </button>
 
       {/* ── Certificate Settings ──────────────────────────── */}
@@ -2262,19 +2268,19 @@ function CourseSettingsTab({
           </div>
           <div>
             <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:'var(--ink)' }}>
-              إعدادات الشهادة
+              {isAr ? 'إعدادات الشهادة' : 'Certificate settings'}
             </h3>
             <p style={{ margin:0, fontSize:'0.78rem', color:'var(--ink-3)' }}>
               {course?.isCompleted
                 ? (
                   <span className="flex items-center gap-1">
-                    الكورس مكتمل — الشهادات متاحة للطلاب
+                    {isAr ? 'الكورس مكتمل — الشهادات متاحة للطلاب' : 'The course is complete — certificates are available to students'}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </span>
                 )
                 : (
                   <span className="flex items-center gap-1">
-                    الكورس قيد التطوير — الشهادات معطلة
+                    {isAr ? 'الكورس قيد التطوير — الشهادات معطلة' : 'The course is in development — certificates are disabled'}
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </span>
                 )}
@@ -2286,13 +2292,13 @@ function CourseSettingsTab({
           <div data-tour="manage-expected-lessons" style={{ marginBottom:'1rem' }}>
             <label style={{ fontSize:'0.82rem', color:'var(--ink-3)',
               display:'block', marginBottom:'6px' }}>
-              العدد المتوقع للدروس النهائي
+              {isAr ? 'العدد المتوقع للدروس النهائي' : 'Final expected number of lessons'}
             </label>
             <input
               type="number"
               value={expectedLessons}
               onChange={e => setExpectedLessons(Number(e.target.value))}
-              placeholder="مثال: 24"
+              placeholder={isAr ? 'مثال: 24' : 'Example: 24'}
               style={{
                 width:'120px', padding:'8px 12px', borderRadius:'8px',
                 background:'rgba(255,255,255,0.05)',
@@ -2301,7 +2307,7 @@ function CourseSettingsTab({
               }}
             />
             <p style={{ fontSize:'0.75rem', color:'#666680', margin:'4px 0 0' }}>
-              يظهر للطلاب لإعلامهم بالمحتوى القادم
+              {isAr ? 'يظهر للطلاب لإعلامهم بالمحتوى القادم' : 'Shown to students to tell them about upcoming content'}
             </p>
           </div>
         )}
@@ -2310,10 +2316,10 @@ function CourseSettingsTab({
           padding:'10px 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginBottom:'1rem' }}>
           <div>
             <p style={{ margin:0, fontSize:'0.875rem', fontWeight:600, color:'var(--ink)' }}>
-              تفعيل الشهادات
+              {isAr ? 'تفعيل الشهادات' : 'Enable certificates'}
             </p>
             <p style={{ margin:0, fontSize:'0.75rem', color:'var(--ink-3)' }}>
-              تتوفر فقط عند إعلان اكتمال الكورس
+              {isAr ? 'تتوفر فقط عند إعلان اكتمال الكورس' : 'Available only when the course is declared complete'}
             </p>
           </div>
           <div
@@ -2351,7 +2357,7 @@ function CourseSettingsTab({
                 <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
             )}
-            إعادة فتح الكورس للتعديل
+            {isAr ? 'إعادة فتح الكورس للتعديل' : 'Reopen the course for editing'}
           </button>
         ) : (
           <button onClick={handleMarkCompleted} disabled={certLoading} data-tour="manage-certificate-settings"
@@ -2371,7 +2377,7 @@ function CourseSettingsTab({
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             )}
-            إعلان اكتمال الكورس وتفعيل الشهادات
+            {isAr ? 'إعلان اكتمال الكورس وتفعيل الشهادات' : 'Declare the course complete and enable certificates'}
           </button>
         )}
       </div>

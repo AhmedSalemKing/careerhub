@@ -14,6 +14,7 @@ const inputCls =
   'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
 const labelCls = 'block text-sm font-semibold text-[var(--ink)] mb-1.5'
 
+const TYPE_LABEL_EN: Record<string, string> = { MCQ: 'Multiple choice', SHORT_ANSWER: 'Essay question', FILE_UPLOAD: 'File upload' }
 const TYPE_LABEL: Record<string, string> = {
   MCQ: 'اختيار من متعدد',
   SHORT_ANSWER: 'سؤال مقالي',
@@ -29,6 +30,7 @@ export default function ReviewAttemptPage() {
   const params = useParams()
   const router = useRouter()
   const locale = (params.locale as string) || 'ar'
+  const isAr = locale === 'ar'
   const courseId = params.id as string
   const aid = params.aid as string
 
@@ -83,11 +85,11 @@ export default function ReviewAttemptPage() {
         answers,
         teacherNotes: teacherNotes.trim() ? teacherNotes.trim() : undefined,
       })
-      toast.success('تم حفظ التصحيح')
+      toast.success((isAr ? 'تم حفظ التصحيح' : 'Grading saved'))
       setHydrated(false)
       refetch()
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر حفظ التصحيح')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر حفظ التصحيح' : 'Could not save the grading'))
     } finally {
       setSaving(false)
     }
@@ -105,7 +107,7 @@ export default function ReviewAttemptPage() {
   if (!attempt) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--ink-2)]">المحاولة غير موجودة</p>
+        <p className="text-[color:var(--ink-2)]">{isAr ? 'المحاولة غير موجودة' : 'Attempt not found'}</p>
       </div>
     )
   }
@@ -128,7 +130,7 @@ export default function ReviewAttemptPage() {
             <ArrowRight className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">مراجعة محاولة</h1>
+            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">{isAr ? 'مراجعة محاولة' : 'Review attempt'}</h1>
             <p className="text-sm text-[color:var(--ink-2)] mt-1">
               {attempt.quiz?.titleAr || attempt.quiz?.title || ''} — {name}
             </p>
@@ -150,9 +152,9 @@ export default function ReviewAttemptPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
                   <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--ink-2)] border border-[color:var(--line)]">
-                    {TYPE_LABEL[q.type] ?? q.type}
+                    {(isAr ? TYPE_LABEL : TYPE_LABEL_EN)[q.type] ?? q.type}
                   </span>
-                  <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} نقطة</span>
+                  <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} {isAr ? 'نقطة' : 'points'}</span>
                   {answer?.autoGrade != null && (
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
@@ -163,7 +165,7 @@ export default function ReviewAttemptPage() {
                             : 'bg-[#ef4444]/15 text-[#ef4444]'
                       }`}
                     >
-                      تلقائي: {Math.round(answer.autoGrade)}
+                      {isAr ? 'تلقائي:' : 'Auto:'} {Math.round(answer.autoGrade)}
                     </span>
                   )}
                 </div>
@@ -205,7 +207,7 @@ export default function ReviewAttemptPage() {
                         </div>
                       )
                     })}
-                    {!answer && <p className="text-xs text-[#ef4444] mt-1">لم يجِب الطالب عن هذا السؤال</p>}
+                    {!answer && <p className="text-xs text-[#ef4444] mt-1">{isAr ? 'لم يجِب الطالب عن هذا السؤال' : 'The student did not answer this question'}</p>}
                   </div>
                 )}
 
@@ -214,7 +216,7 @@ export default function ReviewAttemptPage() {
                     {answer?.textAnswer ? (
                       answer.textAnswer
                     ) : (
-                      <span className="text-xs text-[#ef4444]">لم يُجب الطالب</span>
+                      <span className="text-xs text-[#ef4444]">{isAr ? 'لم يُجب الطالب' : 'The student did not answer'}</span>
                     )}
                   </div>
                 )}
@@ -229,7 +231,7 @@ export default function ReviewAttemptPage() {
                             width="100%"
                             height="400"
                             style={{ border: '1px solid var(--line)', borderRadius: 8, background: '#fff' }}
-                            title="معاينة ملف الطالب"
+                            title={isAr ? 'معاينة ملف الطالب' : 'Preview the student\'s file'}
                           />
                         )}
                         <div className="flex flex-wrap items-center gap-3">
@@ -239,7 +241,7 @@ export default function ReviewAttemptPage() {
                             className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
                           >
                             <Download className="h-4 w-4" />
-                            تحميل الملف{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
+                            {isAr ? 'تحميل الملف' : 'Download the file'}{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
                           </button>
                           <span className="max-w-[260px] truncate text-xs text-[color:var(--ink-2)]">
                             {getDownloadFilename(answer.fileUrl, answer.fileName)}
@@ -247,7 +249,7 @@ export default function ReviewAttemptPage() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-xs text-[#ef4444]">لم يرفع الطالب ملفاً</p>
+                      <p className="text-xs text-[#ef4444]">{isAr ? 'لم يرفع الطالب ملفاً' : 'The student did not upload a file'}</p>
                     )}
                   </div>
                 )}
@@ -255,7 +257,7 @@ export default function ReviewAttemptPage() {
                 {needsManual && answer && (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className={labelCls}>الدرجة اليدوية (من {q.points})</label>
+                      <label className={labelCls}>{isAr ? 'الدرجة اليدوية (من' : 'Manual grade (out of'} {q.points})</label>
                       <input
                         className={inputCls}
                         type="number"
@@ -267,12 +269,12 @@ export default function ReviewAttemptPage() {
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>ملاحظة (اختياري)</label>
+                      <label className={labelCls}>{isAr ? 'ملاحظة (اختياري)' : 'Note (optional)'}</label>
                       <input
                         className={inputCls}
                         value={grade?.feedback ?? ''}
                         onChange={(e) => setGrade(answer.id, 'feedback', e.target.value)}
-                        placeholder="تعليق يظهر للطالب"
+                        placeholder={isAr ? 'تعليق يظهر للطالب' : 'A comment shown to the student'}
                       />
                     </div>
                   </div>
@@ -286,42 +288,42 @@ export default function ReviewAttemptPage() {
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
             <h2 className="mb-1 font-bold text-[var(--ink)]">{name}</h2>
             <p className="text-xs text-[color:var(--ink-2)]">{attempt.student?.email}</p>
-            <p className="mt-1 text-xs text-[color:var(--ink-2)]">بدأ في: {startDate}</p>
+            <p className="mt-1 text-xs text-[color:var(--ink-2)]">{isAr ? 'بدأ في:' : 'Started at:'} {startDate}</p>
             <div className="mt-2">
               <StatusBadge status={attempt.status} />
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5 text-center">
-            <h2 className="mb-3 font-bold text-[var(--ink)]">النتيجة</h2>
+            <h2 className="mb-3 font-bold text-[var(--ink)]">{isAr ? 'النتيجة' : 'Result'}</h2>
             <div className="flex justify-center">
               <ScoreCircle percentage={attempt.percentage ?? 0} passed={attempt.status === 'GRADED' ? attempt.passed : null} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
                 <p className="text-lg font-extrabold text-[var(--ink)]">{Math.round(attempt.autoScore ?? 0)}</p>
-                <p className="text-xs text-[color:var(--ink-2)]">تلقائي</p>
+                <p className="text-xs text-[color:var(--ink-2)]">{isAr ? 'تلقائي' : 'Auto'}</p>
               </div>
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
                 <p className="text-lg font-extrabold text-[var(--ink)]">{Math.round(attempt.manualScore ?? 0)}</p>
-                <p className="text-xs text-[color:var(--ink-2)]">يدوي</p>
+                <p className="text-xs text-[color:var(--ink-2)]">{isAr ? 'يدوي' : 'Manual'}</p>
               </div>
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
                 <p className="text-lg font-extrabold text-[#5120c8]">
                   {Math.round(attempt.totalScore ?? 0)}/{Math.round(attempt.maxScore ?? 0)}
                 </p>
-                <p className="text-xs text-[color:var(--ink-2)]">الإجمالي</p>
+                <p className="text-xs text-[color:var(--ink-2)]">{isAr ? 'الإجمالي' : 'Total'}</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
-            <label className={labelCls}>ملاحظات عامة للطالب</label>
+            <label className={labelCls}>{isAr ? 'ملاحظات عامة للطالب' : 'General notes for the student'}</label>
             <textarea
               className={`${inputCls} min-h-[80px] resize-y`}
               value={teacherNotes}
               onChange={(e) => setTeacherNotes(e.target.value)}
-              placeholder="اكتب ملاحظات تصحيح إجمالية هنا"
+              placeholder={isAr ? 'اكتب ملاحظات تصحيح إجمالية هنا' : 'Write overall grading notes here'}
             />
             <button
               type="button"
@@ -334,7 +336,7 @@ export default function ReviewAttemptPage() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              حفظ التصحيح
+              {isAr ? 'حفظ التصحيح' : 'Save grading'}
             </button>
           </div>
         </div>

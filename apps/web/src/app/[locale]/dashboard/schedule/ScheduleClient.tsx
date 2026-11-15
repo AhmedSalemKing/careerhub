@@ -30,6 +30,10 @@ interface Session {
 }
 
 /* ─── Constants ───────────────────────────────────────────────────── */
+/** Set from the component on every render so the module-level helpers below format in the page language. */
+let uiAr = true
+const DAYS_EN    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const MONTHS_EN  = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const DAYS_AR    = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
 const MONTHS_AR  = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 const HOURS      = Array.from({ length: 16 }, (_: unknown, i: number) => i + 8)
@@ -100,21 +104,25 @@ function startOfWeekSun(d: Date): Date {
   return r
 }
 function hourLabel(h: number): string {
-  if (h === 0)  return '12:00 ص'
-  if (h < 12)   return `${h}:00 ص`
-  if (h === 12) return '12:00 م'
-  return `${h - 12}:00 م`
+  const am = uiAr ? 'ص' : 'AM', pm = uiAr ? 'م' : 'PM'
+  if (h === 0)  return `12:00 ${am}`
+  if (h < 12)   return `${h}:00 ${am}`
+  if (h === 12) return `12:00 ${pm}`
+  return `${h - 12}:00 ${pm}`
 }
 function fmt12(d: Date): string {
   const h = d.getHours(), m = d.getMinutes()
   const mm = String(m).padStart(2, '0')
-  if (h === 0)  return `12:${mm} ص`
-  if (h < 12)   return `${h}:${mm} ص`
-  if (h === 12) return `12:${mm} م`
-  return `${h - 12}:${mm} م`
+  const am = uiAr ? 'ص' : 'AM', pm = uiAr ? 'م' : 'PM'
+  if (h === 0)  return `12:${mm} ${am}`
+  if (h < 12)   return `${h}:${mm} ${am}`
+  if (h === 12) return `12:${mm} ${pm}`
+  return `${h - 12}:${mm} ${pm}`
 }
 function fmtDateAr(d: Date): string {
-  return `${DAYS_AR[d.getDay()]}، ${d.getDate()} ${MONTHS_AR[d.getMonth()]} ${d.getFullYear()}`
+  return uiAr
+    ? `${DAYS_AR[d.getDay()]}، ${d.getDate()} ${MONTHS_AR[d.getMonth()]} ${d.getFullYear()}`
+    : `${DAYS_EN[d.getDay()]}, ${MONTHS_EN[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
 }
 // Accepts Date, ISO string, or null — handles all safely
 function sameDay(a: Date | string | null | undefined, b: Date): boolean {
@@ -143,6 +151,11 @@ function getOtherPerson(s: Session): UserRef | undefined {
 }
 
 /* ─── Status ──────────────────────────────────────────────────────── */
+const STATUS_EN: Record<string, string> = {
+  PENDING: 'Pending approval', PENDING_APPROVAL: 'Pending approval', AWAITING_PAYMENT: 'Pending payment',
+  CONFIRMED: 'Confirmed', IN_PROGRESS: 'Live now', COMPLETED: 'Completed', CANCELLED: 'Cancelled',
+  REJECTED: 'Rejected', RESCHEDULE_REQUESTED: 'Reschedule requested', RESCHEDULED: 'Rescheduled',
+}
 const STATUS_AR: Record<string, string> = {
   PENDING:              'بانتظار الموافقة',
   PENDING_APPROVAL:     'بانتظار الموافقة',
@@ -181,6 +194,8 @@ function statusConfig(status: string): { bg: string; border: string; text: strin
 /* ─── Component ───────────────────────────────────────────────────── */
 export default function ScheduleClient() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
+  uiAr = isAr
   const router = useRouter()
 
   const [sessions,  setSessions]  = useState<Session[]>([])
@@ -323,7 +338,7 @@ export default function ScheduleClient() {
   /* ── Week range label ────────────────────────────────────────────── */
   const weekLabel = useMemo(() => {
     const end = addDays(weekStart, 6)
-    return `${weekStart.getDate()} ${MONTHS_AR[weekStart.getMonth()]} — ${end.getDate()} ${MONTHS_AR[end.getMonth()]} ${end.getFullYear()}`
+    return `${weekStart.getDate()} ${(uiAr ? MONTHS_AR : MONTHS_EN)[weekStart.getMonth()]} — ${end.getDate()} ${(uiAr ? MONTHS_AR : MONTHS_EN)[end.getMonth()]} ${end.getFullYear()}`
   }, [weekStart])
 
   /* ── Session detail modal ────────────────────────────────────────── */
@@ -336,7 +351,7 @@ export default function ScheduleClient() {
     const canAct    = (s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS') && minsUntil >= -240
     const isLive    = s.status === 'IN_PROGRESS'
     const other     = getOtherPerson(s)
-    const initials  = userName(other).split(' ').map((w: string) => w[0] ?? '').join('').slice(0,2) || '؟'
+    const initials  = userName(other).split(' ').map((w: string) => w[0] ?? '').join('').slice(0,2) || '?'
     const st        = statusConfig(s.status)
 
     return (
@@ -348,7 +363,7 @@ export default function ScheduleClient() {
 
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <span style={{ fontWeight:500, fontSize:16, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>تفاصيل الجلسة</span>
+            <span style={{ fontWeight:500, fontSize:16, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>{isAr ? 'تفاصيل الجلسة' : 'Session details'}</span>
             <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--ink) 10%, transparent)', background:'color-mix(in srgb, var(--ink) 5%, transparent)', color:'var(--ink-3)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
           </div>
 
@@ -361,10 +376,10 @@ export default function ScheduleClient() {
             </div>
             <div>
               <div style={{ fontWeight:500, fontSize:14, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
-              <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مرشد'}</div>
+              <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? (isAr ? 'عميل' : 'Client') : (isAr ? 'مرشد' : 'Mentor')}</div>
             </div>
             <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
-              {STATUS_AR[s.status] ?? s.status}
+              {(uiAr ? STATUS_AR : STATUS_EN)[s.status] ?? s.status}
             </span>
           </div>
 
@@ -372,30 +387,30 @@ export default function ScheduleClient() {
           <div style={{ background:'var(--surface)', border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:12, display:'flex', flexDirection:'column', gap:8 }}>
             {(s.topic || s.sessionName) && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الموضوع</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>{isAr ? 'الموضوع' : 'Topic'}</span>
                 <span style={{ color:'var(--ink)', fontWeight:500, fontFamily: 'var(--font-ui)' }}>{s.topic || s.sessionName}</span>
               </div>
             )}
             {startD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>التاريخ</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>{isAr ? 'التاريخ' : 'Date'}</span>
                 <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmtDateAr(startD)}</span>
               </div>
             )}
             {startD && endD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الوقت</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>{isAr ? 'الوقت' : 'Time'}</span>
                 <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmt12(startD)} — {fmt12(endD)}</span>
               </div>
             )}
             <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-              <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>المدة</span>
-              <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} دقيقة</span>
+              <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>{isAr ? 'المدة' : 'Duration'}</span>
+              <span style={{ color:'var(--ink-2)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} {isAr ? 'دقيقة' : 'min'}</span>
             </div>
             {s.meetingLink && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>رابط</span>
-                <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', fontWeight:300, fontFamily: 'var(--font-ui)' }}>فتح الرابط</a>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>{isAr ? 'رابط' : 'Link'}</span>
+                <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{isAr ? 'فتح الرابط' : 'Open link'}</a>
               </div>
             )}
           </div>
@@ -403,7 +418,7 @@ export default function ScheduleClient() {
           {/* Countdown */}
           {s.status === 'CONFIRMED' && minsUntil > 0 && (
             <div style={{ fontSize:11, color:'var(--ink-3)', textAlign:'center', marginBottom:14, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
-              تبدأ خلال {minsUntil < 60 ? `${Math.round(minsUntil)} دقيقة` : `${(minsUntil/60).toFixed(1)} ساعة`}
+              {isAr ? 'تبدأ خلال' : 'Starts in'} {minsUntil < 60 ? (isAr ? `${Math.round(minsUntil)} دقيقة` : `${Math.round(minsUntil)} min`) : (isAr ? `${(minsUntil/60).toFixed(1)} ساعة` : `${(minsUntil/60).toFixed(1)} hours`)}
             </div>
           )}
 
@@ -411,14 +426,14 @@ export default function ScheduleClient() {
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {canAct && (
               <button onClick={() => isLive ? handleJoinRoom(s.id) : handleStartRoom(s.id)} disabled={acting} style={{ padding:'12px 20px', borderRadius:12, border:'none', background:isLive ? '#8b5cf6' : '#14b8a6', color:'var(--primary-foreground)', fontWeight:500, fontSize:14, cursor:acting ? 'wait' : 'pointer', opacity:acting ? 0.7 : 1, fontFamily: 'var(--font-ui)' }}>
-                {acting ? 'جاري...' : isLive ? 'متابعة الجلسة' : 'بدء الجلسة'}
+                {acting ? (isAr ? 'جاري...' : 'Working...') : isLive ? (isAr ? 'متابعة الجلسة' : 'Resume session') : (isAr ? 'بدء الجلسة' : 'Start session')}
               </button>
             )}
             <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ padding:'12px 20px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, color:st.text, cursor:'pointer', fontWeight:500, fontSize:13, fontFamily: 'var(--font-ui)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-              عرض التفاصيل ←
+              {isAr ? 'عرض التفاصيل ←' : 'View details ←'}
             </button>
             <button onClick={() => setSelected(null)} style={{ padding:'8px 20px', borderRadius:10, border:'1px solid color-mix(in srgb, var(--ink) 8%, transparent)', background:'transparent', color:'var(--ink-3)', cursor:'pointer', fontSize:12, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
-              إغلاق
+              {isAr ? 'إغلاق' : 'Close'}
             </button>
           </div>
         </div>
@@ -449,16 +464,16 @@ export default function ScheduleClient() {
               <div style={{ width:3, alignSelf:'stretch', borderRadius:2, background:st.border, flexShrink:0 }} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:500, fontSize:13, color:st.text, marginBottom:3, fontFamily: 'var(--font-ui)' }}>
-                  {s.topic || s.sessionName || 'جلسة إرشادية'}
+                  {s.topic || s.sessionName || (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                 </div>
                 <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                   {userName(other)}
-                  {startD ? ` · ${fmtDateAr(startD)}` : ' · تاريخ غير محدد'}
+                  {startD ? ` · ${fmtDateAr(startD)}` : (isAr ? ' · تاريخ غير محدد' : '· Date not set')}
                   {startD && endD ? ` · ${fmt12(startD)} — ${fmt12(endD)}` : ''}
                 </div>
               </div>
               <span style={{ background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:300, flexShrink:0, fontFamily: 'var(--font-ui)' }}>
-                {STATUS_AR[s.status] ?? s.status}
+                {(uiAr ? STATUS_AR : STATUS_EN)[s.status] ?? s.status}
               </span>
             </button>
           )
@@ -475,21 +490,21 @@ export default function ScheduleClient() {
       {/* Page title */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <h1 data-tour="schedule-header" style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>جدول مواعيدي</h1>
-          <p style={{ fontSize:12, color:'var(--ink-2)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>نظم جلساتك ومواعيدك بسهولة</p>
+          <h1 data-tour="schedule-header" style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>{isAr ? 'جدول مواعيدي' : 'My schedule'}</h1>
+          <p style={{ fontSize:12, color:'var(--ink-2)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>{isAr ? 'نظم جلساتك ومواعيدك بسهولة' : 'Organize your sessions and appointments with ease'}</p>
         </div>
         <button data-tour="schedule-manage-btn" onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          إدارة الجلسات
+          {isAr ? 'إدارة الجلسات' : 'Manage sessions'}
         </button>
       </div>
 
       {/* Stat cards */}
       <div data-tour="schedule-stats" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
         {([
-          { label:'جلسات هذا الأسبوع', value:activeWeekSessions.length, color:'#14b8a6', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-          { label:'مواعيد قادمة',        value:upcomingCount,             color:'#a78bfa', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-          { label:'ساعات مكتملة',        value:doneHours,                 color:'#10b981', icon:'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
+          { label:(isAr ? 'جلسات هذا الأسبوع' : 'Sessions this week'), value:activeWeekSessions.length, color:'#14b8a6', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+          { label:(isAr ? 'مواعيد قادمة' : 'Upcoming appointments'),        value:upcomingCount,             color:'#a78bfa', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+          { label:(isAr ? 'ساعات مكتملة' : 'Completed hours'),        value:doneHours,                 color:'#10b981', icon:'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
         ] as const).map(({ label, value, color, icon }) => (
           <div key={label} style={{ borderRadius:14, border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)', background:'var(--surface)', padding:'16px 20px', display:'flex', flexDirection:'column', gap:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -515,25 +530,25 @@ export default function ScheduleClient() {
         </button>
 
         <button onClick={() => setWeekStart(startOfWeekSun(new Date()))} style={{ padding:'5px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
-          اليوم
+          {isAr ? 'اليوم' : 'Today'}
         </button>
         </div>
 
         <div data-tour="schedule-view-toggle" style={{ display:'flex', border:'1px solid var(--line)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
           {(['calendar','list'] as const).map((v: 'calendar' | 'list') => (
             <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:500, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--ink-2)', transition:'all 0.15s' }}>
-              {v === 'calendar' ? 'أسبوع' : 'قائمة'}
+              {v === 'calendar' ? (isAr ? 'أسبوع' : 'Week') : (isAr ? 'قائمة' : 'List')}
             </button>
           ))}
         </div>
 
         <button data-tour="schedule-refresh" onClick={load} disabled={loading} style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink-2)', cursor:loading ? 'wait' : 'pointer', fontSize:11 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          {loading ? 'جاري...' : 'تحديث'}
+          {loading ? (isAr ? 'جاري...' : 'Working...') : (isAr ? 'تحديث' : 'Refresh')}
         </button>
 
         {activeWeekSessions.length > 0 && (
-          <span style={{ fontSize:10, color:'var(--ink-2)', opacity:0.6 }}>{activeWeekSessions.length} جلسة هذا الأسبوع</span>
+          <span style={{ fontSize:10, color:'var(--ink-2)', opacity:0.6 }}>{activeWeekSessions.length} {isAr ? 'جلسة هذا الأسبوع' : 'session this week'}</span>
         )}
       </div>
 
@@ -575,7 +590,7 @@ export default function ScheduleClient() {
                   })
                   return (
                     <div key={i} style={{ padding:'8px 4px', textAlign:'center', borderRight:i<6 ? '1px solid color-mix(in srgb, var(--ink) 6%, transparent)' : undefined }}>
-                      <div style={{ fontSize:11, fontWeight:500, color:'var(--ink-3)', marginBottom:4, fontFamily: 'var(--font-ui)' }}>{DAYS_AR[d.getDay()]}</div>
+                      <div style={{ fontSize:11, fontWeight:500, color:'var(--ink-3)', marginBottom:4, fontFamily: 'var(--font-ui)' }}>{(uiAr ? DAYS_AR : DAYS_EN)[d.getDay()].slice(0, uiAr ? undefined : 3)}</div>
                       <div style={{ width:30, height:30, borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:300, background:isToday ? '#5120c8' : 'transparent', color:isToday ? 'var(--primary-foreground)' : 'var(--ink)', position:'relative', fontFamily: 'var(--font-ui)' }}>
                         {d.getDate()}
                         {hasSess && !isToday && (
@@ -651,7 +666,7 @@ export default function ScheduleClient() {
                             key={s.id}
                             data-tour="schedule-session-block"
                             onClick={() => setSelected(s)}
-                            title={`${s.topic || s.sessionName || 'جلسة'} — ${STATUS_AR[s.status] ?? s.status}`}
+                            title={`${s.topic || s.sessionName || (isAr ? 'جلسة' : 'Session')} — ${(uiAr ? STATUS_AR : STATUS_EN)[s.status] ?? s.status}`}
                             style={{
                               position:'absolute',
                               top: top + 1,
@@ -676,7 +691,7 @@ export default function ScheduleClient() {
                             }}
                           >
                             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500, fontSize:10 }}>
-                              {s.topic || s.sessionName || 'جلسة إرشادية'}
+                              {s.topic || s.sessionName || (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                             </span>
                             {ht > 40 && (
                               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:9, fontWeight:300, opacity:0.75 }}>
@@ -690,7 +705,7 @@ export default function ScheduleClient() {
                             )}
                             {ht >= 72 && (
                               <span style={{ fontSize:8, fontWeight:300, background:st.badge, color:st.badgeText, borderRadius:4, padding:'1px 5px', alignSelf:'flex-start' }}>
-                                {STATUS_AR[s.status] ?? s.status}
+                                {(uiAr ? STATUS_AR : STATUS_EN)[s.status] ?? s.status}
                               </span>
                             )}
                           </button>
@@ -721,12 +736,12 @@ export default function ScheduleClient() {
             return (
               <div style={{ marginTop:16, padding:16, background:'var(--surface)', borderRadius:12, border:'1px dashed var(--line)' }}>
                 <div style={{ fontSize:13, color:'var(--ink-2)', marginBottom:12, textAlign:'center', fontWeight:500 }}>
-                  لا توجد جلسات في هذا الأسبوع — اختر أسبوعاً من الجلسات الموجودة:
+                  {isAr ? 'لا توجد جلسات في هذا الأسبوع — اختر أسبوعاً من الجلسات الموجودة:' : 'No sessions this week. Pick a week that has sessions:'}
                 </div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center' }}>
                   {uniqueWeeks.map((w: Date) => {
                     const end = addDays(w, 6)
-                    const label = `${w.getDate()} ${MONTHS_AR[w.getMonth()]} — ${end.getDate()} ${MONTHS_AR[end.getMonth()]}`
+                    const label = `${w.getDate()} ${(uiAr ? MONTHS_AR : MONTHS_EN)[w.getMonth()]} — ${end.getDate()} ${(uiAr ? MONTHS_AR : MONTHS_EN)[end.getMonth()]}`
                     const sessCount = sessions.filter((s: Session) => {
                       const d = getSessionDate(s)
                       return d && d >= w && d < addDays(w, 7)
@@ -751,13 +766,13 @@ export default function ScheduleClient() {
             sessions.filter((s: Session) => getSessionDate(s) !== null).length === 0 && (
             <div style={{ marginTop:16, padding:16, background:'rgba(255,149,0,0.08)', borderRadius:12, border:'1px dashed var(--warning)', textAlign:'center' }}>
               <div style={{ fontSize:13, color:'var(--warning)', fontWeight:500, marginBottom:6 }}>
-                تنبيه: {sessions.length} جلسة موجودة لكن بدون تاريخ صالح
+                {isAr ? 'تنبيه:' : 'Note:'} {sessions.length} {isAr ? 'جلسة موجودة لكن بدون تاريخ صالح' : 'A session exists but has no valid date'}
               </div>
               <div style={{ fontSize:11, color:'var(--ink-2)' }}>
-                يرجى استخدام عرض القائمة لمشاهدة جميع الجلسات
+                {isAr ? 'يرجى استخدام عرض القائمة لمشاهدة جميع الجلسات' : 'Please use the list view to see all sessions'}
               </div>
               <button onClick={() => setView('list')} style={{ marginTop:10, padding:'6px 18px', borderRadius:8, border:'1px solid var(--warning)', background:'transparent', color:'var(--warning)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
-                عرض القائمة
+                {isAr ? 'عرض القائمة' : 'Show list view'}
               </button>
             </div>
           )}
@@ -768,8 +783,8 @@ export default function ScheduleClient() {
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 12px', display:'block', opacity:0.4 }}>
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              <div style={{ fontWeight:500, fontSize:14, marginBottom:6 }}>لا توجد جلسات</div>
-              <div style={{ fontSize:12 }}>لم يتم العثور على أي جلسات في حسابك</div>
+              <div style={{ fontWeight:500, fontSize:14, marginBottom:6 }}>{isAr ? 'لا توجد جلسات' : 'No sessions'}</div>
+              <div style={{ fontSize:12 }}>{isAr ? 'لم يتم العثور على أي جلسات في حسابك' : 'No sessions were found in your account'}</div>
             </div>
           )}
         </>

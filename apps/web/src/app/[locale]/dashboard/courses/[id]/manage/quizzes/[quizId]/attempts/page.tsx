@@ -13,6 +13,7 @@ export default function QuizAttemptsPage() {
   const params = useParams()
   const router = useRouter()
   const locale = (params.locale as string) || 'ar'
+  const isAr = locale === 'ar'
   const courseId = params.id as string
   const quizId = params.quizId as string
   const [status, setStatus] = useState('ALL')
@@ -62,7 +63,7 @@ export default function QuizAttemptsPage() {
             <ArrowRight className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">محاولات الاختبار</h1>
+            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">{isAr ? 'محاولات الاختبار' : 'Quiz attempts'}</h1>
             <p className="text-sm text-[color:var(--ink-2)] mt-1">{quiz?.titleAr || quiz?.title || ''}</p>
           </div>
         </div>
@@ -72,9 +73,9 @@ export default function QuizAttemptsPage() {
       <div data-tour="attempts-filter" className="mb-4 max-w-sm">
         <SegmentedControl
           options={[
-            { value: 'ALL', label: 'الكل' },
-            { value: 'SUBMITTED', label: 'بانتظار التصحيح' },
-            { value: 'GRADED', label: 'مصحّحة' },
+            { value: 'ALL', label: (isAr ? 'الكل' : 'All') },
+            { value: 'SUBMITTED', label: (isAr ? 'بانتظار التصحيح' : 'Awaiting grading') },
+            { value: 'GRADED', label: (isAr ? 'مصحّحة' : 'Graded') },
           ]}
           value={status}
           onChange={(v) => setStatus(v)}
@@ -90,7 +91,7 @@ export default function QuizAttemptsPage() {
       ) : attempts.length === 0 ? (
         <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-10 text-center">
           <Eye className="mx-auto mb-3 h-8 w-8 text-[color:var(--ink-2)]" />
-          <p className="text-sm text-[color:var(--ink-2)]">لا توجد محاولات في هذا القسم بعد.</p>
+          <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'لا توجد محاولات في هذا القسم بعد.' : 'No attempts in this section yet.'}</p>
         </div>
       ) : (
         <>
@@ -98,11 +99,11 @@ export default function QuizAttemptsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--line)] text-right">
-                  <th className="px-4 py-3 font-bold text-[var(--ink)]">الطالب</th>
-                  <th className="px-4 py-3 font-bold text-[var(--ink)]">البداية</th>
-                  <th className="px-4 py-3 font-bold text-[var(--ink)]">الحالة</th>
-                  <th className="px-4 py-3 font-bold text-[var(--ink)]">الدرجة</th>
-                  <th className="px-4 py-3 font-bold text-[var(--ink)]">النتيجة</th>
+                  <th className="px-4 py-3 font-bold text-[var(--ink)]">{isAr ? 'الطالب' : 'Student'}</th>
+                  <th className="px-4 py-3 font-bold text-[var(--ink)]">{isAr ? 'البداية' : 'Started'}</th>
+                  <th className="px-4 py-3 font-bold text-[var(--ink)]">{isAr ? 'الحالة' : 'Status'}</th>
+                  <th className="px-4 py-3 font-bold text-[var(--ink)]">{isAr ? 'الدرجة' : 'Score'}</th>
+                  <th className="px-4 py-3 font-bold text-[var(--ink)]">{isAr ? 'النتيجة' : 'Result'}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -128,7 +129,7 @@ export default function QuizAttemptsPage() {
                         {(() => {
                           const earned = Math.round((a.totalScore ?? 0) * 100) / 100
                           const total = Number(a.maxScore) > 0 ? Number(a.maxScore) : quizTotal
-                          return total > 0 ? `${earned} / ${Math.round(total * 100) / 100}` : `${earned} نقطة`
+                          return total > 0 ? `${earned} / ${Math.round(total * 100) / 100}` : (isAr ? `${earned} نقطة` : `${earned} points`)
                         })()}
                       </td>
                       <td className="px-4 py-3">
@@ -141,7 +142,7 @@ export default function QuizAttemptsPage() {
                           {...(idx === 0 ? { 'data-tour': 'attempts-review-btn' } : {})}
                           className="flex items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                         >
-                          مراجعة
+                          {isAr ? 'مراجعة' : 'Review'}
                         </button>
                       </td>
                     </tr>
@@ -159,7 +160,7 @@ export default function QuizAttemptsPage() {
                 onClick={() => setPage((p) => p - 1)}
                 className="rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-sm font-semibold disabled:opacity-30 transition-opacity duration-150"
               >
-                السابق
+                {isAr ? 'السابق' : 'Previous'}
               </button>
               <span className="text-sm text-[color:var(--ink-2)]">
                 {page} / {totalPages}
@@ -170,7 +171,7 @@ export default function QuizAttemptsPage() {
                 onClick={() => setPage((p) => p + 1)}
                 className="rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-sm font-semibold disabled:opacity-30 transition-opacity duration-150"
               >
-                التالي
+                {isAr ? 'التالي' : 'Next'}
               </button>
             </div>
           )}

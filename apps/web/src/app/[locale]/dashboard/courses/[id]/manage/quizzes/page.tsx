@@ -12,6 +12,7 @@ export default function ManageQuizzesPage() {
   const params = useParams()
   const router = useRouter()
   const locale = (params.locale as string) || 'ar'
+  const isAr = locale === 'ar'
   const courseId = params.id as string
   const qc = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
@@ -31,10 +32,10 @@ export default function ManageQuizzesPage() {
     if (!deleteTarget) return
     try {
       await del(`/quizzes/${deleteTarget.id}`)
-      toast.success('تم حذف الاختبار')
+      toast.success((isAr ? 'تم حذف الاختبار' : 'Quiz deleted'))
       qc.invalidateQueries({ queryKey: ['instructor-quizzes', courseId] })
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'حدث خطأ أثناء الحذف')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'حدث خطأ أثناء الحذف' : 'An error occurred while deleting'))
     } finally {
       setDeleteTarget(null)
     }
@@ -54,8 +55,8 @@ export default function ManageQuizzesPage() {
             <ArrowRight className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">اختبارات الكورس</h1>
-            <p className="text-sm text-[color:var(--ink-2)] mt-1">أنشئ وادير اختبارات متعددة مع أسئلة اختيار من متعدد وأسئلة مقالية ورفع ملفات</p>
+            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">{isAr ? 'اختبارات الكورس' : 'Course quizzes'}</h1>
+            <p className="text-sm text-[color:var(--ink-2)] mt-1">{isAr ? 'أنشئ وادير اختبارات متعددة مع أسئلة اختيار من متعدد وأسئلة مقالية ورفع ملفات' : 'Create and manage multiple quizzes with multiple-choice, essay and file-upload questions'}</p>
           </div>
         </div>
         <button
@@ -64,7 +65,7 @@ export default function ManageQuizzesPage() {
           className="flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all duration-150"
         >
           <Plus className="h-4 w-4" />
-          اختبار جديد
+          {isAr ? 'اختبار جديد' : 'New quiz'}
         </button>
       </div>
 
@@ -79,15 +80,15 @@ export default function ManageQuizzesPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--surface-2)]">
             <FileQuestion className="h-8 w-8 text-[color:var(--ink-2)]" />
           </div>
-          <h3 className="text-lg font-bold text-[var(--ink)]">لا توجد اختبارات بعد</h3>
-          <p className="mt-2 text-sm text-[color:var(--ink-2)]">ابدأ بإنشاء أول اختبار لطلاب هذا الكورس</p>
+          <h3 className="text-lg font-bold text-[var(--ink)]">{isAr ? 'لا توجد اختبارات بعد' : 'No quizzes yet'}</h3>
+          <p className="mt-2 text-sm text-[color:var(--ink-2)]">{isAr ? 'ابدأ بإنشاء أول اختبار لطلاب هذا الكورس' : 'Start by creating the first quiz for this course\'s students'}</p>
           <button
             type="button"
             onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/new`)}
             className="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all duration-150"
           >
             <Plus className="h-4 w-4" />
-            إنشاء اختبار
+            {isAr ? 'إنشاء اختبار' : 'Create a quiz'}
           </button>
         </div>
       ) : (
@@ -110,15 +111,15 @@ export default function ManageQuizzesPage() {
                     {quiz.lessonTitleAr && <span className="truncate">{quiz.lessonTitleAr}</span>}
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
-                      {quiz.durationMinutes} دقيقة
+                      {quiz.durationMinutes} {isAr ? 'دقيقة' : 'min'}
                     </span>
                     <span className="flex items-center gap-1">
                       <Layers className="h-3.5 w-3.5" />
-                      {quiz._count?.questions ?? 0} سؤال
+                      {quiz._count?.questions ?? 0} {isAr ? 'سؤال' : 'questions'}
                     </span>
                     <span className="flex items-center gap-1">
                       <ListChecks className="h-3.5 w-3.5" />
-                      {quiz._count?.attempts ?? 0} محاولة
+                      {quiz._count?.attempts ?? 0} {isAr ? 'محاولة' : 'attempts'}
                     </span>
                   </div>
                 </div>
@@ -130,14 +131,14 @@ export default function ManageQuizzesPage() {
                   onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/${quiz.id}/builder`)}
                   className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                 >
-                  تحرير الأسئلة
+                  {isAr ? 'تحرير الأسئلة' : 'Edit questions'}
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/${quiz.id}/attempts`)}
                   className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                 >
-                  المحاولات
+                  {isAr ? 'المحاولات' : 'Attempts'}
                 </button>
                 <button
                   type="button"
@@ -154,10 +155,10 @@ export default function ManageQuizzesPage() {
 
       <ConfirmModal
         isOpen={!!deleteTarget}
-        title="حذف الاختبار"
-        message="سيتم حذف الاختبار مع جميع أسئلته ومحاولات الطلاب نهائياً. هل أنت متأكد؟"
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
+        title={isAr ? 'حذف الاختبار' : 'Delete quiz'}
+        message={isAr ? 'سيتم حذف الاختبار مع جميع أسئلته ومحاولات الطلاب نهائياً. هل أنت متأكد؟' : 'The quiz will be permanently deleted along with all its questions and student attempts. Are you sure?'}
+        confirmLabel={isAr ? 'حذف' : 'Delete'}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
         confirmDestructive
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

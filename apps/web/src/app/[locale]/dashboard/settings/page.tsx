@@ -21,7 +21,7 @@ import { SettingsTourLauncher } from '@/components/SettingsTour'
 import { InstructorSettingsTourLauncher } from '@/components/InstructorSettingsTour'
 
 function VerificationSection({ user }: { user: any }) {
-  const isAr = true // locale check handled by parent
+  const isAr = useLocale() === 'ar'
   const [frontImage, setFrontImage] = useState(user?.idFrontUrl || '')
   const [backImage, setBackImage] = useState(user?.idBackUrl || '')
   const [uploading, setUploading] = useState<'front' | 'back' | null>(null)
@@ -82,9 +82,9 @@ function VerificationSection({ user }: { user: any }) {
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(22,163,74,0.1)', border: '2px solid rgba(22,163,74,0.3)', borderRadius: 16, padding: '16px 28px', marginBottom: 16 }}>
           <CheckCircle size={28} color="#16a34a" />
-          <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>هويتك موثقة بنجاح</span>
+          <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'هويتك موثقة بنجاح' : 'Your identity is verified'}</span>
         </div>
-        <p style={{ color: 'var(--ink-2)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك</p>
+        <p style={{ color: 'var(--ink-2)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك' : 'Your identity has been verified — a verification badge appears next to your name'}</p>
       </div>
     )
   }
@@ -93,8 +93,8 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <Loader2 size={48} color="#f59e0b" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
-        <p style={{ color: 'var(--ink-2)', fontFamily: 'DM Sans, sans-serif' }}>سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.</p>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'طلب التوثيق قيد المراجعة' : 'Verification request under review'}</h3>
+        <p style={{ color: 'var(--ink-2)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.' : 'Our team will review your documents. You will be notified when it is done.'}</p>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
@@ -104,10 +104,10 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <XCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
-        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
-        {verificationStatus?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {verificationStatus.idRejectedReason}</p>}
-        <p style={{ color: 'var(--ink-2)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
-        <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تم رفض طلب التوثيق' : 'The verification request was rejected'}</h3>
+        {verificationStatus?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'السبب:' : 'Reason:'} {verificationStatus.idRejectedReason}</p>}
+        <p style={{ color: 'var(--ink-2)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'يمكنك إعادة التقديم بوثائق أوضح' : 'You can resubmit with clearer documents'}</p>
+        <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'إعادة التقديم' : 'Resubmit'}</button>
       </div>
     )
   }
@@ -116,18 +116,18 @@ function VerificationSection({ user }: { user: any }) {
   return (
     <div style={{ padding: '24px 0', direction: 'rtl' }}>
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'توثيق الهوية' : 'Identity verification'}</h3>
         <div style={{ background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', borderRadius: 12, padding: '14px 18px' }}>
           <p style={{ color: '#A78BFA', fontSize: 14, margin: 0, lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
-            متطلبات التوثيق:
-            <br />1. رفع صورة واضحة لوجه بطاقة الهوية
-            <br />2. رفع صورة واضحة لظهر بطاقة الهوية
+            {isAr ? 'متطلبات التوثيق:' : 'Verification requirements:'}
+            <br />{isAr ? '1. رفع صورة واضحة لوجه بطاقة الهوية' : '1. Upload a clear photo of the front of your ID card'}
+            <br />{isAr ? '2. رفع صورة واضحة لظهر بطاقة الهوية' : '2. Upload a clear photo of the back of your ID card'}
           </p>
         </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>وجه البطاقة (الأمامية)</label>
+        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'وجه البطاقة (الأمامية)' : 'ID card (front)'}</label>
         <label data-tour="settings-id-front" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
           {frontImage ? <img src={frontImage} alt="ID Front" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'front' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'front')} />
@@ -135,7 +135,7 @@ function VerificationSection({ user }: { user: any }) {
       </div>
 
       <div style={{ marginBottom: 28 }}>
-        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>ظهر البطاقة (الخلفية)</label>
+        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'ظهر البطاقة (الخلفية)' : 'ID card (back)'}</label>
         <label data-tour="settings-id-back" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
           {backImage ? <img src={backImage} alt="ID Back" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'back' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'back')} />
@@ -144,7 +144,7 @@ function VerificationSection({ user }: { user: any }) {
 
       <button data-tour="settings-submit-verification" onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--line)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
         {submitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
-        {submitting ? 'جاري الإرسال...' : 'تقديم طلب التوثيق'}
+        {submitting ? (isAr ? 'جاري الإرسال...' : 'Submitting...') : (isAr ? 'تقديم طلب التوثيق' : 'Submit verification request')}
       </button>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>

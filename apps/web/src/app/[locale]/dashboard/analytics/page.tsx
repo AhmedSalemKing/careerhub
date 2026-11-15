@@ -5,10 +5,12 @@ import { useTheme } from 'next-themes'
 import { BarChart2, Users, BookOpen, Star, TrendingUp, Award } from 'lucide-react'
 import { formatCoursePrice, formatMoney } from '@/lib/market'
 import { AnalyticsTourLauncher } from '@/components/AnalyticsTour'
+import { useLocale } from 'next-intl'
 
 const STAT_TOUR_KEYS = ['analytics-users', 'analytics-courses', 'analytics-rating', 'analytics-revenue', 'analytics-certificates', 'analytics-completion']
 
 export default function AnalyticsPage() {
+  const isAr = useLocale() === 'ar'
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -28,12 +30,12 @@ export default function AnalyticsPage() {
   const firstZeroId = (courses as any[]).find((c: any) => !(c.enrollments || 0))?.id
 
   const statCards = [
-    { label:'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
-    { label:'الكورسات المنشورة', value: stats?.publishedCourses ?? 0, icon:<BookOpen size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)' },
-    { label:'متوسط التقييم', value: stats?.avgRating ? `${stats.avgRating}` : 'لا يوجد', icon:<Star size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
-    { label:'إجمالي الإيرادات', value: formatMoney(stats?.totalRevenue, stats?.totalRevenueDisplay), icon:<TrendingUp size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
-    { label:'الشهادات المصدرة', value: stats?.certificatesIssued ?? 0, icon:<Award size={20} color="#ef4444"/>, bg:'rgba(239,68,68,0.1)' },
-    { label:'معدل الإكمال', value: `${stats?.completionRate ?? 0}%`, icon:<BarChart2 size={20} color="#8b5cf6"/>, bg:'rgba(139,92,246,0.1)' },
+    { label:(isAr ? 'إجمالي المستخدمين' : 'Total users'), value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
+    { label:(isAr ? 'الكورسات المنشورة' : 'Published courses'), value: stats?.publishedCourses ?? 0, icon:<BookOpen size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)' },
+    { label:(isAr ? 'متوسط التقييم' : 'Average rating'), value: stats?.avgRating ? `${stats.avgRating}` : (isAr ? 'لا يوجد' : 'None'), icon:<Star size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
+    { label:(isAr ? 'إجمالي الإيرادات' : 'Total revenue'), value: formatMoney(stats?.totalRevenue, stats?.totalRevenueDisplay), icon:<TrendingUp size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
+    { label:(isAr ? 'الشهادات المصدرة' : 'Certificates issued'), value: stats?.certificatesIssued ?? 0, icon:<Award size={20} color="#ef4444"/>, bg:'rgba(239,68,68,0.1)' },
+    { label:(isAr ? 'معدل الإكمال' : 'Completion rate'), value: `${stats?.completionRate ?? 0}%`, icon:<BarChart2 size={20} color="#8b5cf6"/>, bg:'rgba(139,92,246,0.1)' },
   ]
 
   return (
@@ -41,8 +43,8 @@ export default function AnalyticsPage() {
       <div style={{ maxWidth: 760, margin:'0 auto' }}>
         <AnalyticsTourLauncher />
         <div style={{ marginBottom:28 }}>
-          <h1 style={{ color: 'var(--foreground)', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
-          <p style={{ color:'var(--ink-3)', fontSize:14, marginTop:4 }}>تحليل أداء كورساتك وطلابك</p>
+          <h1 style={{ color: 'var(--foreground)', fontSize:24, fontWeight:800, margin:0 }}>{isAr ? 'إحصائياتي' : 'My analytics'}</h1>
+          <p style={{ color:'var(--ink-3)', fontSize:14, marginTop:4 }}>{isAr ? 'تحليل أداء كورساتك وطلابك' : 'Analysis of your courses and student performance'}</p>
         </div>
 
         {isLoading ? (
@@ -55,8 +57,8 @@ export default function AnalyticsPage() {
           <>
             {isError && (
               <div style={{ marginBottom:16, padding:'12px 16px', borderRadius:12, background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#ef4444', fontSize:13, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <span>تعذر تحميل الإحصائيات</span>
-                <button onClick={() => refetch()} style={{ background:'none', border:'1px solid currentColor', color:'inherit', borderRadius:8, padding:'4px 12px', cursor:'pointer', fontSize:12 }}>إعادة المحاولة</button>
+                <span>{isAr ? 'تعذر تحميل الإحصائيات' : 'Could not load the statistics'}</span>
+                <button onClick={() => refetch()} style={{ background:'none', border:'1px solid currentColor', color:'inherit', borderRadius:8, padding:'4px 12px', cursor:'pointer', fontSize:12 }}>{isAr ? 'إعادة المحاولة' : 'Try again'}</button>
               </div>
             )}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:28 }}>
@@ -70,11 +72,11 @@ export default function AnalyticsPage() {
             </div>
 
             <div data-tour="analytics-course-list" style={{ background: 'var(--surface)', borderRadius:20, padding:24, border:`1px solid ${'var(--border)'}` }}>
-              <h3 style={{ color: 'var(--foreground)', fontSize:16, fontWeight:700, marginBottom:20 }}>أداء الكورسات</h3>
+              <h3 style={{ color: 'var(--foreground)', fontSize:16, fontWeight:700, marginBottom:20 }}>{isAr ? 'أداء الكورسات' : 'Course performance'}</h3>
               {!courses.length ? (
                 <div style={{ textAlign:'center', padding:32, color:'var(--ink-3)' }}>
                   <BookOpen size={40} style={{ margin:'0 auto 12px', opacity:0.3 }}/>
-                  <p>لا توجد كورسات بعد</p>
+                  <p>{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}</p>
                 </div>
               ) : courses.map((c: any) => (
                 <div key={c.id} {...(c.id === firstZeroId ? { 'data-tour': 'analytics-low-performing' } : {})} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${'var(--bg-2)'}` }}>
@@ -83,7 +85,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ color: 'var(--foreground)', fontSize:14, fontWeight:600 }}>{c.title}</div>
-                    <div style={{ color:'var(--ink-3)', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
+                    <div style={{ color:'var(--ink-3)', fontSize:12, marginTop:2 }}>{c.enrollments || 0} {isAr ? 'مستخدم' : 'users'}  {c.status === 'PUBLISHED' ? (isAr ? ' منشور' : 'Published') : (isAr ? ' مسودة' : 'Draft')}</div>
                   </div>
                   <div style={{ color: 'var(--muted)', fontSize:13, fontWeight:600 }}>
                     {formatCoursePrice(c)}

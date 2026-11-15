@@ -37,7 +37,7 @@ function parseSessionDate(raw: unknown): Date | null {
   return null
 }
 
-function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
+function displayTotal(items: any[], displayKey: string, rawTotal: number, isAr = true): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
   const isEGP = sample.includes('ج.م')
   if (isEGP) {
@@ -45,7 +45,7 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number): strin
       const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
       return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
     }, 0)
-    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+    return (isAr ? `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م` : `${Math.round(egpTotal).toLocaleString('en-US')} EGP`)
   }
   return formatSarAmount(rawTotal ?? 0)
 }
@@ -299,13 +299,14 @@ function InstructorOverview() {
    BOOKING MODAL — same endpoints as /coaching and /coaching/[id]/book
    ════════════════════════════════════════════════════════ */
 
-function mentorName(c: any): string {
-  return `${c?.profile?.firstName || ''} ${c?.profile?.lastName || ''}`.trim() || c?.email || 'مرشد'
+function mentorName(c: any, isAr = true): string {
+  return `${c?.profile?.firstName || ''} ${c?.profile?.lastName || ''}`.trim() || c?.email || (isAr ? 'مرشد' : 'Mentor')
 }
 
 function BookingModal({ paths, initialIdx, onClose, onBooked }: {
   paths: any[]; initialIdx: number; onClose: () => void; onBooked: () => void
 }) {
+  const isAr = useLocale() === 'ar'
   const [tab, setTab] = useState(initialIdx)
   const [mentor, setMentor] = useState<any>(null)
   const [slot, setSlot] = useState<string | null>(null)
@@ -361,7 +362,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
 
   const confirm = async () => {
     if (!mentor || !slot || booking) return
-    const t = (topic.trim() || pathName || 'جلسة إرشادية')
+    const t = (topic.trim() || pathName || (isAr ? 'جلسة إرشادية' : 'Mentoring session'))
     setBooking(true); setError(null)
     try {
       await post('/consulting/sessions/book', {
@@ -371,7 +372,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
       onClose()
     } catch (e: any) {
       const m = e?.response?.data?.message
-      setError((Array.isArray(m) ? m.join(' - ') : m) || 'تعذر حجز الجلسة، حاول مرة أخرى')
+      setError((Array.isArray(m) ? m.join(' - ') : m) || (isAr ? 'تعذر حجز الجلسة، حاول مرة أخرى' : 'Could not book the session, please try again'))
     } finally {
       setBooking(false)
     }
@@ -395,13 +396,13 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
 
   return (
     <div className="book-overlay" onClick={onClose}>
-      <div className="book-modal" dir="rtl" role="dialog" aria-modal="true" aria-label="احجز جلسة مع مرشد" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="book-close" onClick={onClose} aria-label="إغلاق">×</button>
+      <div className="book-modal" dir="rtl" role="dialog" aria-modal="true" aria-label={isAr ? 'احجز جلسة مع مرشد' : 'Book a session with a mentor'} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="book-close" onClick={onClose} aria-label={isAr ? 'إغلاق' : 'Close'}>×</button>
 
         <div className="book-head">
           <span className="book-char" aria-hidden="true" dangerouslySetInnerHTML={{ __html: CHARACTERS.sa2 }} />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h3>احجز جلسة مع مرشد</h3>
+            <h3>{isAr ? 'احجز جلسة مع مرشد' : 'Book a session with a mentor'}</h3>
             {pathName && <p>{pathName}</p>}
           </div>
         </div>
@@ -417,15 +418,15 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
         )}
 
         {loadingMentors ? (
-          <p className="book-note">جارٍ تحميل المرشدين...</p>
+          <p className="book-note">{isAr ? 'جارٍ تحميل المرشدين...' : 'Loading mentors...'}</p>
         ) : filtered.length === 0 ? (
-          <p className="book-note">لا يوجد مرشدون متاحون حالياً</p>
+          <p className="book-note">{isAr ? 'لا يوجد مرشدون متاحون حالياً' : 'No mentors are available right now'}</p>
         ) : (
           <>
-            {!matched && <p className="book-note">لا يوجد مرشدون مطابقون لهذا المسار، عرض كل المرشدين</p>}
+            {!matched && <p className="book-note">{isAr ? 'لا يوجد مرشدون مطابقون لهذا المسار، عرض كل المرشدين' : 'No mentors match this path, showing all mentors'}</p>}
             <div className="mentor-grid">
               {filtered.map((c: any) => {
-                const name = mentorName(c)
+                const name = mentorName(c, isAr)
                 const active = mentor?.id === c.id
                 return (
                   <div key={c.id} role="button" tabIndex={0} className={`mentor-card${active ? ' on' : ''}`}
@@ -436,9 +437,9 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
                       : <span className="mentor-av">{name[0]}</span>}
                     <span className="mentor-info">
                       <b>{name}</b>
-                      <small>{c.profile?.speciality || 'إرشاد مهني'}</small>
+                      <small>{c.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}</small>
                     </span>
-                    <span className="mentor-pick">{active ? 'مختار' : 'اختر'}</span>
+                    <span className="mentor-pick">{active ? (isAr ? 'مختار' : 'Selected') : (isAr ? 'اختر' : 'Choose')}</span>
                   </div>
                 )
               })}
@@ -448,11 +449,11 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
 
         {mentor && (
           <>
-            <p className="book-section">المواعيد المتاحة</p>
+            <p className="book-section">{isAr ? 'المواعيد المتاحة' : 'Available times'}</p>
             {loadingSlots ? (
-              <p className="book-note">جارٍ تحميل المواعيد...</p>
+              <p className="book-note">{isAr ? 'جارٍ تحميل المواعيد...' : 'Loading times...'}</p>
             ) : slots.length === 0 ? (
-              <p className="book-note">لا توجد مواعيد متاحة خلال الأسبوع القادم</p>
+              <p className="book-note">{isAr ? 'لا توجد مواعيد متاحة خلال الأسبوع القادم' : 'No times available over the next week'}</p>
             ) : (
               <>
                 <div className="book-tabs" role="tablist">
@@ -472,7 +473,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
               </>
             )}
             {slot && (
-              <input className="book-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={`موضوع الجلسة (${pathName || 'جلسة إرشادية'})`} />
+              <input className="book-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={(isAr ? `موضوع الجلسة (${pathName || 'جلسة إرشادية'})` : `Session topic (${pathName || 'Mentoring session'})`)} />
             )}
           </>
         )}
@@ -480,7 +481,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
         {error && <p role="alert" className="book-error">{error}</p>}
 
         <button type="button" onClick={confirm} disabled={!canConfirm} className="book-confirm">
-          {booking ? 'جارٍ الحجز...' : 'تأكيد الحجز'}
+          {booking ? (isAr ? 'جارٍ الحجز...' : 'Booking...') : (isAr ? 'تأكيد الحجز' : 'Confirm booking')}
         </button>
       </div>
     </div>
@@ -760,7 +761,7 @@ function StudentOverview() {
   }
 
   const firstName = isAr
-    ? (user?.profile?.firstName || 'الطالب')
+    ? (user?.profile?.firstName || (isAr ? 'الطالب' : 'Student'))
     : (user?.profile?.firstName || 'Student')
   const progressOf = (e: any): number => Number(e.progress ?? e.enrollment?.progress ?? 0) || 0
   const courseOf = (e: any) => e.course || e
@@ -841,7 +842,7 @@ function StudentOverview() {
           <span className="dw2-char-av dw2-char-letter" aria-hidden="true">{userName?.[0]?.toUpperCase() ?? '?'}</span>
         )}
         <div className="dw2-grow">
-          <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
+          <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>{isAr ? 'مرحباً بعودتك' : 'Welcome back'}</p>
           <h1>{userName}</h1>
         </div>
         <Link href={`/${locale}/dashboard/my-courses`} data-tour="dashboard-my-courses-link" className="dw-btn dw-btn-light dw-btn-sm">
@@ -855,17 +856,17 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-track">
           <div className="dw-card-h">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            <h2 style={{ flex: 1 }}>المسار المهني</h2>
+            <h2 style={{ flex: 1 }}>{isAr ? 'المسار المهني' : 'Career path'}</h2>
             {selectedPaths.length > 1 && (
-              <div className="dw2-pager" role="group" aria-label="التنقل بين المسارات">
-                <button type="button" onClick={() => setPathIdx(safePathIdx - 1)} aria-label="المسار السابق"><ChevronLeft size={14} style={{ transform: 'scaleX(-1)' }} /></button>
+              <div className="dw2-pager" role="group" aria-label={isAr ? 'التنقل بين المسارات' : 'Switch between paths'}>
+                <button type="button" onClick={() => setPathIdx(safePathIdx - 1)} aria-label={isAr ? 'المسار السابق' : 'Previous path'}><ChevronLeft size={14} style={{ transform: 'scaleX(-1)' }} /></button>
                 <span>{safePathIdx + 1} / {selectedPaths.length}</span>
-                <button type="button" onClick={() => setPathIdx(safePathIdx + 1)} aria-label="المسار التالي"><ChevronLeft size={14} /></button>
+                <button type="button" onClick={() => setPathIdx(safePathIdx + 1)} aria-label={isAr ? 'المسار التالي' : 'Next path'}><ChevronLeft size={14} /></button>
               </div>
             )}
-            {selectedPaths.length > 1 && <span className="dw3-count-badge">لديك {selectedPaths.length} مسارات</span>}
+            {selectedPaths.length > 1 && <span className="dw3-count-badge">{isAr ? 'لديك' : 'You have'} {selectedPaths.length} {isAr ? 'مسارات' : 'paths'}</span>}
             <button type="button" className="dw-open-btn" onClick={() => setCareerPathOpen(true)}>
-              فتح المسار المهني
+              {isAr ? 'فتح المسار المهني' : 'Open career path'}
               <OpenArrow />
             </button>
           </div>
@@ -897,21 +898,21 @@ function StudentOverview() {
                       }}/>
                     </svg>
                     <b>{pct}%</b>
-                    <small>اكتملت</small>
+                    <small>{isAr ? 'اكتملت' : 'completed'}</small>
                   </span>
                   <div>
                     <h3 data-tour="dashboard-track-title" style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
                     <p className="dw-muted">{(selectedPath.roles ?? []).slice(0, 3).join(' · ')}</p>
                     <div style={{ marginTop: '14px' }}>
                       <button type="button" onClick={() => setCareerPathOpen(true)} className="dw-btn dw-btn-primary dw-btn-sm">
-                        تابع
+                        {isAr ? 'تابع' : 'Continue'}
                         <OpenArrow />
                       </button>
                     </div>
                   </div>
                 </div>
                 {/* Section 1: every course the student is enrolled in for this path */}
-                <p className="dw-section-label">الكورسات المشترك فيها</p>
+                <p className="dw-section-label">{isAr ? 'الكورسات المشترك فيها' : 'Enrolled courses'}</p>
                 {(() => {
                   // Same source as /dashboard/my-courses (/courses/enrolled); not filtered by path
                   const enrolledCourses = enrollments
@@ -920,7 +921,7 @@ function StudentOverview() {
                   if (enrolledCourses.length === 0) {
                     return (
                       <p style={{ fontSize: '13px', color: 'var(--ink-3)', padding: '8px 4px' }}>
-                        لم تبدأ أي كورس بعد
+                        {isAr ? 'لم تبدأ أي كورس بعد' : 'You have not started any course yet'}
                       </p>
                     )
                   }
@@ -943,7 +944,7 @@ function StudentOverview() {
                               <small>{isDoing && <span className="dw-mini-prog"><span style={{ width: `${prog}%` }}/></span>}</small>
                             </span>
                             <span className={`dw-status ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
-                              {isDone ? 'مكتمل' : isDoing ? 'قيد التقدّم' : 'مشترك'}
+                              {isDone ? (isAr ? 'مكتمل' : 'Completed') : isDoing ? (isAr ? 'قيد التقدّم' : 'In progress') : (isAr ? 'مشترك' : 'Enrolled')}
                             </span>
                           </a>
                         )
@@ -956,7 +957,7 @@ function StudentOverview() {
                         style={{ marginTop: '10px' }}
                         onClick={() => setShowAllEnrolled((v) => !v)}
                       >
-                        {showAllEnrolled ? 'عرض أقل' : `عرض المزيد (${enrolledCourses.length})`}
+                        {showAllEnrolled ? (isAr ? 'عرض أقل' : 'Show less') : (isAr ? `عرض المزيد (${enrolledCourses.length})` : `Show more (${enrolledCourses.length})`)}
                       </button>
                     )}
                     </>
@@ -965,12 +966,12 @@ function StudentOverview() {
 
                 {/* Section 2: all courses of this path, enrolled or not */}
                 <p className="dw-section-label" data-tour="dashboard-track-courses" style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  كورسات المسار
-                  {packageBought && <span className="dw-status done" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><PackageIcon size={12} aria-hidden="true" />باكدج مجمّع</span>}
+                  {isAr ? 'كورسات المسار' : 'Path courses'}
+                  {packageBought && <span className="dw-status done" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><PackageIcon size={12} aria-hidden="true" />{isAr ? 'باكدج مجمّع' : 'Bundle package'}</span>}
                 </p>
                 {trackPackage && !packageBought && (
                   <Link href={`/${locale}/careers/${selectedPathRaw?.slug}`} className="dw-btn dw-btn-ghost dw-btn-sm" style={{ marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <PackageIcon size={14} aria-hidden="true" />باكدج متاح لهذا المسار
+                    <PackageIcon size={14} aria-hidden="true" />{isAr ? 'باكدج متاح لهذا المسار' : 'A package is available for this path'}
                   </Link>
                 )}
                 {pathCoursesLoading ? (
@@ -984,8 +985,8 @@ function StudentOverview() {
                   </div>
                 ) : pathCourses.length === 0 ? (
                   <div className="dw2-empty-courses">
-                    <p>لا توجد كورسات مرتبطة بهذا المسار بعد.</p>
-                    <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-primary dw-btn-sm">تصفح كل الكورسات</a>
+                    <p>{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد.' : 'No courses are linked to this path yet.'}</p>
+                    <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-primary dw-btn-sm">{isAr ? 'تصفح كل الكورسات' : 'Browse all courses'}</a>
                   </div>
                 ) : (
                   <div className="dw-clist dw2-scroll" style={{ marginTop: 0 }}>
@@ -999,7 +1000,7 @@ function StudentOverview() {
                           <span className="dw-dot">{i + 1}</span>
                           <span className="dw-crow-info"><h4>{c.name}</h4>{meta && <small>{meta}</small>}</span>
                           <span className={`dw-status ${isEnrolled || inPackage ? 'doing' : 'todo'}`}>
-                            {isEnrolled ? 'مشترك' : inPackage ? 'مشمول في الباكدج' : 'غير مشترك'}
+                            {isEnrolled ? (isAr ? 'مشترك' : 'Enrolled') : inPackage ? (isAr ? 'مشمول في الباكدج' : 'Included in the package') : (isAr ? 'غير مشترك' : 'Not enrolled')}
                           </span>
                         </Row>
                       )
@@ -1010,9 +1011,9 @@ function StudentOverview() {
             )
           })() : (
             <div className="dw-empty-state">
-              <p>لم تختر مساراً مهنياً بعد</p>
+              <p>{isAr ? 'لم تختر مساراً مهنياً بعد' : 'You have not chosen a career path yet'}</p>
               <Link href={`/${locale}/careers`} className="dw-btn dw-btn-primary dw-btn-sm">
-                اختر مسارك →
+                {isAr ? 'اختر مسارك →' : 'Choose your path →'}
               </Link>
             </div>
           )}
@@ -1026,7 +1027,7 @@ function StudentOverview() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>
               </svg>
-              <h3>الجلسة المباشرة القادمة</h3>
+              <h3>{isAr ? 'الجلسة المباشرة القادمة' : 'Next live session'}</h3>
               {upcomingSession && <span className="dw-live-dot"/>}
             </div>
 
@@ -1040,7 +1041,7 @@ function StudentOverview() {
                   </p>
                 )}
                 <p className="dw-lc-sub">
-                  {upcomingSession.topic ?? upcomingSession.sessionName ?? 'جلسة إرشادية'}
+                  {upcomingSession.topic ?? upcomingSession.sessionName ?? (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                 </p>
                 {upcomingMentor && (
                   <div className="dw2-lc-host">
@@ -1059,30 +1060,30 @@ function StudentOverview() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M8 5v14l11-7Z"/>
                   </svg>
-                  {upcomingSession.status === 'IN_PROGRESS' ? 'انضم إلى الجلسة' : 'تفاصيل الجلسة'}
+                  {upcomingSession.status === 'IN_PROGRESS' ? (isAr ? 'انضم إلى الجلسة' : 'Join the session') : (isAr ? 'تفاصيل الجلسة' : 'Session details')}
                 </Link>
                 {upcomingCount > 1 && (
                   <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-lc-more">
-                    +{upcomingCount - 1} جلسات قادمة أخرى
+                    +{upcomingCount - 1} {isAr ? 'جلسات قادمة أخرى' : 'Other upcoming sessions'}
                   </Link>
                 )}
               </>
             ) : pendingCount > 0 ? (
               <>
                 <p className="dw-lc-sub" style={{ marginBottom: '14px' }}>
-                  لديك {pendingCount} {pendingCount === 1 ? 'جلسة' : 'جلسات'} بانتظار الموافقة أو الدفع
+                  {isAr ? 'لديك' : 'You have'} {pendingCount} {pendingCount === 1 ? (isAr ? 'جلسة' : 'session') : (isAr ? 'جلسات' : 'sessions')} {isAr ? 'بانتظار الموافقة أو الدفع' : 'awaiting approval or payment'}
                 </p>
                 <Link href={`/${locale}/dashboard/my-sessions`} className="dw-btn dw-btn-light dw-btn-sm dw-btn-block">
-                  عرض جلساتي
+                  {isAr ? 'عرض جلساتي' : 'View my sessions'}
                 </Link>
               </>
             ) : (
               <>
                 <p className="dw-lc-sub" style={{ marginBottom: '14px' }}>
-                  لا توجد جلسات قادمة
+                  {isAr ? 'لا توجد جلسات قادمة' : 'No upcoming sessions'}
                 </p>
                 <Link href={`/${locale}/coaching`} className="dw-btn dw-btn-light dw-btn-sm dw-btn-block">
-                  احجز جلستك الأولى
+                  {isAr ? 'احجز جلستك الأولى' : 'Book your first session'}
                 </Link>
               </>
             )}
@@ -1096,24 +1097,24 @@ function StudentOverview() {
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
-              <h3>دعم المرشدين</h3>
+              <h3>{isAr ? 'دعم المرشدين' : 'Mentor support'}</h3>
             </div>
 
-            <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-stats" aria-label="جلساتي">
-              <span className="dw3-stat"><CalendarClock size={18} aria-hidden="true" /><b>{upcomingCount}</b><small>قادمة</small></span>
-              <span className={`dw3-stat${pendingCount > 0 ? ' warn' : ''}`}><Clock size={18} aria-hidden="true" /><b>{pendingCount}</b><small>بانتظار الموافقة</small></span>
-              <span className="dw3-stat good"><CheckCircle2 size={18} aria-hidden="true" /><b>{completedSessionsCount}</b><small>مكتملة</small></span>
+            <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-stats" aria-label={isAr ? 'جلساتي' : 'My sessions'}>
+              <span className="dw3-stat"><CalendarClock size={18} aria-hidden="true" /><b>{upcomingCount}</b><small>{isAr ? 'قادمة' : 'Upcoming'}</small></span>
+              <span className={`dw3-stat${pendingCount > 0 ? ' warn' : ''}`}><Clock size={18} aria-hidden="true" /><b>{pendingCount}</b><small>{isAr ? 'بانتظار الموافقة' : 'Pending approval'}</small></span>
+              <span className="dw3-stat good"><CheckCircle2 size={18} aria-hidden="true" /><b>{completedSessionsCount}</b><small>{isAr ? 'مكتملة' : 'Completed'}</small></span>
             </Link>
 
             <button type="button" onClick={() => setBookingOpen(true)} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/>
               </svg>
-              احجز جلسة جديدة
+              {isAr ? 'احجز جلسة جديدة' : 'Book a new session'}
             </button>
 
             <Link href={`/${locale}/dashboard/my-sessions`} className="dw-link-sm">
-              عرض كل جلساتي
+              {isAr ? 'عرض كل جلساتي' : 'View all my sessions'}
             </Link>
           </div>
         </div>
@@ -1123,7 +1124,7 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-rashid">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <h3>ترشيحات رشيد</h3>
+            <h3>{isAr ? 'ترشيحات رشيد' : 'Rashid\'s recommendations'}</h3>
           </div>
           {rasheedResult?.topCareers?.length ? (
             <div className="dw-clist" style={{ marginTop: 0 }}>
@@ -1132,7 +1133,7 @@ function StudentOverview() {
                   <span className="dw-dot">{k + 1}</span>
                   <span className="dw-crow-info">
                     <h4>{isAr ? c.name : (c.nameEn || c.name)}</h4>
-                    <small>{c.match}% توافق</small>
+                    <small>{c.match}{isAr ? '% توافق' : '% match'}</small>
                   </span>
                   <OpenArrow />
                 </Link>
@@ -1141,10 +1142,10 @@ function StudentOverview() {
           ) : (
             <>
               <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                يحلّل مهاراتك ويرشدك لأفضل مسار مهني مناسب لك.
+                {isAr ? 'يحلّل مهاراتك ويرشدك لأفضل مسار مهني مناسب لك.' : 'Analyzes your skills and guides you to the best career path for you.'}
               </p>
               <Link href={`/${locale}/dashboard/ai-chat`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
-                ابدأ التقييم المجاني
+                {isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}
               </Link>
             </>
           )}
@@ -1153,16 +1154,16 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-milestones">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
-            <h3>المحطات</h3>
+            <h3>{isAr ? 'المحطات' : 'Milestones'}</h3>
           </div>
           <ol className="dw-ms">
             {(() => {
               const steps = [
-                { label: 'إنشاء حسابك', done: true },
-                { label: 'اختيار مسارك المهني', done: selectedPaths.length > 0 },
-                { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0 },
-                { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0 },
-                { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0 },
+                { label: (isAr ? 'إنشاء حسابك' : 'Create your account'), done: true },
+                { label: (isAr ? 'اختيار مسارك المهني' : 'Choose your career path'), done: selectedPaths.length > 0 },
+                { label: (isAr ? 'إكمال أول كورس' : 'Complete your first course'), done: (completedCount ?? 0) > 0 },
+                { label: (isAr ? 'حجز جلسة مع مرشد' : 'Book a session with a mentor'), done: (completedSessionsCount ?? 0) > 0 },
+                { label: (isAr ? 'الحصول على شهادتك الأولى' : 'Get your first certificate'), done: (certificatesCount ?? 0) > 0 },
               ]
               const current = steps.findIndex((x) => !x.done)
               return steps.map((s, i) => (
@@ -1180,29 +1181,29 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-payments">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2z"/><path d="M8 8h8M8 12h8"/></svg>
-            <h3>المدفوعات</h3>
+            <h3>{isAr ? 'المدفوعات' : 'Payments'}</h3>
           </div>
           {paymentsData?.last ? (
             <>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--ink-3)' }}>آخر عملية دفع</p>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--ink-3)' }}>{isAr ? 'آخر عملية دفع' : 'Last payment'}</p>
               <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700 }}>{paymentsData.last.itemName}</p>
               <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--ink-2)' }}>
                 {formatMoney(paymentsData.last.amount)}
                 {' · '}
                 {new Date(paymentsData.last.date).toLocaleDateString('ar-EG-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' })}
-                {paymentsData.total > 1 ? ` · ${paymentsData.total} عمليات` : ''}
+                {paymentsData.total > 1 ? (isAr ? ` · ${paymentsData.total} عمليات` : `· ${paymentsData.total} payments`) : ''}
               </p>
               <Link href={`/${locale}/dashboard/invoices`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
-                عرض سجل المدفوعات
+                {isAr ? 'عرض سجل المدفوعات' : 'View payment history'}
               </Link>
             </>
           ) : (
             <>
               <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                لا توجد مدفوعات بعد
+                {isAr ? 'لا توجد مدفوعات بعد' : 'No payments yet'}
               </p>
               <Link href={`/${locale}/dashboard/invoices`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
-                سجل المدفوعات
+                {isAr ? 'سجل المدفوعات' : 'Payment history'}
               </Link>
             </>
           )}
@@ -1211,24 +1212,24 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-certificates">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
-            <h3>شهاداتي</h3>
+            <h3>{isAr ? 'شهاداتي' : 'My certificates'}</h3>
           </div>
           {certificatesCount > 0 ? (
             <>
               <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                حصلت على <b style={{ color: 'var(--ink)', fontSize: '20px' }}>{certificatesCount}</b> {certificatesCount === 1 ? 'شهادة' : 'شهادات'}
+                {isAr ? 'حصلت على' : 'You earned'} <b style={{ color: 'var(--ink)', fontSize: '20px' }}>{certificatesCount}</b> {certificatesCount === 1 ? (isAr ? 'شهادة' : 'certificate') : (isAr ? 'شهادات' : 'certificates')}
               </p>
               <Link href={`/${locale}/dashboard/certificates`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
-                عرض شهاداتي
+                {isAr ? 'عرض شهاداتي' : 'View my certificates'}
               </Link>
             </>
           ) : (
             <>
               <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                لم تحصل على شهادات بعد
+                {isAr ? 'لم تحصل على شهادات بعد' : 'You have no certificates yet'}
               </p>
               <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
-                اكمل أول كورس
+                {isAr ? 'اكمل أول كورس' : 'Complete your first course'}
               </Link>
             </>
           )}
@@ -1239,13 +1240,13 @@ function StudentOverview() {
         <div className="dw-card dw2-card" data-tour="dashboard-grades">
           <div className="dw-card-h">
             <GraduationCap size={16} aria-hidden="true" />
-            <h3>درجاتي</h3>
+            <h3>{isAr ? 'درجاتي' : 'My grades'}</h3>
           </div>
           <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-            نتائجك في كل الاختبارات
+            {isAr ? 'نتائجك في كل الاختبارات' : 'Your results in all the quizzes'}
           </p>
           <a href={learnUrlWithToken(`/${locale}/dashboard/grades`)} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
-            عرض درجاتي
+            {isAr ? 'عرض درجاتي' : 'View my grades'}
           </a>
         </div>
       </div>
@@ -1358,7 +1359,7 @@ function ConsultantOverview() {
     {
       Icon: DollarSign, color: 'var(--warning)',
       label: isAr ? 'الإيرادات' : 'Revenue',
-      value: displayTotal(completed, 'priceDisplay', totalRevenue),
+      value: displayTotal(completed, 'priceDisplay', totalRevenue, isAr),
       href: `/${locale}/dashboard/revenue`,
     },
   ]
@@ -1572,8 +1573,8 @@ export default function DashboardPage() {
   const roleCard = useMemo(() => {
     if (accountType === 'ADMIN') return {
       icon: <Shield size={22} color="var(--primary-foreground)"/>,
-      title: 'لوحة تحكم الإدارة',
-      desc: 'إدارة المستخدمين والكورسات والإعدادات',
+      title: (isAr ? 'لوحة تحكم الإدارة' : 'Admin dashboard'),
+      desc: (isAr ? 'إدارة المستخدمين والكورسات والإعدادات' : 'Manage users, courses and settings'),
       href: `/${locale}/admin`,
       bg: 'linear-gradient(135deg,rgba(81,32,200,0.2),rgba(124,58,237,0.15))',
       border: 'rgba(81,32,200,0.3)',

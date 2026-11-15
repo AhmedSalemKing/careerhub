@@ -15,6 +15,7 @@ export default function NewQuizPage() {
   const params = useParams()
   const router = useRouter()
   const locale = (params.locale as string) || 'ar'
+  const isAr = locale === 'ar'
   const courseId = params.id as string
 
   const [form, setForm] = useState({
@@ -53,15 +54,15 @@ export default function NewQuizPage() {
 
   const save = async () => {
     if (!form.title.trim()) {
-      toast.error('أدخل عنوان الاختبار')
+      toast.error((isAr ? 'أدخل عنوان الاختبار' : 'Enter the quiz title'))
       return
     }
     if (!form.lessonId) {
-      toast.error('اختر الدرس الذي سيظهر البرنامج الاختباري عنده')
+      toast.error((isAr ? 'اختر الدرس الذي سيظهر البرنامج الاختباري عنده' : 'Choose the lesson where the quiz will appear'))
       return
     }
     if (!form.sectionId) {
-      toast.error('اختر القسم الذي ينتمي إليه الدرس')
+      toast.error((isAr ? 'اختر القسم الذي ينتمي إليه الدرس' : 'Choose the section the lesson belongs to'))
       return
     }
     setSaving(true)
@@ -84,10 +85,10 @@ export default function NewQuizPage() {
         lessonId: form.lessonId,
       })
       const quiz = (res?.data as any)?.data ?? (res as any)?.data ?? null
-      toast.success('تم إنشاء الاختبار')
+      toast.success((isAr ? 'تم إنشاء الاختبار' : 'Quiz created'))
       router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/${quiz?.id ?? ''}/builder`)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'حدث خطأ أثناء الإنشاء')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'حدث خطأ أثناء الإنشاء' : 'An error occurred while creating'))
     } finally {
       setSaving(false)
     }
@@ -102,37 +103,37 @@ export default function NewQuizPage() {
           className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
         >
           <ArrowRight className="h-4 w-4" />
-          الرجوع للاختبارات
+          {isAr ? 'الرجوع للاختبارات' : 'Back to quizzes'}
         </button>
-        <h1 className="mt-3 text-xl font-bold font-madinet text-[var(--ink)]">اختبار جديد</h1>
+        <h1 className="mt-3 text-xl font-bold font-madinet text-[var(--ink)]">{isAr ? 'اختبار جديد' : 'New quiz'}</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-[var(--ink)]">بيانات الاختبار</h2>
+            <h2 className="mb-4 font-bold text-[var(--ink)]">{isAr ? 'بيانات الاختبار' : 'Quiz details'}</h2>
             <div className="space-y-4">
               <div>
-                <label className={labelCls}>عنوان الاختبار *</label>
-                <input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="مثال: اختبار الفصل الأول" />
+                <label className={labelCls}>{isAr ? 'عنوان الاختبار *' : 'Quiz title *'}</label>
+                <input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={isAr ? 'مثال: اختبار الفصل الأول' : 'Example: First term quiz'} />
               </div>
               <div>
-                <label className={labelCls}>العنوان بالإنجليزية</label>
-                <input className={inputCls} value={form.titleAr} onChange={(e) => set('titleAr', e.target.value)} placeholder="Quiz 1 (اختياري)" />
+                <label className={labelCls}>{isAr ? 'العنوان بالإنجليزية' : 'Title in English'}</label>
+                <input className={inputCls} value={form.titleAr} onChange={(e) => set('titleAr', e.target.value)} placeholder={isAr ? 'Quiz 1 (اختياري)' : 'Quiz 1 (optional)'} />
               </div>
               <div>
-                <label className={labelCls}>الوصف</label>
+                <label className={labelCls}>{isAr ? 'الوصف' : 'Description'}</label>
                 <textarea
                   className={`${inputCls} min-h-[90px] resize-y`}
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  placeholder="وصف قصير يظهر للطلاب"
+                  placeholder={isAr ? 'وصف قصير يظهر للطلاب' : 'A short description shown to students'}
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls}>الدرس المرتبط *</label>
+                  <label className={labelCls}>{isAr ? 'الدرس المرتبط *' : 'Linked lesson *'}</label>
                   <select
                     className={inputCls}
                     value={form.lessonId}
@@ -142,7 +143,7 @@ export default function NewQuizPage() {
                       if (lesson) set('sectionId', lesson.sectionId)
                     }}
                   >
-                    <option value="">اختر الدرس...</option>
+                    <option value="">{isAr ? 'اختر الدرس...' : 'Choose the lesson...'}</option>
                     {sections.map((s: any) => (
                       <optgroup key={s.id} label={s.title}>
                         {(s.lessons ?? []).map((l: any) => (
@@ -155,18 +156,18 @@ export default function NewQuizPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>القسم</label>
-                  <input className={inputCls} value={sections.find((s) => s.id === form.sectionId)?.title ?? ''} readOnly placeholder="يُحدد تلقائياً" />
+                  <label className={labelCls}>{isAr ? 'القسم' : 'Section'}</label>
+                  <input className={inputCls} value={sections.find((s) => s.id === form.sectionId)?.title ?? ''} readOnly placeholder={isAr ? 'يُحدد تلقائياً' : 'Set automatically'} />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls}>المدة (دقيقة)</label>
+                  <label className={labelCls}>{isAr ? 'المدة (دقيقة)' : 'Duration (minutes)'}</label>
                   <input className={inputCls} type="number" min={1} value={form.durationMinutes} onChange={(e) => set('durationMinutes', e.target.value)} />
                 </div>
                 <div>
-                  <label className={labelCls}>درجة النجاح (%)</label>
+                  <label className={labelCls}>{isAr ? 'درجة النجاح (%)' : 'Passing score (%)'}</label>
                   <input className={inputCls} type="number" min={0} max={100} value={form.passingScore} onChange={(e) => set('passingScore', e.target.value)} />
                 </div>
               </div>
@@ -174,27 +175,27 @@ export default function NewQuizPage() {
           </div>
 
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-[var(--ink)]">الإعدادات</h2>
+            <h2 className="mb-4 font-bold text-[var(--ink)]">{isAr ? 'الإعدادات' : 'Settings'}</h2>
             <div className="grid gap-5 sm:grid-cols-2">
-              <ToggleSwitch checked={form.shuffleQuestions} onChange={(v) => set('shuffleQuestions', v)} label="خلط ترتيب الأسئلة" />
-              <ToggleSwitch checked={form.shuffleChoices} onChange={(v) => set('shuffleChoices', v)} label="خلط ترتيب الخيارات" />
-              <ToggleSwitch checked={form.allowRetake} onChange={(v) => set('allowRetake', v)} label="السماح بإعادة المحاولة" />
-              <ToggleSwitch checked={form.showResults} onChange={(v) => set('showResults', v)} label="إظهار النتيجة والإجابات الصحيحة بعد التسليم" />
+              <ToggleSwitch checked={form.shuffleQuestions} onChange={(v) => set('shuffleQuestions', v)} label={isAr ? 'خلط ترتيب الأسئلة' : 'Shuffle question order'} />
+              <ToggleSwitch checked={form.shuffleChoices} onChange={(v) => set('shuffleChoices', v)} label={isAr ? 'خلط ترتيب الخيارات' : 'Shuffle choice order'} />
+              <ToggleSwitch checked={form.allowRetake} onChange={(v) => set('allowRetake', v)} label={isAr ? 'السماح بإعادة المحاولة' : 'Allow retaking'} />
+              <ToggleSwitch checked={form.showResults} onChange={(v) => set('showResults', v)} label={isAr ? 'إظهار النتيجة والإجابات الصحيحة بعد التسليم' : 'Show the result and correct answers after submission'} />
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-[var(--ink)]">سياسة إعادة المحاولة</h2>
+            <h2 className="mb-4 font-bold text-[var(--ink)]">{isAr ? 'سياسة إعادة المحاولة' : 'Retake policy'}</h2>
             <div className="space-y-5">
               <ToggleSwitch
                 checked={form.unlimitedRetakes}
                 onChange={(v) => set('unlimitedRetakes', v)}
-                label="محاولات غير محدودة"
+                label={isAr ? 'محاولات غير محدودة' : 'Unlimited attempts'}
               />
 
               {!form.unlimitedRetakes && (
                 <div>
-                  <label className={labelCls}>عدد المحاولات</label>
+                  <label className={labelCls}>{isAr ? 'عدد المحاولات' : 'Number of attempts'}</label>
                   <input
                     className={inputCls}
                     type="number"
@@ -208,7 +209,7 @@ export default function NewQuizPage() {
 
               <div>
                 <label className={labelCls}>
-                  حد إعادة المحاولة — {Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%
+                  {isAr ? 'حد إعادة المحاولة —' : 'Retake limit —'} {Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%
                 </label>
                 <input
                   type="range"
@@ -222,8 +223,8 @@ export default function NewQuizPage() {
 
               <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-xs leading-5 text-[color:var(--ink-2)]">
                 {form.unlimitedRetakes
-                  ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`
-                  : `الطالب يقدّر يعيد المحاولة حتى ${Math.max(1, parseInt(form.maxAttempts, 10) || 1)} مرة إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`}
+                  ? (isAr ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.` : `The student can retake without a limit if their score is below ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`)
+                  : (isAr ? `الطالب يقدّر يعيد المحاولة حتى ${Math.max(1, parseInt(form.maxAttempts, 10) || 1)} مرة إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.` : `The student can retake up to ${Math.max(1, parseInt(form.maxAttempts, 10) || 1)} times if their score is below ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`)}
               </p>
             </div>
           </div>
@@ -242,7 +243,7 @@ export default function NewQuizPage() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              إنشاء والانتقال لبناء الأسئلة
+              {isAr ? 'إنشاء والانتقال لبناء الأسئلة' : 'Create and go to building the questions'}
             </button>
           </div>
         </div>
