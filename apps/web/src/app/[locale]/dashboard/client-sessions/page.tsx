@@ -50,6 +50,13 @@ const Ic = {
 }
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
+import { ClientSessionsTourLauncher } from '@/components/ClientSessionsTour'
+
+function maskEmail(email: string): string {
+  const [user, domain] = email.split('@')
+  if (!domain) return email
+  return user.slice(0, 3) + '***@' + domain
+}
 
 interface StatusStyle {
   ar: string
@@ -104,6 +111,13 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
 }
 
 type TabKey = 'pending_approval' | 'awaiting_payment' | 'upcoming' | 'completed' | 'cancelled'
+
+const TAB_TOUR_KEYS: Record<string, string | undefined> = {
+  awaiting_payment: 'client-sessions-pending-payment',
+  upcoming: 'client-sessions-upcoming',
+  completed: 'client-sessions-completed',
+  cancelled: 'client-sessions-cancelled',
+}
 
 const TABS: { key: TabKey; ar: string; en: string; statuses: string[] }[] = [
   { key: 'pending_approval', ar: 'بانتظار موافقتي', en: 'Pending approval', statuses: ['PENDING_APPROVAL'] },
@@ -227,6 +241,8 @@ export default function ClientSessionsPage() {
     [sessions, activeTab],
   )
 
+  const firstPendingId = filtered.find((session) => displayStatus(session.status) === 'PENDING_APPROVAL')?.id
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['client-sessions'] })
 
   const handleApprove = async (sessionId: string) => {
@@ -312,6 +328,7 @@ export default function ClientSessionsPage() {
       className="min-h-screen pb-20"
       style={{ background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
     >
+      <ClientSessionsTourLauncher />
       <header
         className="border-b px-4 pb-0 pt-6 sm:px-6"
         style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
@@ -326,7 +343,7 @@ export default function ClientSessionsPage() {
                 <Ic.users size={20} />
               </div>
               <div>
-                <h1 className="text-lg font-black sm:text-xl" style={{ fontFamily: 'var(--font-madinet)' }}>
+                <h1 data-tour="client-sessions-header" className="text-lg font-black sm:text-xl" style={{ fontFamily: 'var(--font-madinet)' }}>
                   {isAr ? 'جلسات عملائي' : 'Client sessions'}
                 </h1>
                 <p className="text-[11px] font-semibold" style={{ color: 'var(--ink-2)' }}>
@@ -346,7 +363,7 @@ export default function ClientSessionsPage() {
             </button>
           </div>
 
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div data-tour="client-sessions-summary" className="mb-4 flex flex-wrap gap-2">
             {[
               {
                 value: counts.PENDING_APPROVAL || 0,
@@ -385,7 +402,7 @@ export default function ClientSessionsPage() {
             ))}
           </div>
 
-          <div className="-mb-px flex overflow-x-auto">
+          <div data-tour="client-sessions-tabs" className="-mb-px flex overflow-x-auto">
             {TABS.map((tab) => {
               const count = sessions.filter((session) =>
                 tab.statuses.includes(displayStatus(session.status)),
@@ -395,6 +412,7 @@ export default function ClientSessionsPage() {
                 <button
                   key={tab.key}
                   type="button"
+                  data-tour={TAB_TOUR_KEYS[tab.key]}
                   onClick={() => setActiveTab(tab.key)}
                   className="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-bold transition-colors"
                   style={{
@@ -407,13 +425,10 @@ export default function ClientSessionsPage() {
                   {isAr ? tab.ar : tab.en}
                   {count > 0 && (
                     <span
-                      className="min-w-[18px] rounded-full px-1.5 py-0.5 text-[9px] font-black"
-                      style={{
-                        background: active ? 'var(--primary)' : 'var(--surface-2)',
-                        color: active ? 'var(--primary-foreground)' : 'var(--ink-2)',
-                      }}
+                      className="text-[11px] font-black"
+                      style={{ color: active ? 'var(--primary)' : 'var(--ink-2)' }}
                     >
-                      {count}
+                      ({count})
                     </span>
                   )}
                 </button>
@@ -466,6 +481,7 @@ export default function ClientSessionsPage() {
               return (
                 <article
                   key={session.id}
+                  {...(status === 'PENDING_APPROVAL' && session.id === firstPendingId ? { 'data-tour': 'client-sessions-pending-card' } : {})}
                   className="overflow-hidden rounded-2xl border transition-shadow"
                   style={{
                     background: 'var(--surface)',
@@ -525,7 +541,7 @@ export default function ClientSessionsPage() {
                           {session.user?.email && (
                             <p className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--ink-2)' }}>
                               <Ic.mail size={10} />
-                              <span className="truncate">{session.user.email}</span>
+                              <span className="truncate">{maskEmail(session.user.email)}</span>
                             </p>
                           )}
                         </div>
@@ -587,6 +603,7 @@ export default function ClientSessionsPage() {
                         <>
                           <button
                             type="button"
+                            data-tour="client-sessions-approve-btn"
                             onClick={() => handleApprove(session.id)}
                             disabled={loadingId === session.id}
                             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black transition-opacity"
@@ -598,6 +615,7 @@ export default function ClientSessionsPage() {
 
                           <button
                             type="button"
+                            data-tour="client-sessions-reschedule-btn"
                             onClick={() => {
                               setRescheduleSession(session)
                             }}
@@ -610,6 +628,7 @@ export default function ClientSessionsPage() {
 
                           <button
                             type="button"
+                            data-tour="client-sessions-reject-btn"
                             onClick={() => {
                               setConfirmModal({
                                 isOpen: true,
@@ -648,6 +667,7 @@ export default function ClientSessionsPage() {
                       {status === 'IN_PROGRESS' && (
                         <button
                           type="button"
+                          data-tour="client-sessions-join-btn"
                           onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
                           style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)', border: '1.5px solid var(--accent)', cursor: 'pointer' }}

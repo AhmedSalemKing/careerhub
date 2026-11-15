@@ -5,8 +5,119 @@ import { useLocale } from 'next-intl'
 import api from '@/lib/api'
 import { DollarSign, Users, BookOpen, TrendingUp, Download, Eye } from 'lucide-react'
 import { formatCoursePrice, formatMoney } from '@/lib/market'
+import { useAuthStore } from '@/stores/authStore'
+
+const SESSION_STATUS_AR: Record<string, string> = {
+  PENDING_APPROVAL: 'بانتظار الموافقة', AWAITING_PAYMENT: 'بانتظار الدفع', CONFIRMED: 'مؤكدة',
+  IN_PROGRESS: 'جارية', COMPLETED: 'مكتملة', CANCELLED: 'ملغاة', RESCHEDULE_REQUESTED: 'طلب إعادة جدولة',
+}
+
+function ConsultantRevenue() {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
+  const [sessions, setSessions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get('/coaching/consulting/my-sessions')
+      .then(r => {
+        const d = (r.data as any)?.data ?? r.data
+        setSessions(Array.isArray(d) ? d : [])
+      })
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const completed = sessions.filter(x => x.status === 'COMPLETED')
+  const total = completed.reduce((sum, x) => sum + (Number(x.price) || 0), 0)
+  const avg = completed.length ? total / completed.length : 0
+  const now = new Date()
+  const thisMonth = sessions.filter(x => {
+    const d = x.scheduledAt ? new Date(x.scheduledAt) : null
+    return d && !isNaN(d.getTime()) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      && x.status !== 'CANCELLED'
+  }).length
+  const clientOf = (x: any) =>
+    `${x.user?.profile?.firstName ?? ''} ${x.user?.profile?.lastName ?? ''}`.trim() || (isAr ? 'عميل' : 'Client')
+  const fmtDate = (v: any) => {
+    const d = v ? new Date(v) : null
+    return d && !isNaN(d.getTime()) ? d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'
+  }
+  const kpis = [
+    { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatMoney(total), color: 'var(--brand)', Icon: DollarSign },
+    { label: isAr ? 'عدد الجلسات المكتملة' : 'Completed Sessions', value: String(completed.length), color: 'var(--good, #137a45)', Icon: BookOpen },
+    { label: isAr ? 'متوسط سعر الجلسة' : 'Average Session Price', value: avg > 0 ? formatMoney(avg) : '—', color: 'var(--info)', Icon: TrendingUp },
+    { label: isAr ? 'جلسات هذا الشهر' : 'Sessions This Month', value: String(thisMonth), color: 'var(--warn, #8a4b00)', Icon: Users },
+  ]
+  const th = { padding: '14px 16px', textAlign: isAr ? 'right' as const : 'left' as const, color: 'var(--ink-3)', fontSize: 13, fontWeight: 600 }
+  const td = { padding: '14px 16px', color: 'var(--ink)', fontSize: 14 }
+
+  if (loading) {
+    return <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 32, color: 'var(--ink-3)' }}>{isAr ? 'جارٍ التحميل...' : 'Loading...'}</div>
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 24px 120px', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ color: 'var(--ink)', fontSize: 24, fontWeight: 800, margin: 0 }}>
+            {isAr ? 'إيراداتك من الجلسات الإرشادية' : 'Your Coaching Session Revenue'}
+          </h1>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
+          {kpis.map(({ label, value, color, Icon }) => (
+            <div key={label} style={{ background: 'var(--surface)', borderRadius: 16, padding: '22px 20px', border: '1px solid var(--line)' }}>
+              <div style={{ marginBottom: 14 }}><Icon size={20} color={color} /></div>
+              <div style={{ color, fontSize: 22, fontWeight: 800 }}>{value}</div>
+              <div style={{ color: 'var(--ink-3)', fontSize: 13, marginTop: 4 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--line)', overflow: 'hidden' }}>
+          {sessions.length === 0 || completed.length === 0 ? (
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <DollarSign size={48} style={{ color: 'var(--ink-3)', margin: '0 auto 16px', display: 'block' }} />
+              <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>
+                {isAr ? 'لا توجد إيرادات بعد. عندما تُكمل جلسات مع عملائك، ستظهر هنا.' : 'No revenue yet. When you complete sessions with your clients, they will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                    {(isAr ? ['العميل', 'التاريخ', 'الموضوع', 'المدة', 'السعر', 'الحالة'] : ['Client', 'Date', 'Topic', 'Duration', 'Price', 'Status']).map(h => <th key={h} style={th}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {completed.map((x: any) => (
+                    <tr key={x.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td style={td}>{clientOf(x)}</td>
+                      <td style={td}>{fmtDate(x.scheduledAt)}</td>
+                      <td style={td}>{x.topic || x.sessionName || '—'}</td>
+                      <td style={td}>{x.actualDuration || x.duration ? `${x.actualDuration || x.duration} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
+                      <td style={{ ...td, fontWeight: 700 }}>{formatMoney(x.price, x.priceDisplay)}</td>
+                      <td style={td}>{isAr ? (SESSION_STATUS_AR[x.status] ?? x.status) : x.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function RevenuePage() {
+  const user = useAuthStore((st: any) => st.user)
+  return user?.accountType === 'CONSULTANT' ? <ConsultantRevenue /> : <InstructorRevenue />
+}
+
+function InstructorRevenue() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const [data, setData] = useState<any>(null)

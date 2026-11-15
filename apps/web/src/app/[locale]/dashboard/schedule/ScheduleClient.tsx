@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { api } from '../../../../lib/api'
+import { ScheduleTourLauncher } from '@/components/ScheduleTour'
 
 /* ─── Types ───────────────────────────────────────────────────────── */
 interface UserRef {
@@ -469,21 +470,22 @@ export default function ScheduleClient() {
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
     <div dir="rtl" style={{ background:'var(--bg)', color:'var(--ink)', padding:20, minHeight:'100vh' }}>
+      <ScheduleTourLauncher />
 
       {/* Page title */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <h1 style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>جدول مواعيدي</h1>
+          <h1 data-tour="schedule-header" style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>جدول مواعيدي</h1>
           <p style={{ fontSize:12, color:'var(--ink-2)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>نظم جلساتك ومواعيدك بسهولة</p>
         </div>
-        <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
+        <button data-tour="schedule-manage-btn" onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           إدارة الجلسات
         </button>
       </div>
 
       {/* Stat cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
+      <div data-tour="schedule-stats" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
         {([
           { label:'جلسات هذا الأسبوع', value:activeWeekSessions.length, color:'#14b8a6', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
           { label:'مواعيد قادمة',        value:upcomingCount,             color:'#a78bfa', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -501,6 +503,7 @@ export default function ScheduleClient() {
 
       {/* Toolbar */}
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+        <div data-tour="schedule-week-nav" style={{ display:'flex', alignItems:'center', gap:8 }}>
         <button onClick={() => setWeekStart((w: Date) => addDays(w,-7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -514,8 +517,9 @@ export default function ScheduleClient() {
         <button onClick={() => setWeekStart(startOfWeekSun(new Date()))} style={{ padding:'5px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
           اليوم
         </button>
+        </div>
 
-        <div style={{ display:'flex', border:'1px solid var(--line)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
+        <div data-tour="schedule-view-toggle" style={{ display:'flex', border:'1px solid var(--line)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
           {(['calendar','list'] as const).map((v: 'calendar' | 'list') => (
             <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:500, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--ink-2)', transition:'all 0.15s' }}>
               {v === 'calendar' ? 'أسبوع' : 'قائمة'}
@@ -523,14 +527,31 @@ export default function ScheduleClient() {
           ))}
         </div>
 
-        <button onClick={load} disabled={loading} style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink-2)', cursor:loading ? 'wait' : 'pointer', fontSize:11 }}>
+        <button data-tour="schedule-refresh" onClick={load} disabled={loading} style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink-2)', cursor:loading ? 'wait' : 'pointer', fontSize:11 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           {loading ? 'جاري...' : 'تحديث'}
         </button>
 
-        {sessions.length > 0 && (
-          <span style={{ fontSize:10, color:'var(--ink-2)', opacity:0.6 }}>{sessions.length} جلسة</span>
+        {activeWeekSessions.length > 0 && (
+          <span style={{ fontSize:10, color:'var(--ink-2)', opacity:0.6 }}>{activeWeekSessions.length} جلسة هذا الأسبوع</span>
         )}
+      </div>
+
+      {/* Legend */}
+      <div data-tour="schedule-legend" style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14, flexWrap:'wrap' }}>
+        {[
+          { label:'مؤكدة',             color:'#3b82f6' },
+          { label:'جارية الآن',        color:'#8b5cf6' },
+          { label:'مكتملة',            color:'#22c55e' },
+          { label:'بانتظار الدفع',    color:'#eab308' },
+          { label:'بانتظار الموافقة', color:'var(--ink-3)' },
+          { label:'ملغاة',             color:'#ef4444' },
+        ].map(({ label, color }: { label: string; color: string }) => (
+          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+            <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
+            {label}
+          </div>
+        ))}
       </div>
 
       {/* ════ LIST VIEW ════════════════════════════════════════════════ */}
@@ -540,7 +561,7 @@ export default function ScheduleClient() {
       {view === 'calendar' && (
         <>
           {/* Calendar grid */}
-          <div style={{ overflowX:'auto', borderRadius:12, border:'1px solid var(--line)' }}>
+          <div data-tour="schedule-calendar" style={{ overflowX:'auto', borderRadius:12, border:'1px solid var(--line)' }}>
             <div style={{ minWidth:780, background:'var(--surface)' }}>
 
               {/* Day headers */}
@@ -628,6 +649,7 @@ export default function ScheduleClient() {
                         return (
                           <button
                             key={s.id}
+                            data-tour="schedule-session-block"
                             onClick={() => setSelected(s)}
                             title={`${s.topic || s.sessionName || 'جلسة'} — ${STATUS_AR[s.status] ?? s.status}`}
                             style={{
@@ -752,23 +774,6 @@ export default function ScheduleClient() {
           )}
         </>
       )}
-
-      {/* Legend */}
-      <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:14, flexWrap:'wrap' }}>
-        {[
-          { label:'مؤكدة',             color:'#3b82f6' },
-          { label:'جارية الآن',        color:'#8b5cf6' },
-          { label:'مكتملة',            color:'#22c55e' },
-          { label:'بانتظار الدفع',    color:'#eab308' },
-          { label:'بانتظار الموافقة', color:'var(--ink-3)' },
-          { label:'ملغاة',             color:'#ef4444' },
-        ].map(({ label, color }: { label: string; color: string }) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
-            {label}
-          </div>
-        ))}
-      </div>
 
       <SessionModal />
     </div>

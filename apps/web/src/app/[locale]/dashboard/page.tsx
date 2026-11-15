@@ -27,6 +27,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice, formatMoney, formatSarAmount } from '../../../lib/market'
 import { DashboardTourLauncher } from '@/components/DashboardTour'
 import { InstructorDashboardTourLauncher } from '@/components/InstructorDashboardTour'
+import { ConsultantDashboardTourLauncher } from '@/components/ConsultantDashboardTour'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -1386,7 +1387,8 @@ function ConsultantOverview() {
         @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
       `}</style>
 
-      <div style={{
+      <ConsultantDashboardTourLauncher />
+      <div data-tour="consultant-welcome" style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}>
@@ -1412,7 +1414,7 @@ function ConsultantOverview() {
         </a>
       </div>
 
-      <div className="rd-stats">
+      <div className="rd-stats" data-tour="consultant-stats">
         {statCards.map(({ Icon, color, label, value, href }) => (
           <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
             <div className="rd-stat" style={{
@@ -1441,7 +1443,7 @@ function ConsultantOverview() {
 
       <div className="rd-main">
         {/* Upcoming sessions */}
-        <section style={{
+        <section data-tour="consultant-upcoming" style={{
           background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 24, minWidth: 0,
         }}>
@@ -1519,7 +1521,7 @@ function ConsultantOverview() {
           )}
         </section>
 
-        <aside style={{
+        <aside data-tour="consultant-quick-links" style={{
           background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 20, minWidth: 0,
         }}>
@@ -1577,16 +1579,6 @@ export default function DashboardPage() {
       border: 'rgba(81,32,200,0.3)',
       iconBg: 'linear-gradient(135deg,#5120c8,#7c3aed)',
       chevronColor: '#5120c8',
-    }
-    if (accountType === 'CONSULTANT') return {
-      icon: <Calendar size={22} color="var(--primary-foreground)"/>,
-      title: 'جلساتي القادمة',
-      desc: 'إدارة مواعيد الجلسات الإرشادية',
-      href: `/${locale}/dashboard/my-sessions`,
-      bg: 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1))',
-      border: 'rgba(245,158,11,0.3)',
-      iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
-      chevronColor: '#f59e0b',
     }
     return null
   }, [accountType, locale])
