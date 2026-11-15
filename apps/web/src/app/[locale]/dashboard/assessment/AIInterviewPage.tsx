@@ -95,6 +95,28 @@ const ALL_QUESTIONS = [
   { id: 'p6q3', phase: 'readiness', phaseLabel: 'الجاهزية المهنية', question: 'ما أكبر عائق يواجهك حالياً في تطوير مسارك؟', options: ['ضيق الوقت', 'التكلفة المادية', 'مش عارف أبدأ منين', 'نقص المهارات الأساسية', 'قلة الفرص في محيطي'] },
 ]
 
+/** English display text, matched to ALL_QUESTIONS by id and option index. The Arabic option text remains the stored answer value. */
+const QUESTIONS_EN: Record<string, { q: string; o: string[] }> = {
+  p1q1: { q: 'What best describes your current career stage?', o: ['Student', 'Recent graduate', 'Currently employed', 'Thinking of changing fields', 'Business owner'] },
+  p1q2: { q: 'What is your main goal for the next 12 months?', o: ['Get my first job', 'Change my career field', 'Get promoted in my job', 'Increase my income', 'Gain new skills'] },
+  p1q3: { q: 'What kind of experience have you gained so far?', o: ['Academic study only', 'Training or an internship', 'Personal projects', 'Real work experience', 'No experience yet'] },
+  p2q1: { q: 'If you had a new project, which task would you start with?', o: ['Analyzing data and extracting insights', 'Coming up with the idea and designing the solution', 'Organizing the execution and the plan', 'Talking to clients and understanding their needs', 'Building the product technically from scratch'] },
+  p2q2: { q: 'Which activity absorbs you so much that you lose track of time?', o: ['Research and deep analysis', 'Design and visual creativity', 'Helping people and solving their problems', 'Solving technical programming problems', 'Planning and managing projects'] },
+  p2q3: { q: 'If you could learn a new skill for free, what would you choose?', o: ['Programming and software development', 'Data analysis and artificial intelligence', 'Design and user experience', 'Digital marketing and sales', 'Project and product management'] },
+  p3q1: { q: 'When you face a new problem, how do you usually start?', o: ['Gather information and analyze it first', 'Try different solutions hands-on', 'Consult people with experience', 'Break the problem into small steps', 'Look for similar solutions online'] },
+  p3q2: { q: 'How comfortable are you with numbers, data and analysis?', o: ['I love numbers and handle them easily', 'I do not dislike them but they are not my strongest area', 'I prefer creative or communication work', 'I rely on ready-made tools', 'It is very hard for me'] },
+  p3q3: { q: 'When you need to learn something new, what is your style?', o: ['Try it and learn from my own mistakes', 'Watch a YouTube explanation or a course', 'Follow an organized curriculum step by step', 'Learn with a trainer or mentor', 'Read documentation'] },
+  p4q1: { q: 'You are responsible for delivering a project within two days and you discover a problem that could delay delivery. What do you do first?', o: ['Analyze the cause, identify the alternatives and the time needed', 'Inform the team and suggest redistributing tasks', 'Look for a quick fix and test it before escalating', 'Contact the manager immediately and present the options'] },
+  p4q2: { q: 'During teamwork, two colleagues disagree on how to carry out a task. How do you act?', o: ['Help them compare the solutions based on the expected results', 'Listen to each side and try to reach an agreement', 'Suggest trying both solutions in practice and seeing the result', 'Ask for clear criteria on which to base the decision'] },
+  p4q3: { q: 'You have been assigned a task completely outside your expertise. How do you handle it?', o: ['Research all the necessary information myself', 'Ask for guidance from someone more experienced', 'Break the task into steps and learn while executing', 'Clarify the skills I need and propose an execution plan'] },
+  p5q1: { q: 'What is the most important factor for you when choosing a job?', o: ['Income and financial stability', 'Creativity and innovation', 'Continuous learning and growth', 'Positive impact and serving others', 'Independence and flexibility'] },
+  p5q2: { q: 'Which work environment helps you perform at your best?', o: ['A collaborative, organized team', 'Independent work with complete freedom', 'Clear systems and procedures', 'A changing environment with new challenges every day'] },
+  p5q3: { q: 'When you think about your career success, what comes to mind first?', o: ['Becoming a well-known expert in my field', 'Leading a successful team', 'Building my own business', 'Earning an excellent, stable income', 'Making a positive impact on society'] },
+  p6q1: { q: 'How many hours a week can you dedicate to developing your skills?', o: ['Less than 3 hours', '3 to 5 hours', '6 to 10 hours', 'More than 10 hours'] },
+  p6q2: { q: 'What is your English level when dealing with work materials?', o: ['Beginner — I barely understand', 'Intermediate — I understand but find writing hard', 'Good — I read and write acceptably', 'Advanced — completely comfortable'] },
+  p6q3: { q: 'What is the biggest obstacle you currently face in developing your path?', o: ['Lack of time', 'Financial cost', 'Do not know where to start', 'Lack of basic skills', 'Few opportunities around me'] },
+}
+
 /* ── Responsive overrides (inline styles cannot use media queries) ── */
 const INTERVIEW_CSS = `
   @media (max-width: 768px) {
@@ -1030,6 +1052,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const router = useRouter()
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const langNote = isAr ? '' : '\n\nIMPORTANT: Respond in English. All text in your JSON response must be in English.'
 
   const { data: platformTracks = [] } = useTracks('ar')
   const currentQuestion  = ALL_QUESTIONS[currentIndex]
@@ -1089,7 +1112,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
 
     setIsLoadingInsight(true)
     setInsight('')
-    const hintPrompt = `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.`
+    const hintPrompt = `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.${langNote}`
     const askHint = () => callChat(hintPrompt, undefined, `insight:Q${qIndex + 1}`)
     try {
       const text = await queueHint(async () => {
@@ -1137,7 +1160,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
       // Same answers and market as the saved result: reuse it instead of asking the model again
       try {
         const saved = JSON.parse(sessionStorage.getItem('assessmentResult') || 'null')
-        if (saved?.result && saved.market === aiMarket && JSON.stringify(saved.answers) === JSON.stringify(finalAnswers)) {
+        if (saved?.result && saved.market === aiMarket && (saved.locale ?? 'ar') === locale && JSON.stringify(saved.answers) === JSON.stringify(finalAnswers)) {
           router.push(`/${locale}/dashboard/assessment/result`)
           setIsAnalyzing(false)
           return
@@ -1178,14 +1201,14 @@ ${trackList}
   "mainBarrier": "العائق الرئيسي اللي لاحظته من إجاباته وكيف يتغلب عليه",
   "personalNote": "ملاحظة شخصية من رشيد تشجيعية ومحددة ليه"
 }
-[/QUIZ_RESULT]`,
+[/QUIZ_RESULT]${langNote}`,
           3000,
           'analysis',
           58_000,
         )
         const parsed = parseQuizResult(text)
         if (!parsed) throw new Error('unparseable result')
-        sessionStorage.setItem('assessmentResult', JSON.stringify({ result: parsed, answers: finalAnswers, timestamp: Date.now(), market: aiMarket }))
+        sessionStorage.setItem('assessmentResult', JSON.stringify({ result: parsed, answers: finalAnswers, timestamp: Date.now(), market: aiMarket, locale }))
         router.push(`/${locale}/dashboard/assessment/result`)
       } catch (e) {
         console.error('[Assessment] analysis failed', e)
@@ -1312,9 +1335,9 @@ ${trackList}
                   <b>{isAr ? 'يسأل رشيد' : 'Rashid asks'}</b> · <span className="muted">{phaseLabel}</span>
                 </span>
               </div>
-              <h2>{currentQuestion.question}</h2>
+              <h2>{isAr ? currentQuestion.question : (QUESTIONS_EN[currentQuestion.id]?.q ?? currentQuestion.question)}</h2>
 
-              <div className="opts" role="radiogroup" aria-label={currentQuestion.question} data-tour="assess-options">
+              <div className="opts" role="radiogroup" aria-label={isAr ? currentQuestion.question : (QUESTIONS_EN[currentQuestion.id]?.q ?? currentQuestion.question)} data-tour="assess-options">
                 {currentQuestion.options.map((opt, i) => {
                   const isSelected = selectedOption === opt
                   return (
@@ -1327,7 +1350,7 @@ ${trackList}
                       className={`opt${isSelected ? ' on' : ''}`}
                     >
                       <span className="o-ic">{(isAr ? OPT_LETTERS : OPT_LETTERS_EN)[i] ?? String.fromCharCode(65 + i)}</span>
-                      <span>{opt}</span>
+                      <span>{isAr ? opt : (QUESTIONS_EN[currentQuestion.id]?.o[i] ?? opt)}</span>
                       <span className="o-check" aria-hidden="true">{CHECK_SVG}</span>
                     </button>
                   )
