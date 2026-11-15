@@ -7,6 +7,7 @@ import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
 import { formatDate } from '../../../lib/time'
 import { notify } from '../../../lib/notify'
+import { SmartImage } from '@/components/SmartImage'
 import { useMarket } from '../../contexts/MarketContext'
 import { formatCurrency } from '../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../lib/marketConfig'
@@ -83,7 +84,7 @@ function BookingModal({
         <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
           <div className="flex items-center gap-3">
             {avatar ? (
-              <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt={name} />
+              <SmartImage src={avatar} width={40} height={40} className="h-10 w-10 rounded-full object-cover" alt={name} />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold">
                 {name[0]}
@@ -261,7 +262,7 @@ function ConsultantModal({
           </button>
           <div className="absolute -bottom-8 right-5">
             {avatar ? (
-              <img src={avatar} className="h-16 w-16 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-lg" alt={name} />
+              <SmartImage src={avatar} width={64} height={64} className="h-16 w-16 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-lg" alt={name} />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-2xl font-bold text-white shadow-lg">
                 {name[0]}
@@ -369,7 +370,7 @@ export default function CoachingPage() {
                 <div className="relative h-28 bg-gradient-to-br from-primary/20 to-purple-500/10">
                   <div className="absolute -bottom-7 right-5">
                     {avatar ? (
-                      <img src={avatar} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
+                      <SmartImage src={avatar} width={56} height={56} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
                     ) : (
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-xl font-bold text-white shadow-md">
                         {name[0]}

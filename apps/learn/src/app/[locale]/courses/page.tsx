@@ -17,6 +17,8 @@ import { useAuthStore } from '../../../stores/authStore'
 import { formatCoursePrice } from '../../../lib/market'
 import { instructorDisplayName } from '../../../lib/instructor'
 import { LearnCoursesTourLauncher } from '@/components/LearnCoursesTour'
+import { SmartImage } from '@/components/SmartImage'
+
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 
@@ -451,7 +453,8 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
 
       {/* Thumbnail */}
-      <div className="dw2-cc-thumb" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--bg-2)' }}>
+      <div className="dw2-cc-thumb" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: 'var(--bg-2)' }}>
+        {course.thumbnail && <SmartImage src={course.thumbnail} alt="" fill sizes="(max-width: 768px) 100vw, 360px" style={{ objectFit: 'cover' }} />}
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <Video size={10} />
           {tl('recordedBadge')}
@@ -477,7 +480,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
             style={{ textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:6 }}
           >
             {course.instructor.profile.avatar
-              ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+              ? <SmartImage src={course.instructor.profile.avatar} alt="" width={20} height={20} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
               : <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
             <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
           </a>
@@ -640,7 +643,8 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
       <div style={{ padding: '20px', display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {/* Thumbnail */}
-        <div style={{ width: 120, height: 80, borderRadius: 12, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'rgba(220,38,38,0.1)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: 120, height: 80, borderRadius: 12, background: 'rgba(220,38,38,0.1)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+          {course.thumbnail && <SmartImage src={course.thumbnail} alt="" fill sizes="120px" style={{ objectFit: 'cover' }} />}
           {!course.thumbnail && <Radio size={28} color="rgba(220,38,38,0.5)" />}
           {isLive && (
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -667,7 +671,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
               style={{ textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:6, marginBottom:8 }}
             >
               {course.instructor.profile.avatar
-                ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+                ? <SmartImage src={course.instructor.profile.avatar} alt="" width={22} height={22} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
                 : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
               <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
             </a>
@@ -780,7 +784,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
       
       {/* Map preview or thumbnail */}
-      <div className="dw2-cc-thumb" style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--bg-2)', position: 'relative', overflow: 'hidden' }}>
+      <div className="dw2-cc-thumb" style={{ height: 140, background: 'var(--bg-2)', position: 'relative', overflow: 'hidden' }}>
+        {course.thumbnail && <SmartImage src={course.thumbnail} alt="" fill sizes="(max-width: 768px) 100vw, 360px" style={{ objectFit: 'cover' }} />}
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <MapPin size={10} />
           {tl('physicalBadge')}

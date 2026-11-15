@@ -1,4 +1,5 @@
 import { MaleAvatar } from './MaleAvatar'
+import { SmartImage } from '../SmartImage'
 import { FemaleAvatar } from './FemaleAvatar'
 
 interface UserAvatarProps {
@@ -18,7 +19,7 @@ export function UserAvatar({ user, size = 40, className = '' }: UserAvatarProps)
   const photo = user.profileImage || user.avatar
   if (photo) {
     return (
-      <img
+      <SmartImage
         src={photo}
         alt={user.name || ''}
         width={size}

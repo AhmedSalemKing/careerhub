@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
+import { SmartImage } from '@/components/SmartImage'
 import { useState, useEffect, useRef } from 'react'
 import {
   Play, Users, BookOpen, Clock, ArrowRight,
@@ -227,9 +228,11 @@ export default function HomePage() {
               >
                 <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--navy)' }}>
                   {thumbUrl(course.thumbnail) ? (
-                    <img
+                    <SmartImage
                       src={thumbUrl(course.thumbnail)!}
                       alt=""
+                      fill
+                      sizes="(max-width: 768px) 100vw, 400px"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />

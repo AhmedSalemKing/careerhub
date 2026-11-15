@@ -6,6 +6,7 @@ import { BookOpen, Users, ArrowLeft, ArrowRight, Play } from 'lucide-react'
 import api from '../../lib/api'
 import { learnUrlWithToken } from '../../lib/learn-link'
 import { formatCoursePrice } from '../../lib/market'
+import { SmartImage } from '@/components/SmartImage'
 
 /* ════════════════════════════════════════
    INTERFACES
@@ -168,9 +169,11 @@ export function CoursesShowcase() {
                   {/* Thumbnail */}
                   <div className="dw-thumb">
                     {thumb ? (
-                      <img
+                      <SmartImage
                         src={thumb}
                         alt={name}
+                        width={360}
+                        height={200}
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).style.display = 'none'
                         }}

@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useMarket } from '../contexts/MarketContext'
 import VisionBadge from '../../components/VisionBadge'
 import { LearnHomeTourLauncher } from '@/components/LearnHomeTour'
+import { SmartImage } from '@/components/SmartImage'
 
 const MAIN_SITE_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
@@ -495,8 +496,8 @@ export default function HomePage() {
                 const students = course._count?.enrollments ?? course.studentsCount ?? 0
                 return (
                   <div key={course.id} className="dw2-course-card" {...(index === 0 ? { 'data-tour': 'learn-course-card' } : {})}>
-                    <div className="dw2-course-thumb">
-                      {course.thumbnail ? <img src={course.thumbnail} alt={title} /> : <div className="dw2-thumb-placeholder">{title.charAt(0)}</div>}
+                    <div className="dw2-course-thumb" style={{ position: 'relative' }}>
+                      {course.thumbnail ? <SmartImage src={course.thumbnail} alt={title} fill sizes="(max-width: 768px) 100vw, 320px" style={{ objectFit: 'cover' }} /> : <div className="dw2-thumb-placeholder">{title.charAt(0)}</div>}
                     </div>
                     <div className="dw2-course-info">
                       <h3 className="dw2-course-title">{title}</h3>

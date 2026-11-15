@@ -6,6 +6,7 @@ import { useState, useRef } from 'react'
 import { Clock, Signal, ExternalLink, Play, BookOpen } from 'lucide-react'
 import VerifiedBadge from '../../components/VerifiedBadge'
 import { formatCoursePrice } from '../../lib/market'
+import { SmartImage } from '@/components/SmartImage'
 
 export type CourseCardCourse = {
   id: string
@@ -440,12 +441,13 @@ export function CourseCard({
 
         {course.thumbnailUrl && !imageError ? (
           <>
-            <img 
-              src={course.thumbnailUrl} 
+            <SmartImage
+              src={course.thumbnailUrl}
               alt={title}
+              width={400}
+              height={225}
+              sizes="(max-width: 768px) 100vw, 400px"
               className={`cc-image ${imageLoaded ? 'loaded' : 'loading'}`}
-              loading="lazy"
-              decoding="async"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />

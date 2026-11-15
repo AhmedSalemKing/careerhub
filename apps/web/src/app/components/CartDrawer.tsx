@@ -9,6 +9,7 @@ import { formatCoursePrice } from '../../lib/market'
 import { useMarket } from '../contexts/MarketContext'
 import { formatCurrency } from '../../lib/formatCurrency'
 import { toMarketAmount } from '../../lib/marketConfig'
+import { SmartImage } from '@/components/SmartImage'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -124,9 +125,11 @@ export function CartIcon() {
                     >
                       <div className="h-14 w-20 shrink-0 rounded-lg bg-[color:var(--surface-2)] overflow-hidden">
                         {src ? (
-                          <img
+                          <SmartImage
                             src={src}
-                            alt={item.course?.titleAr || item.course?.titleEn}
+                            alt={item.course?.titleAr || item.course?.titleEn || ''}
+                            width={80}
+                            height={56}
                             className="h-full w-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none'

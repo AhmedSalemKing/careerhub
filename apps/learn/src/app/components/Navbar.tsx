@@ -11,6 +11,8 @@ import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sparkles, BookOpen, Bell
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
 import { UserAvatar } from '../../components/avatars/UserAvatar'
+import { SmartImage } from '@/components/SmartImage'
+
 import { useMarket } from '../contexts/MarketContext'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
@@ -67,8 +69,10 @@ function Avatar({
 
   if (src && failedSrc !== src) {
     return (
-      <img
+      <SmartImage
         src={src}
+        width={size === 'sm' ? 32 : 40}
+        height={size === 'sm' ? 32 : 40}
         alt={initial || 'avatar'}
         className={`${dim} rounded-full object-cover`}
         style={{ boxShadow: '0 0 0 2px var(--border)' }}
