@@ -9,6 +9,7 @@ import { downloadFile, getDownloadFilename, getFilePreviewUrl, isPdfFile } from 
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 import { QuizResultTourLauncher } from '@/components/QuizResultTour'
 
+const TYPE_LABEL_EN: Record<string, string> = { MCQ: 'Multiple choice', SHORT_ANSWER: 'Essay question', FILE_UPLOAD: 'File upload' }
 const TYPE_LABEL: Record<string, string> = {
   MCQ: 'اختيار من متعدد',
   SHORT_ANSWER: 'سؤال مقالي',
@@ -16,6 +17,7 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 export default function QuizResultPage() {
+  const isAr = useLocale() === 'ar'
   const params = useParams()
   const router = useRouter()
   const search = useSearchParams()
@@ -115,7 +117,7 @@ export default function QuizResultPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-4xl space-y-4">
           <div className="h-10 w-64 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
           <div className="h-40 animate-pulse rounded-[14px] bg-[color:var(--surface-2)]" />
@@ -126,14 +128,14 @@ export default function QuizResultPage() {
 
   if (error && !attempt && errStatus !== 404 && errStatus !== 403) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm text-[color:var(--muted)]">تعذر تحميل النتيجة</p>
+          <p className="text-sm text-[color:var(--muted)]">{isAr ? 'تعذر تحميل النتيجة' : 'Could not load the result'}</p>
           <button
             onClick={() => refetch()}
             className="mt-4 rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:opacity-90"
           >
-            إعادة المحاولة
+            {isAr ? 'إعادة المحاولة' : 'Try again'}
           </button>
         </div>
       </div>
@@ -142,9 +144,9 @@ export default function QuizResultPage() {
 
   if (!attempt) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
-          النتيجة غير متاحة حالياً
+          {isAr ? 'النتيجة غير متاحة حالياً' : 'The result is not available right now'}
         </div>
       </div>
     )
@@ -157,7 +159,7 @@ export default function QuizResultPage() {
   const ringColor = !isGradedStatus ? '#f59e0b' : passed ? '#10b981' : '#ef4444'
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
+    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <QuizResultTourLauncher />
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div data-tour="result-header" className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center">
@@ -166,11 +168,11 @@ export default function QuizResultPage() {
             <ScoreCircle percentage={attempt.scores.percentage} passed={attempt.status === 'GRADED' ? attempt.scores.passed : null} size={100} />
           </div>
           {attempt.status === 'SUBMITTED' && (
-            <p data-tour="result-status" className="mt-4 text-sm text-[#5120c8]">بانتظار التصحيح اليدوي من المعلم</p>
+            <p data-tour="result-status" className="mt-4 text-sm text-[#5120c8]">{isAr ? 'بانتظار التصحيح اليدوي من المعلم' : 'Awaiting manual grading by the teacher'}</p>
           )}
           {attempt.status === 'GRADED' && (
             <p data-tour="result-status" className={`mt-4 text-sm font-semibold ${attempt.scores.passed ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-              {attempt.scores.passed ? 'تم اجتياز الاختبار' : 'لم يتم اجتياز الاختبار'}
+              {attempt.scores.passed ? (isAr ? 'تم اجتياز الاختبار' : 'Quiz passed') : (isAr ? 'لم يتم اجتياز الاختبار' : 'Quiz not passed')}
             </p>
           )}
           {attempt.status === 'GRADED' && !attempt.scores.passed && (
@@ -184,13 +186,13 @@ export default function QuizResultPage() {
                 textAlign: 'right',
               }}
             >
-              <p style={{ color: '#EF4444', fontWeight: 700, marginBottom: '6px' }}>لم تجتز الاختبار</p>
+              <p style={{ color: '#EF4444', fontWeight: 700, marginBottom: '6px' }}>{isAr ? 'لم تجتز الاختبار' : 'You did not pass the quiz'}</p>
               <p data-tour="result-attempts" style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '14px' }}>
                 {attempt.attemptsRemaining === null
-                  ? `محاولاتك المتبقية: غير محدودة (${attempt.attemptCount} محاولة حتى الآن)`
+                  ? (isAr ? `محاولاتك المتبقية: غير محدودة (${attempt.attemptCount} محاولة حتى الآن)` : `Your remaining attempts: unlimited (${attempt.attemptCount} attempts so far)`)
                   : attempt.attemptsRemaining > 0
-                    ? `المحاولات المتبقية: ${attempt.attemptsRemaining} من ${attempt.quiz.maxAttempts}`
-                    : 'لا توجد محاولات متبقية — تواصل مع المحاضر'}
+                    ? (isAr ? `المحاولات المتبقية: ${attempt.attemptsRemaining} من ${attempt.quiz.maxAttempts}` : `Remaining attempts: ${attempt.attemptsRemaining} of ${attempt.quiz.maxAttempts}`)
+                    : (isAr ? 'لا توجد محاولات متبقية — تواصل مع المحاضر' : 'No attempts remaining — contact the instructor')}
               </p>
               {attempt.canRetake ? (
                 <a
@@ -209,10 +211,10 @@ export default function QuizResultPage() {
                   }}
                 >
                   <RotateCcw size={14} />
-                  إعادة المحاولة
+                  {isAr ? 'إعادة المحاولة' : 'Try again'}
                 </a>
               ) : (
-                <p style={{ color: 'var(--muted)', fontSize: '12px' }}>لا يمكن إعادة المحاولة — تواصل مع المحاضر</p>
+                <p style={{ color: 'var(--muted)', fontSize: '12px' }}>{isAr ? 'لا يمكن إعادة المحاولة — تواصل مع المحاضر' : 'You cannot retake — contact the instructor'}</p>
               )}
             </div>
           )}
@@ -233,7 +235,7 @@ export default function QuizResultPage() {
           >
             <div className="flex items-center gap-2" style={{ marginBottom: '20px' }}>
               <Target size={20} style={{ color: '#5120c8' }} />
-              <h2 style={{ fontWeight: 800, fontSize: '17px', color: 'var(--foreground)' }}>تحليل النتيجة</h2>
+              <h2 style={{ fontWeight: 800, fontSize: '17px', color: 'var(--foreground)' }}>{isAr ? 'تحليل النتيجة' : 'Result analysis'}</h2>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-8" style={{ marginBottom: '22px' }}>
@@ -254,7 +256,7 @@ export default function QuizResultPage() {
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--foreground)' }}>{pct}%</span>
-                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>النسبة</span>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{isAr ? 'النسبة' : 'Percentage'}</span>
                 </div>
               </div>
 
@@ -271,10 +273,10 @@ export default function QuizResultPage() {
                   }}
                 >
                   {!isGradedStatus ? <AlertCircle size={16} /> : passed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-                  {!isGradedStatus ? 'بانتظار المراجعة' : passed ? 'نجحت' : 'لم تنجح'}
+                  {!isGradedStatus ? (isAr ? 'بانتظار المراجعة' : 'Awaiting review') : passed ? (isAr ? 'نجحت' : 'Passed') : (isAr ? 'لم تنجح' : 'Not passed')}
                 </div>
                 <p style={{ marginTop: 10, fontSize: 12, color: 'var(--muted)' }}>
-                  درجة النجاح: {attempt.quiz.passingScore}%
+                  {isAr ? 'درجة النجاح:' : 'Passing score:'} {attempt.quiz.passingScore}%
                 </p>
               </div>
             </div>
@@ -294,14 +296,14 @@ export default function QuizResultPage() {
               >
                 <AlertCircle size={16} style={{ color: '#5120c8', flexShrink: 0, marginTop: 2 }} />
                 <span>
-                  بعض الأسئلة تحتاج مراجعة يدوية. الإحصائيات أدناه تعرض الأسئلة التلقائية فقط — سيتم إشعارك عند اكتمال التصحيح.
+                  {isAr ? 'بعض الأسئلة تحتاج مراجعة يدوية. الإحصائيات أدناه تعرض الأسئلة التلقائية فقط — سيتم إشعارك عند اكتمال التصحيح.' : 'Some questions need manual review. The statistics below show the automatic questions only — you will be notified when grading is complete.'}
                 </span>
               </div>
             )}
 
             <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
               <BarChart3 size={16} style={{ color: '#5120c8' }} />
-              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>إحصائيات</h3>
+              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>{isAr ? 'إحصائيات' : 'Statistics'}</h3>
             </div>
             <div
               style={{
@@ -312,10 +314,10 @@ export default function QuizResultPage() {
               }}
             >
               {[
-                { label: 'إجمالي الأسئلة', value: stats.total, color: 'var(--foreground)' },
-                { label: 'صحيحة', value: stats.correct, color: '#10b981' },
-                { label: 'خاطئة', value: stats.wrong, color: '#ef4444' },
-                { label: 'بدون إجابة', value: stats.skipped, color: 'var(--muted)' },
+                { label: (isAr ? 'إجمالي الأسئلة' : 'Total questions'), value: stats.total, color: 'var(--foreground)' },
+                { label: (isAr ? 'صحيحة' : 'Correct'), value: stats.correct, color: '#10b981' },
+                { label: (isAr ? 'خاطئة' : 'Wrong'), value: stats.wrong, color: '#ef4444' },
+                { label: (isAr ? 'بدون إجابة' : 'Unanswered'), value: stats.skipped, color: 'var(--muted)' },
               ].map((s) => (
                 <div
                   key={s.label}
@@ -335,17 +337,17 @@ export default function QuizResultPage() {
 
             <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
               <TrendingUp size={16} style={{ color: '#5120c8' }} />
-              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>حسب نوع السؤال</h3>
+              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>{isAr ? 'حسب نوع السؤال' : 'By question type'}</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '22px' }}>
               {Object.entries(stats.byType).map(([type, t]) => {
                 const typePct = t.total > 0 ? Math.round((t.correct / t.total) * 100) : 0
                 return (
                   <div key={type} className="flex items-center justify-between gap-3" style={{ fontSize: '13px' }}>
-                    <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{TYPE_LABEL[type] ?? type}</span>
+                    <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{(locale === 'ar' ? TYPE_LABEL : TYPE_LABEL_EN)[type] ?? type}</span>
                     <span style={{ color: 'var(--muted)' }}>
-                      {t.correct}/{t.total} صحيحة ({typePct}%)
-                      {t.pending > 0 && ` · ${t.pending} بانتظار المراجعة`}
+                      {t.correct}/{t.total} {isAr ? 'صحيحة (' : 'Correct ('}{typePct}%)
+                      {t.pending > 0 && (isAr ? ` · ${t.pending} بانتظار المراجعة` : `· ${t.pending} awaiting review`)}
                     </span>
                   </div>
                 )
@@ -362,14 +364,14 @@ export default function QuizResultPage() {
             >
               <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
                 <AlertCircle size={16} style={{ color: '#5120c8' }} />
-                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--foreground)' }}>توصيات</span>
+                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--foreground)' }}>{isAr ? 'توصيات' : 'Recommendations'}</span>
               </div>
               {stats.needsReview.length > 0 ? (
                 <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.7 }}>
-                  راجع الأسئلة: {stats.needsReview.join('، ')}
+                  {isAr ? 'راجع الأسئلة:' : 'Review the questions:'} {stats.needsReview.join((isAr ? '، ' : ', '))}
                 </p>
               ) : (
-                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>أداء ممتاز — لا توجد أسئلة تحتاج مراجعة.</p>
+                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>{isAr ? 'أداء ممتاز — لا توجد أسئلة تحتاج مراجعة.' : 'Excellent performance — no questions need review.'}</p>
               )}
             </div>
           </div>
@@ -386,9 +388,9 @@ export default function QuizResultPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
                   <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
-                    {TYPE_LABEL[q.type] ?? q.type}
+                    {(locale === 'ar' ? TYPE_LABEL : TYPE_LABEL_EN)[q.type] ?? q.type}
                   </span>
-                  <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} نقطة</span>
+                  <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} {isAr ? 'نقطة' : 'points'}</span>
                 </div>
                 <p className="mt-3 text-sm font-semibold text-foreground">{q.questionText}</p>
                 {q.questionImage && (
@@ -444,7 +446,7 @@ export default function QuizResultPage() {
                         width="100%"
                         height="400"
                         style={{ border: '1px solid var(--border)', borderRadius: 8, background: '#fff' }}
-                        title="معاينة الملف المرفق"
+                        title={isAr ? 'معاينة الملف المرفق' : 'Preview the attached file'}
                       />
                     )}
                     <div className="flex flex-wrap items-center gap-3">
@@ -454,7 +456,7 @@ export default function QuizResultPage() {
                         className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
                       >
                         <Download className="h-4 w-4" />
-                        تحميل الملف{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
+                        {isAr ? 'تحميل الملف' : 'Download the file'}{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
                       </button>
                       <span className="max-w-[260px] truncate text-xs text-[color:var(--muted)]">
                         {getDownloadFilename(answer.fileUrl, answer.fileName)}
@@ -467,12 +469,12 @@ export default function QuizResultPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                     {answer.autoGrade != null && (
                       <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-1 border border-[color:var(--border)]">
-                        تلقائي: {Math.round(answer.autoGrade)}/{q.points}
+                        {isAr ? 'تلقائي:' : 'Auto:'} {Math.round(answer.autoGrade)}/{q.points}
                       </span>
                     )}
                     {answer.manualGrade != null && (
                       <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-1 border border-[color:var(--border)]">
-                        يدوي: {Math.round(answer.manualGrade)}/{q.points}
+                        {isAr ? 'يدوي:' : 'Manual:'} {Math.round(answer.manualGrade)}/{q.points}
                       </span>
                     )}
                     {answer.feedback && <span className="text-[color:var(--muted)]">{answer.feedback}</span>}

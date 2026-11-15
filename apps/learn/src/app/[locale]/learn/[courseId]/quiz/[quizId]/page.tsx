@@ -12,6 +12,7 @@ import { QuizTourLauncher } from '@/components/QuizTour'
 
 const inputCls = 'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
 
+const TYPE_LABEL_EN: Record<string, string> = { MCQ: 'Multiple choice', SHORT_ANSWER: 'Essay question', FILE_UPLOAD: 'File upload' }
 const TYPE_LABEL: Record<string, string> = {
   MCQ: 'اختيار من متعدد',
   SHORT_ANSWER: 'سؤال مقالي',
@@ -19,6 +20,7 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 export default function TakeQuizPage() {
+  const isAr = useLocale() === 'ar'
   const params = useParams()
   const router = useRouter()
   const locale = useLocale()
@@ -113,7 +115,7 @@ export default function TakeQuizPage() {
         setTimeLeft(0)
         if (!submitting && !autoSubmittedRef.current) {
           autoSubmittedRef.current = true
-          toast.error('انتهى وقت الاختبار — جاري التسليم')
+          toast.error((isAr ? 'انتهى وقت الاختبار — جاري التسليم' : 'The quiz time is over — submitting'))
           handleSubmit(true)
         }
       } else {
@@ -142,7 +144,7 @@ export default function TakeQuizPage() {
           await post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...ans })
         }
       } catch (e: any) {
-        toast.error(e?.response?.data?.message ?? 'فشل الحفظ التلقائي')
+        toast.error(e?.response?.data?.message ?? (isAr ? 'فشل الحفظ التلقائي' : 'Auto-save failed'))
       } finally {
         setAutoSaving(false)
       }
@@ -176,7 +178,7 @@ export default function TakeQuizPage() {
   const onFileChange = async (questionId: string, file: File) => {
     if (!attemptId) return
     if (file.size > 20 * 1024 * 1024) {
-      toast.error('حجم الملف يجب أن يكون أقل من 20 ميجا')
+      toast.error((isAr ? 'حجم الملف يجب أن يكون أقل من 20 ميجا' : 'File size must be under 20 MB'))
       return
     }
     setUploading((prev) => ({ ...prev, [questionId]: true }))
@@ -188,12 +190,12 @@ export default function TakeQuizPage() {
       const url: string | undefined = d?.url
       const name: string = d?.fileName || file.name
       if (!url) {
-        toast.error(getUploadErrorMessage(new Error('استجابة غير صالحة من الخادم'), { kind: 'file', isAr: locale === 'ar', maxMB: 50 }))
+        toast.error(getUploadErrorMessage(new Error((isAr ? 'استجابة غير صالحة من الخادم' : 'Invalid response from the server')), { kind: 'file', isAr: locale === 'ar', maxMB: 50 }))
         return
       }
       await persistAnswer(questionId, { fileUrl: url, fileName: name })
       setFileMeta(questionId, { fileUrl: url, fileName: name })
-      toast.success(`تم رفع: ${name}`)
+      toast.success((isAr ? `تم رفع: ${name}` : `Uploaded: ${name}`))
     } catch (e: any) {
       toast.error(getUploadErrorMessage(e, { kind: 'file', isAr: locale === 'ar', maxMB: 50 }))
     } finally {
@@ -232,7 +234,7 @@ export default function TakeQuizPage() {
         if (!isAnsweredLocally(q, answers[q.id])) missingIdx.push(i + 1)
       })
       if (missingIdx.length > 0) {
-        toast.warning(`لم تجب على ${missingIdx.length} سؤال: ${missingIdx.join('، ')}`)
+        toast.warning((isAr ? `لم تجب على ${missingIdx.length} سؤال: ${missingIdx.join('، ')}` : `You did not answer ${missingIdx.length} question(s): ${missingIdx.join(', ')}`))
         const first = questions.find((q) => !isAnsweredLocally(q, answers[q.id]))
         if (first) document.getElementById(`q-${first.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
@@ -266,10 +268,10 @@ export default function TakeQuizPage() {
         predicate: (q) =>
           Array.isArray(q.queryKey) && q.queryKey.some((k) => String(k).includes('quiz')),
       })
-      toast.success('تم تسليم الاختبار')
+      toast.success((isAr ? 'تم تسليم الاختبار' : 'Quiz submitted'))
       router.push(`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${attemptId}`)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'تعذر تسليم الاختبار')
+      toast.error(e?.response?.data?.message ?? (isAr ? 'تعذر تسليم الاختبار' : 'Could not submit the quiz'))
     } finally {
       setSubmitting(false)
     }
@@ -293,13 +295,13 @@ export default function TakeQuizPage() {
       if (code === 'RETAKE_NOT_ALLOWED') {
         toast.error(
           reason === 'MAX_ATTEMPTS_REACHED'
-            ? 'لا يمكن إعادة المحاولة — استنفدت عدد المحاولات'
+            ? (isAr ? 'لا يمكن إعادة المحاولة — استنفدت عدد المحاولات' : 'You cannot retake — you have used all your attempts')
             : reason === 'PASSED'
-              ? 'لقد اجتزت هذا الاختبار بالفعل'
-              : 'لا يمكن بدء الاختبار الآن',
+              ? (isAr ? 'لقد اجتزت هذا الاختبار بالفعل' : 'You have already passed this quiz')
+              : (isAr ? 'لا يمكن بدء الاختبار الآن' : 'The quiz cannot be started now'),
         )
       } else {
-        toast.error('تعذر بدء الاختبار، حاول مرة أخرى')
+        toast.error((isAr ? 'تعذر بدء الاختبار، حاول مرة أخرى' : 'Could not start the quiz, please try again'))
       }
     } finally {
       setStarting(false)
@@ -334,7 +336,7 @@ export default function TakeQuizPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-3xl space-y-4">
           <div className="h-10 w-64 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
           <div className="h-40 animate-pulse rounded-[14px] bg-[color:var(--surface-2)]" />
@@ -345,17 +347,17 @@ export default function TakeQuizPage() {
 
   if (isFinished) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-2xl rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-8 text-center">
-          <p className="text-lg font-bold text-foreground">انتهت هذه المحاولة</p>
+          <p className="text-lg font-bold text-foreground">{isAr ? 'انتهت هذه المحاولة' : 'This attempt has ended'}</p>
           <p className="mt-2 text-sm text-[color:var(--muted)]">
-            تم تسليم هذا الاختبار بالفعل ولا يمكن تعديل الإجابات.
+            {isAr ? 'تم تسليم هذا الاختبار بالفعل ولا يمكن تعديل الإجابات.' : 'This quiz has already been submitted and the answers can no longer be changed.'}
           </p>
           <a
             href={`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${aidParam}`}
             className="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity duration-150"
           >
-            عرض النتيجة
+            {isAr ? 'عرض النتيجة' : 'View result'}
           </a>
         </div>
       </div>
@@ -365,16 +367,16 @@ export default function TakeQuizPage() {
   if (showPreStart) {
     if (!quizInfo) {
       return (
-        <div className="min-h-screen p-6" dir="rtl">
+        <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
           <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
-            لا يمكن عرض الاختبار الآن
+            {isAr ? 'لا يمكن عرض الاختبار الآن' : 'The quiz cannot be shown now'}
           </div>
         </div>
       )
     }
     return (
       <div
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{
           maxWidth: '560px',
           margin: '80px auto',
@@ -389,7 +391,7 @@ export default function TakeQuizPage() {
           {quizInfo.titleAr || quizInfo.title}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
-          {quizInfo.durationMinutes} دقيقة · {quizInfo.questions?.length ?? 0} سؤال · النجاح {quizInfo.passingScore}%
+          {quizInfo.durationMinutes} {isAr ? 'دقيقة ·' : 'min ·'} {quizInfo.questions?.length ?? 0} {isAr ? 'سؤال · النجاح' : 'questions · passing'} {quizInfo.passingScore}%
         </p>
         <button
           type="button"
@@ -408,7 +410,7 @@ export default function TakeQuizPage() {
             boxShadow: '0 4px 20px rgba(81,32,200,0.4)',
           }}
         >
-          {starting ? 'جاري البدء...' : 'ابدأ الاختبار'}
+          {starting ? (isAr ? 'جاري البدء...' : 'Starting...') : (isAr ? 'ابدأ الاختبار' : 'Start the quiz')}
         </button>
       </div>
     )
@@ -416,25 +418,25 @@ export default function TakeQuizPage() {
 
   if (!attemptId && !snapshot) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
-          لا يمكن بدء الاختبار الآن
+          {isAr ? 'لا يمكن بدء الاختبار الآن' : 'The quiz cannot be started now'}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
+    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <QuizTourLauncher />
       <div data-tour="quiz-header" className="sticky top-0 z-10 border-b border-[color:var(--border)] bg-[color:var(--surface)]">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div data-tour="quiz-title">
             <h1 className="font-bold font-madinet text-foreground">{quizInfo?.titleAr || quizInfo?.title}</h1>
-            <p className="text-xs text-[color:var(--muted)]">{questions.length} سؤال</p>
+            <p className="text-xs text-[color:var(--muted)]">{questions.length} {isAr ? 'سؤال' : 'questions'}</p>
           </div>
           <div className="flex items-center gap-3">
-            {autoSaving && <span className="text-xs text-[color:var(--muted)]">جارٍ الحفظ...</span>}
+            {autoSaving && <span className="text-xs text-[color:var(--muted)]">{isAr ? 'جارٍ الحفظ...' : 'Saving...'}</span>}
             <div data-tour="quiz-timer" className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2">
               <Clock className="h-4 w-4" style={{ color: getTimerColor(timeLeft) }} />
               <span className="text-sm font-bold" style={{ color: getTimerColor(timeLeft) }}>
@@ -466,9 +468,9 @@ export default function TakeQuizPage() {
                 <div className="flex flex-wrap items-center gap-2" data-tour="quiz-question-number">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
                   <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
-                    {TYPE_LABEL[q.type] ?? q.type}
+                    {(locale === 'ar' ? TYPE_LABEL : TYPE_LABEL_EN)[q.type] ?? q.type}
                   </span>
-                  <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} نقطة</span>
+                  <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} {isAr ? 'نقطة' : 'points'}</span>
                 </div>
                 <p className="mt-3 text-sm font-semibold text-foreground">{q.questionText}</p>
                 {q.note && <p className="mt-1 text-xs text-[color:var(--muted)]">{q.note}</p>}
@@ -491,7 +493,7 @@ export default function TakeQuizPage() {
                   <div className="mt-4 space-y-2" data-tour="quiz-mcq">
                     {isMultiple && (
                       <p className="mb-2 text-sm text-yellow-600">
-                        (يمكن اختيار أكثر من إجابة صحيحة)
+                        {isAr ? '(يمكن اختيار أكثر من إجابة صحيحة)' : '(more than one correct answer can be selected)'}
                       </p>
                     )}
                     {(q.choices ?? []).map((c: any) => {
@@ -545,7 +547,7 @@ export default function TakeQuizPage() {
                     className={`${inputCls} mt-3 min-h-[90px] resize-y`}
                     value={ans?.textAnswer ?? ''}
                     onChange={(e) => setText(q.id, e.target.value)}
-                    placeholder="اكتب إجابتك هنا..."
+                    placeholder={isAr ? 'اكتب إجابتك هنا...' : 'Write your answer here...'}
                   />
                 )}
 
@@ -555,31 +557,31 @@ export default function TakeQuizPage() {
                       <div className="flex items-center justify-between gap-3">
                         <span className="flex min-w-0 items-center gap-2 text-foreground">
                           <FileText className="h-4 w-4 shrink-0" />
-                          <span className="truncate">تم رفع: {ans.fileName || 'الملف'}</span>
+                          <span className="truncate">{isAr ? 'تم رفع:' : 'Uploaded:'} {ans.fileName || (isAr ? 'الملف' : 'File')}</span>
                         </span>
                         <button
                           type="button"
                           onClick={() => removeFile(q.id)}
                           className="shrink-0 text-xs font-semibold text-[#ef4444] hover:opacity-80"
                         >
-                          حذف الملف
+                          {isAr ? 'حذف الملف' : 'Delete file'}
                         </button>
                       </div>
                     ) : (
                       <div>
                         <p className="mb-2 text-xs text-[color:var(--muted)]">
-                          ارفع ملف إجابتك (PDF، Word، أو صورة — أقل من 20 ميجا)
+                          {isAr ? 'ارفع ملف إجابتك (PDF، Word، أو صورة — أقل من 20 ميجا)' : 'Upload your answer file (PDF, Word, or an image — under 20 MB)'}
                         </p>
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150">
                           {uploading[q.id] ? (
                             <>
                               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              جارٍ الرفع...
+                              {isAr ? 'جارٍ الرفع...' : 'Uploading...'}
                             </>
                           ) : (
                             <>
                               <Upload className="h-4 w-4" />
-                              اختيار ملف
+                              {isAr ? 'اختيار ملف' : 'Choose a file'}
                             </>
                           )}
                           <input
@@ -614,7 +616,7 @@ export default function TakeQuizPage() {
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              تسليم الاختبار
+              {isAr ? 'تسليم الاختبار' : 'Submit the quiz'}
             </button>
           </div>
         </div>

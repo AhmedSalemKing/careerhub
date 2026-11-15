@@ -573,7 +573,7 @@ function MetaItem({
 	// Update page title
 	useEffect(() => {
 		if (activeLesson) {
-			document.title = `${activeLesson.title || activeLesson.titleAr} - ${course?.titleAr || course?.titleEn || "التعلم"}`;
+			document.title = (isAr ? `${activeLesson.title || activeLesson.titleAr} - ${course?.titleAr || course?.titleEn || "التعلم"}` : `${activeLesson.title || activeLesson.titleAr} - ${course?.titleAr || course?.titleEn || "Learning"}`);
 		}
 	}, [activeLesson, course]);
 
@@ -631,7 +631,7 @@ function MetaItem({
 			if (data?.fatal) {
 				setIsLoadingMedia(false);
 				setVideoReady(true);
-				setVideoError("فشل تحميل الفيديو");
+				setVideoError((isAr ? 'فشل تحميل الفيديو' : 'Failed to load the video'));
 			}
 		});
 
@@ -1193,7 +1193,7 @@ function MetaItem({
 		<CoursePlayerTourLauncher />
 		<div
 			className="flex min-h-screen flex-col"
-			dir="rtl"
+			dir={isAr ? 'rtl' : 'ltr'}
 			style={
 				{
 					background: bg,
@@ -1639,7 +1639,7 @@ function MetaItem({
 														{lesson.duration && (
 															<span className="flex items-center gap-1">
 																<Clock size={10} />
-																{lesson.duration} د
+																{lesson.duration} {isAr ? 'د' : 'min'}
 															</span>
 														)}
 													</div>
@@ -1914,7 +1914,7 @@ function MetaItem({
 													onError={() => {
 														setIsLoadingMedia(false);
 														setVideoReady(true);
-														setVideoError("فشل تحميل الفيديو");
+														setVideoError((isAr ? 'فشل تحميل الفيديو' : 'Failed to load the video'));
 													}}
 													onEnded={() => {
 														if (activeLesson?.id) markVideoWatched(activeLesson.id);
@@ -1975,7 +1975,7 @@ function MetaItem({
 															<h3
 																className="text-white text-lg mb-2"
 																style={{ fontWeight: 500, fontFamily: "var(--font-medium)" }}>
-																خطأ في التشغيل
+																{isAr ? 'خطأ في التشغيل' : 'Playback error'}
 															</h3>
 															<p className="text-white/60 text-sm mb-6">
 																{videoError}
@@ -1986,7 +1986,7 @@ function MetaItem({
 																	videoRef.current?.load();
 																}}
 																className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-all">
-																إعادة المحاولة
+																{isAr ? 'إعادة المحاولة' : 'Try again'}
 															</button>
 														</div>
 													</div>
@@ -2305,13 +2305,12 @@ function MetaItem({
 											<h3
 												className="text-xl font-medium mb-3"
 												style={{ color: textPrimary, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
-												المحتوى قيد الترحيل
+												{isAr ? 'المحتوى قيد الترحيل' : 'Content is being migrated'}
 											</h3>
 											<p
 												className="text-sm leading-relaxed"
 												style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
-												هذا الملف لم يتم رفعه بعد على المنصة الجديدة. يرجى
-												التواصل مع المحاضر لإعادة رفع المحتوى.
+												{isAr ? 'هذا الملف لم يتم رفعه بعد على المنصة الجديدة. يرجى التواصل مع المحاضر لإعادة رفع المحتوى.' : 'This file has not been uploaded to the new platform yet. Please contact the instructor to re-upload the content.'}
 											</p>
 										</div>
 									</div>
@@ -2353,7 +2352,7 @@ function MetaItem({
 												color: "var(--muted)",
 												margin: 0,
 											}}>
-											لا يوجد وسائط لهذا الدرس
+											{isAr ? 'لا يوجد وسائط لهذا الدرس' : 'There is no media for this lesson'}
 										</p>
 										<p
 											style={{
@@ -2419,7 +2418,7 @@ function MetaItem({
 											gap: 6,
 										}}>
 										<ChevronRight size={16} />
-										السابق
+										{isAr ? 'السابق' : 'Previous'}
 									</button>
 
 									<button
@@ -2446,7 +2445,7 @@ function MetaItem({
 												? "0 2px 8px rgba(81,32,200,0.3)"
 												: "none",
 										}}>
-										التالي
+										{isAr ? 'التالي' : 'Next'}
 										<ChevronLeft size={16} />
 									</button>
 								</div>
@@ -2527,7 +2526,7 @@ function MetaItem({
 												style={{ background: `${borderColor}` }}>
 												<BookOpen className="h-4 w-4" />
 												<span>
-													الدرس{" "}
+													{isAr ? 'الدرس' : 'Lesson'}{" "}
 													{activeLessonIndex >= 0 ? activeLessonIndex + 1 : 1}{" "}
 													من {totalLessons}
 												</span>
@@ -2541,7 +2540,7 @@ function MetaItem({
 														color: redColor,
 													}}>
 													<Video className="h-4 w-4" />
-													فيديو
+													{isAr ? 'فيديو' : 'Video'}
 												</span>
 											)}
 
@@ -2553,7 +2552,7 @@ function MetaItem({
 														color: blueColor,
 													}}>
 													<FileText className="h-4 w-4" />
-													ملف PDF
+													{isAr ? 'ملف PDF' : 'PDF file'}
 												</span>
 											)}
 
@@ -2565,7 +2564,7 @@ function MetaItem({
 														color: purpleColor,
 													}}>
 													<Image className="h-4 w-4" />
-													صورة
+													{isAr ? 'صورة' : 'Image'}
 												</span>
 											)}
 
@@ -2574,7 +2573,7 @@ function MetaItem({
 													className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium"
 													style={{ background: `${green}10`, color: green }}>
 													<CheckCircle2 className="h-4 w-4" />
-													تم الإكمال
+													{isAr ? 'تم الإكمال' : 'Completed'}
 												</span>
 											)}
 										</div>
@@ -2844,12 +2843,12 @@ function MetaItem({
 								<h2
 									className="text-2xl lg:text-3xl font-medium mb-4"
 									style={{ color: textPrimary, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
-									اختر درساً للبدء
+									{isAr ? 'اختر درساً للبدء' : 'Choose a lesson to start'}
 								</h2>
 								<p
 									className="text-base mb-8 leading-relaxed"
 									style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
-									اختر أي درس من القائمة الجانبية لبدء رحلتك التعليمية
+									{isAr ? 'اختر أي درس من القائمة الجانبية لبدء رحلتك التعليمية' : 'Pick any lesson from the sidebar to start your learning journey'}
 								</p>
 
 								<button
@@ -2867,7 +2866,7 @@ function MetaItem({
 										fontFamily: "var(--font-medium)",
 									}}>
 									<Play className="h-5 w-5" />
-									<span>ابدأ من أول درس</span>
+									<span>{isAr ? 'ابدأ من أول درس' : 'Start from the first lesson'}</span>
 									<ArrowLeft className="h-5 w-5" />
 								</button>
 							</div>

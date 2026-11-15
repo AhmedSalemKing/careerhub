@@ -29,6 +29,7 @@ interface VerifyResult {
 }
 
 export default function CertificateVerifyPage() {
+  const isAr = useLocale() === 'ar'
   const params = useParams()
   const locale = useLocale()
   const verifyCode = params.serial as string
@@ -47,10 +48,10 @@ export default function CertificateVerifyPage() {
         if (d?.success && d?.data?.valid) {
           setCert(d.data)
         } else {
-          setError('الشهادة غير موجودة أو رمز التحقق غير صحيح')
+          setError((isAr ? 'الشهادة غير موجودة أو رمز التحقق غير صحيح' : 'The certificate does not exist or the verification code is incorrect'))
         }
       } catch {
-        setError('حدث خطأ أثناء التحقق')
+        setError((isAr ? 'حدث خطأ أثناء التحقق' : 'An error occurred during verification'))
       } finally {
         setLoading(false)
       }
@@ -91,10 +92,10 @@ export default function CertificateVerifyPage() {
   const shareLink = () => {
     const url = window.location.href
     if (navigator.share) {
-      navigator.share({ title: 'شهادة DeveWay', url })
+      navigator.share({ title: (isAr ? 'شهادة DeveWay' : 'DeveWay certificate'), url })
     } else {
       navigator.clipboard?.writeText(url)
-      alert('تم نسخ الرابط')
+      alert((isAr ? 'تم نسخ الرابط' : 'Link copied'))
     }
   }
 
@@ -121,7 +122,7 @@ export default function CertificateVerifyPage() {
               margin: '0 auto 16px',
             }}
           />
-          <p>جاري التحقق من الشهادة...</p>
+          <p>{isAr ? 'جاري التحقق من الشهادة...' : 'Verifying the certificate...'}</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
@@ -154,7 +155,7 @@ export default function CertificateVerifyPage() {
           >
             <XCircle size={80} color="#ef4444" style={{ margin: '0 auto 24px' }} />
             <h2 style={{ color: '#fff', fontSize: '24px', marginBottom: '12px' }}>
-              شهادة غير صالحة
+              {isAr ? 'شهادة غير صالحة' : 'Invalid certificate'}
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '16px' }}>{error}</p>
           </div>
@@ -179,10 +180,10 @@ export default function CertificateVerifyPage() {
                 <h2
                   style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0 }}
                 >
-                  شهادة موثقة وصالحة
+                  {isAr ? 'شهادة موثقة وصالحة' : 'Verified and valid certificate'}
                 </h2>
                 <p style={{ color: '#86efac', margin: '4px 0 0', fontSize: '14px' }}>
-                  تم التحقق من صحة هذه الشهادة بنجاح
+                  {isAr ? 'تم التحقق من صحة هذه الشهادة بنجاح' : 'This certificate was verified successfully'}
                 </p>
               </div>
             </div>
@@ -226,18 +227,18 @@ export default function CertificateVerifyPage() {
                   letterSpacing: '0.1em',
                 }}
               >
-                تفاصيل الشهادة
+                {isAr ? 'تفاصيل الشهادة' : 'Certificate details'}
               </h3>
               {[
-                { icon: <User size={18} color="#5120c8" />, label: 'اسم الطالب', value: cert.studentName },
-                { icon: <BookOpen size={18} color="#5120c8" />, label: 'الكورس', value: cert.courseTitle },
-                { icon: <User size={18} color="#5120c8" />, label: 'المحاضر', value: cert.instructorName },
+                { icon: <User size={18} color="#5120c8" />, label: (isAr ? 'اسم الطالب' : 'Student name'), value: cert.studentName },
+                { icon: <BookOpen size={18} color="#5120c8" />, label: (isAr ? 'الكورس' : 'Course'), value: cert.courseTitle },
+                { icon: <User size={18} color="#5120c8" />, label: (isAr ? 'المحاضر' : 'Instructor'), value: cert.instructorName },
                 {
                   icon: <Calendar size={18} color="#5120c8" />,
-                  label: 'تاريخ الإصدار',
+                  label: (isAr ? 'تاريخ الإصدار' : 'Issue date'),
                   value: formatDate(new Date(cert.issueDate), locale),
                 },
-                { icon: <Shield size={18} color="#5120c8" />, label: 'رمز التحقق', value: cert.verifyCode, mono: true },
+                { icon: <Shield size={18} color="#5120c8" />, label: (isAr ? 'رمز التحقق' : 'Verification code'), value: cert.verifyCode, mono: true },
               ].map((item, i) => (
                 <div
                   key={i}
@@ -307,7 +308,7 @@ export default function CertificateVerifyPage() {
                   }}
                 >
                   <Download size={18} />
-                  {downloading ? 'جاري التحميل...' : 'تحميل PNG'}
+                  {downloading ? 'جاري التحميل...' : (isAr ? 'تحميل PNG' : 'Download PNG')}
                 </button>
               )}
               {cert.certificateUrl && (
@@ -330,7 +331,7 @@ export default function CertificateVerifyPage() {
                     fontWeight: '700',
                   }}
                 >
-                  <FileText size={18} /> طباعة / PDF
+                  <FileText size={18} /> {isAr ? 'طباعة / PDF' : 'Print / PDF'}
                 </button>
               )}
               <button
@@ -387,7 +388,7 @@ export default function CertificateVerifyPage() {
               }}
             >
               <Award size={16} style={{ display: 'inline', marginLeft: '6px' }} />
-              صادرة من منصة DeveWay التعليمية
+              {isAr ? 'صادرة من منصة DeveWay التعليمية' : 'Issued by the DeveWay learning platform'}
             </div>
           </div>
         ) : null}
