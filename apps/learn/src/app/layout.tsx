@@ -15,34 +15,43 @@ import { MarketProvider } from './contexts/MarketContext'
 import KeepAlivePing from './components/KeepAlivePing'
 import NumberInputGuard from './components/NumberInputGuard'
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://devewayhub.vercel.app'),
-  title: {
-    default: 'DeveWay | منصة التدريب',
-    template: '%s | DeveWay',
-  },
-  description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف وإرشاد مهني',
-  keywords: ['كورسات', 'تدريب', 'تعليم', 'مهارات', 'مسار مهني', 'شهادات معتمدة'],
-  openGraph: {
-    type: 'website',
-    locale: 'ar_SA',
-    alternateLocale: 'en_US',
-    siteName: 'DeveWay',
-    title: 'DeveWay | منصة التدريب',
-    description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DeveWay' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'DeveWay | منصة التدريب',
-    description: 'منصة DeveWay للتدريب الاحترافي',
-    images: ['/og-image.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const isAr = (await getLocale()) === 'ar'
+  const title = isAr ? 'DeveWay | منصة التعليم والتطوير المهني' : 'DeveWay | Career Learning Platform'
+  const description = isAr
+    ? 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف وإرشاد مهني'
+    : 'DeveWay professional training platform - accredited courses, live sessions and career mentoring'
+  return {
+    metadataBase: new URL('https://devewayhub.vercel.app'),
+    title: {
+      default: title,
+      template: '%s | DeveWay',
+    },
+    description,
+    keywords: isAr
+      ? ['كورسات', 'تدريب', 'تعليم', 'مهارات', 'مسار مهني', 'شهادات معتمدة']
+      : ['courses', 'training', 'learning', 'skills', 'career path', 'accredited certificates'],
+    openGraph: {
+      type: 'website',
+      locale: isAr ? 'ar_SA' : 'en_US',
+      alternateLocale: isAr ? 'en_US' : 'ar_SA',
+      siteName: 'DeveWay',
+      title,
+      description,
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DeveWay' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/og-image.png'],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+    },
+  }
 }
 
 export default async function RootLayout({
