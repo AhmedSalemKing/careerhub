@@ -416,9 +416,6 @@ export function Navbar() {
             {mounted && isLoggedIn && (
               <>
                 <NotificationBell />
-                <Link href={`/${locale}/dashboard/ai-chat`} title="DeveWay AI" aria-label="DeveWay AI" className="icon-btn hide-sm">
-                  <Sparkles className="icon" />
-                </Link>
                 <div className="hidden lg:block">
                   {user?.role === 'ADMIN' || user?.accountType === 'ADMIN' ? (
                     <Link

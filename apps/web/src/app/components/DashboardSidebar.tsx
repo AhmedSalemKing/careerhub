@@ -23,7 +23,6 @@ export function DashboardSidebar() {
         <nav className="mt-3 space-y-1">
           <Item href={`${base}`} label={t('overview')} />
           <Item href={`${base}/assessment`} label={t('start_assessment')} />
-          <Item href={`${base}/career-path`} label={t('my_career')} />
           {isConsultant ? (
             <>
               <Item href={`${base}/client-sessions`} label={isAr ? 'جلسات عملائي' : 'Client Sessions'} />

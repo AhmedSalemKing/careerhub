@@ -68,7 +68,6 @@ return [
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
       { icon: CalendarCheck, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Receipt, labelAr: 'تاريخ المدفوعات', labelEn: 'Payment History', href: `/${locale}/dashboard/invoices` },
-      { icon: Brain, labelAr: 'المسار المهني', labelEn: 'Career', href: `/${locale}/dashboard/career-path` },
       { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI', href: `/${locale}/dashboard/ai-chat` },
       { icon: Award, labelAr: 'الشهادات', labelEn: 'Certs', href: `/${locale}/dashboard/certificates` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
