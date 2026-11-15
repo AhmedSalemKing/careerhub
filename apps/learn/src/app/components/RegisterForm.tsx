@@ -10,40 +10,40 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 
 // مطابق تماماً لـ RegisterDto في الـ Backend
-const registerSchema = z
+const makeRegisterSchema = (isAr: boolean) => z
   .object({
     firstName: z
       .string()
-      .min(2, 'الاسم الأول يجب أن يكون حرفين على الأقل')
-      .max(50, 'الاسم الأول لا يتجاوز 50 حرف')
-      .regex(/^[a-zA-Z\u0600-\u06FF\s]+$/, 'الاسم يجب أن يحتوي على حروف فقط'),
+      .min(2, (isAr ? 'الاسم الأول يجب أن يكون حرفين على الأقل' : 'First name must be at least 2 characters'))
+      .max(50, (isAr ? 'الاسم الأول لا يتجاوز 50 حرف' : 'First name must not exceed 50 characters'))
+      .regex(/^[a-zA-Z\u0600-\u06FF\s]+$/, (isAr ? 'الاسم يجب أن يحتوي على حروف فقط' : 'Name must contain letters only')),
     lastName: z
       .string()
-      .min(2, 'الاسم الأخير يجب أن يكون حرفين على الأقل')
-      .max(50, 'الاسم الأخير لا يتجاوز 50 حرف')
-      .regex(/^[a-zA-Z\u0600-\u06FF\s]+$/, 'الاسم يجب أن يحتوي على حروف فقط'),
-    email: z.string().email('البريد الإلكتروني غير صالح'),
+      .min(2, (isAr ? 'الاسم الأخير يجب أن يكون حرفين على الأقل' : 'Last name must be at least 2 characters'))
+      .max(50, (isAr ? 'الاسم الأخير لا يتجاوز 50 حرف' : 'Last name must not exceed 50 characters'))
+      .regex(/^[a-zA-Z\u0600-\u06FF\s]+$/, (isAr ? 'الاسم يجب أن يحتوي على حروف فقط' : 'Name must contain letters only')),
+    email: z.string().email((isAr ? 'البريد الإلكتروني غير صالح' : 'Invalid email address')),
     password: z
       .string()
-      .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
-      .max(128, 'كلمة المرور لا تتجاوز 128 حرف')
+      .min(8, (isAr ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters'))
+      .max(128, (isAr ? 'كلمة المرور لا تتجاوز 128 حرف' : 'Password must not exceed 128 characters'))
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        'كلمة المرور يجب أن تحتوي على: حرف كبير، حرف صغير، رقم، ورمز خاص (@$!%*?&)'
+        (isAr ? 'كلمة المرور يجب أن تحتوي على: حرف كبير، حرف صغير، رقم، ورمز خاص (@$!%*?&)' : 'Password must contain: an uppercase letter, a lowercase letter, a number, and a special character (@$!%*?&)')
       ),
-    confirmPassword: z.string().min(1, 'تأكيد كلمة المرور مطلوب'),
+    confirmPassword: z.string().min(1, (isAr ? 'تأكيد كلمة المرور مطلوب' : 'Password confirmation is required')),
     country: z
       .string()
-      .min(1, 'الدولة مطلوبة')
-      .max(50, 'اسم الدولة لا يتجاوز 50 حرف'),
+      .min(1, (isAr ? 'الدولة مطلوبة' : 'Country is required'))
+      .max(50, (isAr ? 'اسم الدولة لا يتجاوز 50 حرف' : 'Country name must not exceed 50 characters')),
     language: z.enum(['ar', 'en']).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'كلمة المرور وتأكيدها غير متطابقين',
+    message: (isAr ? 'كلمة المرور وتأكيدها غير متطابقين' : 'Password and confirmation do not match'),
     path: ['confirmPassword'],
   })
 
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = z.infer<ReturnType<typeof makeRegisterSchema>>
 
 export function RegisterForm() {
   const locale = useLocale()
@@ -57,7 +57,7 @@ export function RegisterForm() {
     formState: { errors },
     reset,
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(makeRegisterSchema(locale === 'ar')),
     defaultValues: {
       firstName: '',
       lastName: '',
