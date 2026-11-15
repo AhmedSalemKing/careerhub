@@ -650,7 +650,12 @@ const CSS = `
   .cch-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
-  .cch-steps, .cch-grid { grid-template-columns: 1fr; }
+  .cch-steps { grid-template-columns: 1fr; }
+  .cch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cch-coach { padding: 12px 8px; overflow-wrap: break-word; word-break: break-word; min-width: 0; }
+  .cch-coach h3 { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cch-av { width: 48px; height: 48px; font-size: 18px; }
+  .cch-btns { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .cch * { animation: none !important; } }
 `

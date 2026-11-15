@@ -587,8 +587,13 @@ export function CourseGrid({
 
         @media (max-width: 640px) {
           .course-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+          }
+          .course-grid > :global(*) {
+            min-width: 0;
+            overflow-wrap: break-word;
+            word-break: break-word;
           }
         }
       `}</style>

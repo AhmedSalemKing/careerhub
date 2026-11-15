@@ -24,7 +24,7 @@ export default function CoachesPage() {
       </div>
 
       {q.isLoading ? (
-        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
           <Skeleton className="h-56 w-full rounded-2xl" />
           <Skeleton className="h-56 w-full rounded-2xl" />
           <Skeleton className="h-56 w-full rounded-2xl" />
@@ -44,7 +44,7 @@ export default function CoachesPage() {
           </button>
         </div>
       ) : q.data?.length ? (
-        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
           {q.data.map((coach) => (
             <CoachCard key={coach.id} coach={coach} />
           ))}

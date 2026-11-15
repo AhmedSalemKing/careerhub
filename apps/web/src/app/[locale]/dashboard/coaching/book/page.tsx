@@ -102,7 +102,7 @@ export default function DashboardBookCoachingPage() {
         {step === 1 ? (
           <div className="mt-6">
             {coachesQ.isLoading ? (
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
                 <Skeleton className="h-56 rounded-2xl" />
                 <Skeleton className="h-56 rounded-2xl" />
                 <Skeleton className="h-56 rounded-2xl" />
@@ -123,7 +123,7 @@ export default function DashboardBookCoachingPage() {
               </div>
             ) : coachesQ.data?.length ? (
               <>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
                   {coachesQ.data.map((coach) => (
                     <div key={coach.id} className="relative">
                       <CoachCard coach={coach} />
