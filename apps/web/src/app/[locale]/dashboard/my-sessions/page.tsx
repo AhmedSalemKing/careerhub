@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/market'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import { formatDate, formatTimeOnly } from '@/lib/time'
+import { MySessionsTourLauncher } from '@/components/MySessionsTour'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -146,7 +147,8 @@ export default function MySessionsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', direction: isAr ? 'rtl' : 'ltr' }}>
-      <div style={{ padding: '26px 24px 0', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+      <div data-tour="sessions-header" style={{ padding: '26px 24px 0', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <MySessionsTourLauncher />
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -166,7 +168,7 @@ export default function MySessionsPage() {
               <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
-              <button title={isAr ? 'اختر مرشداً لبدء حجز جلسة' : 'Choose a mentor to start booking a session'} onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+              <button data-tour="sessions-new-btn" title={isAr ? 'اختر مرشداً لبدء حجز جلسة' : 'Choose a mentor to start booking a session'} onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
               </button>
             </div>
@@ -184,7 +186,7 @@ export default function MySessionsPage() {
             ))}
           </div>
 
-          <div style={{ display: 'flex' }}>
+          <div data-tour="sessions-tabs" style={{ display: 'flex' }}>
             {TABS.map(tab => {
               const count = mySessions.filter((s: any) => tab.statuses.includes(s.status)).length
               return (
@@ -225,7 +227,7 @@ export default function MySessionsPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {filtered.map((session: any) => {
+            {filtered.map((session: any, sessionIdx: number) => {
               const conf = STATUS_CONFIG[session.status] || STATUS_CONFIG.PENDING_APPROVAL
               const soon = isSoon(session.scheduledAt)
               const isRescheduleReq = session.status === 'RESCHEDULE_REQUESTED'
@@ -234,7 +236,7 @@ export default function MySessionsPage() {
               const consultantName = `${consultant?.profile?.firstName || ''} ${consultant?.profile?.lastName || ''}`.trim() || ''
 
               return (
-                <div key={session.id} style={{
+                <div key={session.id} {...(sessionIdx === 0 ? { 'data-tour': 'sessions-card' } : {})} style={{
                   background: 'var(--surface)', borderRadius: 18,
                   border: `1.5px solid ${soon ? 'var(--primary-border)' : (isRescheduleReq ? 'var(--accent)' : 'var(--line)')}`,
                   overflow: 'hidden',

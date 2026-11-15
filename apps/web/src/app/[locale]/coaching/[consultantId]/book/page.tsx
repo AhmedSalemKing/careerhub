@@ -24,6 +24,7 @@ import {
   ArrowRight,
   User,
 } from 'lucide-react'
+import { BookingTourLauncher } from '@/components/BookingTour'
 
 interface ConsultantProfile {
   firstName?: string | null
@@ -296,6 +297,7 @@ export default function BookConsultingPage() {
   return (
     <div className="min-h-screen px-4 py-8" style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}>
       <div dir={isAr ? 'rtl' : 'ltr'} className="mx-auto w-full max-w-4xl">
+        <BookingTourLauncher />
         <button
           type="button"
           onClick={goBack}
@@ -330,7 +332,7 @@ export default function BookConsultingPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Steps */}
           <div className="min-w-0 space-y-4 lg:col-span-2">
-            <section className={card} style={cardStyle}>
+            <section className={card} style={cardStyle} data-tour="booking-duration">
               <StepTitle number={1}>{isAr ? 'اختر المدة' : 'Choose a duration'}</StepTitle>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {DURATION_OPTIONS.map((option) => {
@@ -362,7 +364,7 @@ export default function BookConsultingPage() {
               </div>
             </section>
 
-            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked}>
+            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked} data-tour="booking-date">
               <StepTitle number={2}>{isAr ? 'اختر التاريخ' : 'Choose a date'}</StepTitle>
               <StayPicker
                 value={selectedDate}
@@ -380,7 +382,7 @@ export default function BookConsultingPage() {
               </p>
             </section>
 
-            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked}>
+            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked} data-tour="booking-time">
               <StepTitle number={3}>{isAr ? 'اختر الوقت' : 'Choose a time'}</StepTitle>
 
               {loadingSlots ? (
@@ -432,7 +434,7 @@ export default function BookConsultingPage() {
               )}
             </section>
 
-            <section className={card} style={cardStyle}>
+            <section className={card} style={cardStyle} data-tour="booking-details">
               <StepTitle number={4}>{isAr ? 'تفاصيل الجلسة' : 'Session details'}</StepTitle>
 
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }} htmlFor="session-topic">

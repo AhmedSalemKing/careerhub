@@ -16,6 +16,7 @@ import { webLoginUrl } from '../../../lib/constants'
 import { useAuthStore } from '../../../stores/authStore'
 import { formatCoursePrice } from '../../../lib/market'
 import { instructorDisplayName } from '../../../lib/instructor'
+import { LearnCoursesTourLauncher } from '@/components/LearnCoursesTour'
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 
@@ -223,6 +224,7 @@ export default function CoursesPage() {
 
   return (
     <div className="dw2-cp dw2-courses-page" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+      <LearnCoursesTourLauncher />
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
         @keyframes liveGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.4)} 50%{box-shadow:0 0 0 8px rgba(220,38,38,0)} }
@@ -232,7 +234,7 @@ export default function CoursesPage() {
       `}</style>
 
       {/* Hero */}
-      <div className="dw2-cp-head dw2-courses-header">
+      <div className="dw2-cp-head dw2-courses-header" data-tour="courses-header">
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 8 }}>
           <h1 className="dw2-courses-h1">
             {tl('discoverCourses')}
@@ -255,7 +257,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '8px', width: '100%', paddingBottom: '2px' }}>
+        <div data-tour="courses-type-tabs" style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '8px', width: '100%', paddingBottom: '2px' }}>
           {TABS.map(tab => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -297,7 +299,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Category pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div data-tour="courses-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
           {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
@@ -439,7 +441,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const isEnrolled = course.isEnrolled === true
 
   return (
-    <div className="course-card dw2-cp-card dw2-cc" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s` }}
+    <div className="course-card dw2-cp-card dw2-cc" {...(idx === 0 ? { 'data-tour': 'courses-card' } : {})} style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s` }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
 
       {/* Thumbnail */}
@@ -579,7 +581,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
   }
 
   return (
-    <div className="course-card" style={{ animationDelay: `${idx * 0.06}s`, background: 'var(--surface)', borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : 'var(--line)'}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
+    <div className="course-card" {...(idx === 0 ? { 'data-tour': 'courses-card' } : {})} style={{ animationDelay: `${idx * 0.06}s`, background: 'var(--surface)', borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : 'var(--line)'}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
 
       {/* Live/Scheduled Banner */}
       {isLive && (
@@ -768,7 +770,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
   }
 
   return (
-    <div className="course-card dw2-cp-card dw2-cc" style={{ animationDelay: `${(idx % 12) * 0.05}s` }}
+    <div className="course-card dw2-cp-card dw2-cc" {...(idx === 0 ? { 'data-tour': 'courses-card' } : {})} style={{ animationDelay: `${(idx % 12) * 0.05}s` }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
       
       {/* Map preview or thumbnail */}

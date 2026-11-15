@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { useEffect } from 'react'
 import { formatCertDate } from '../../../../lib/time'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
+import { CertificatesTourLauncher } from '@/components/CertificatesTour'
 
 export default function CertificatesPage() {
   const locale = useLocale()
@@ -62,7 +63,8 @@ export default function CertificatesPage() {
       direction: isAr ? 'rtl' : 'ltr',
     }}>
       {/* PAGE HEADER */}
-      <div style={{
+      <CertificatesTourLauncher />
+      <div data-tour="certs-header" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
       }}>
@@ -200,8 +202,8 @@ export default function CertificatesPage() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: '1.25rem',
         }}>
-          {certificates.map((cert: any) => (
-            <div key={cert.id} style={{
+          {certificates.map((cert: any, certIdx: number) => (
+            <div key={cert.id} {...(certIdx === 0 ? { 'data-tour': 'certs-card' } : {})} style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--line)',
               borderRadius: '16px',
@@ -305,7 +307,7 @@ export default function CertificatesPage() {
                 )}
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div {...(certIdx === 0 ? { 'data-tour': 'certs-actions' } : {})} style={{ display: 'flex', gap: '8px' }}>
                   {cert.certificateUrl && (
                     <a
                       href={getDownloadUrl(cert.certificateUrl, cert.verificationCode || cert.id)}

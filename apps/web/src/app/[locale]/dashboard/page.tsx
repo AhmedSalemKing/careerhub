@@ -25,6 +25,7 @@ import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice, formatMoney, formatSarAmount } from '../../../lib/market'
+import { DashboardTourLauncher } from '@/components/DashboardTour'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -825,9 +826,10 @@ function StudentOverview() {
 
   return (
     <div className="dw-dash-wrap dw2-dash-wrap">
+      <DashboardTourLauncher />
 
       {/* HEADER */}
-      <div className="dw-dash-head">
+      <div className="dw-dash-head" data-tour="dashboard-welcome">
         {avatarUrl ? (
           <img src={avatarUrl} alt="" className="dw2-char-av dw2-char-photo" />
         ) : gender === 'FEMALE' || gender === 'MALE' ? (
@@ -847,7 +849,7 @@ function StudentOverview() {
 
       <div className="dw2-dash-body">
         <div className="dw2-dash-right">
-        <div className="dw-card dw2-card">
+        <div className="dw-card dw2-card" data-tour="dashboard-track">
           <div className="dw-card-h">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
             <h2 style={{ flex: 1 }}>المسار المهني</h2>
@@ -906,7 +908,7 @@ function StudentOverview() {
                   </div>
                 </div>
                 {/* Section 1: every course the student is enrolled in for this path */}
-                <p className="dw-section-label">الكورسات المشترك فيها</p>
+                <p className="dw-section-label" data-tour="dashboard-courses">الكورسات المشترك فيها</p>
                 {(() => {
                   // Same source as /dashboard/my-courses (/courses/enrolled); not filtered by path
                   const enrolledCourses = enrollments
@@ -1084,7 +1086,7 @@ function StudentOverview() {
           </div>
 
           {/* === MENTOR SUPPORT CARD (real counts from the same sessions query) === */}
-          <div className="dw-card dw2-card">
+          <div className="dw-card dw2-card" data-tour="dashboard-sessions">
             <div className="dw-card-h">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -1115,7 +1117,7 @@ function StudentOverview() {
       </div>
 
       <div className="dw2-dash-row2">
-        <div className="dw-card dw2-card">
+        <div className="dw-card dw2-card" data-tour="dashboard-rashid">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <h3>ترشيحات رشيد</h3>
@@ -1145,7 +1147,7 @@ function StudentOverview() {
           )}
         </div>
 
-        <div className="dw-card dw2-card">
+        <div className="dw-card dw2-card" data-tour="dashboard-milestones">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
             <h3>المحطات</h3>

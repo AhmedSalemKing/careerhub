@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
+import { InvoicesTourLauncher } from '@/components/InvoicesTour'
 
 type InvoiceType = 'COURSE' | 'SESSION'
 
@@ -92,9 +93,10 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <InvoicesTourLauncher />
 
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3" data-tour="invoices-header">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center"
             style={{
@@ -116,7 +118,7 @@ export default function InvoicesPage() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3" data-tour="invoices-summary">
           <SummaryCard
             label={isAr ? 'إجمالي المدفوعات' : 'Total Spent'}
             value={formatMoney(summary.totalSpent, (summary as any).totalSpentDisplay)}
@@ -139,7 +141,7 @@ export default function InvoicesPage() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap" data-tour="invoices-filters">
         <Filter size={14} style={{ color: 'var(--ink-2)' }} />
         {([
           { id: 'ALL' as const,         label: isAr ? 'الكل' : 'All' },
@@ -237,6 +239,7 @@ export default function InvoicesPage() {
               return (
                 <div
                   key={inv.id}
+                  {...(idx === 0 ? { 'data-tour': 'invoices-row' } : {})}
                   className="flex items-center gap-4 p-4 transition-colors"
                   style={{
                     borderTop: idx > 0 ? '1px solid var(--line)' : 'none',

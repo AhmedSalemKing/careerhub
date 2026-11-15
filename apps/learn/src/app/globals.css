@@ -1840,3 +1840,75 @@ code, pre, kbd, samp, code *, pre * {
   .dw2-learn .t-badge { width: 28px; height: 28px; bottom: 8px; inset-inline-end: 8px }
   .dw2-learn .t-count { bottom: 8px; inset-inline-start: 8px; padding: 3px 8px }
 }
+
+/* Product Tour (Driver.js) */
+.tour-trigger-btn {
+  position: fixed;
+  bottom: 24px;
+  inset-inline-start: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  color: var(--ink-2);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.14);
+  transition: border-color 0.2s, color 0.2s;
+}
+.tour-trigger-btn:hover { border-color: var(--brand); color: var(--brand); }
+
+.driver-popover {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.28) !important;
+  font-family: inherit !important;
+  min-width: 280px !important;
+  max-width: min(340px, calc(100vw - 32px)) !important;
+}
+.driver-popover-title { color: var(--ink) !important; font-size: 0.95rem !important; font-weight: 700 !important; margin-bottom: 6px !important; line-height: 1.4 !important; }
+.driver-popover-description { color: var(--ink-2) !important; font-size: 0.85rem !important; line-height: 1.65 !important; }
+.driver-popover-progress-text { color: var(--ink-3) !important; font-size: 0.75rem !important; }
+.driver-popover-footer { margin-top: 14px !important; gap: 8px !important; }
+.driver-popover-prev-btn {
+  background: transparent !important;
+  border: 1.5px solid var(--line) !important;
+  color: var(--ink-2) !important;
+  border-radius: 10px !important;
+  padding: 6px 14px !important;
+  font-size: 0.82rem !important;
+  font-family: inherit !important;
+  text-shadow: none !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s, color 0.15s !important;
+}
+.driver-popover-prev-btn:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
+.driver-popover-next-btn,
+.driver-popover-done-btn {
+  background: var(--brand) !important;
+  border: 1.5px solid var(--brand) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  padding: 6px 16px !important;
+  font-size: 0.82rem !important;
+  font-family: inherit !important;
+  text-shadow: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s !important;
+}
+.driver-popover-next-btn:hover,
+.driver-popover-done-btn:hover { opacity: 0.88 !important; }
+.driver-popover-close-btn { color: var(--ink-3) !important; font-size: 1.2rem !important; transition: color 0.15s !important; }
+.driver-popover-close-btn:hover { color: var(--ink) !important; }
+.driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--surface) !important; }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--surface) !important; }
+.driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--surface) !important; }
+.driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--surface) !important; }
+.driver-active-element { outline: 2px solid var(--brand) !important; outline-offset: 4px !important; border-radius: 12px !important; }

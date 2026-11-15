@@ -11,6 +11,7 @@ import { instructorDisplayName } from '../../lib/instructor'
 import { useAuthStore } from '../../stores/authStore'
 import { useMarket } from '../contexts/MarketContext'
 import VisionBadge from '../../components/VisionBadge'
+import { LearnHomeTourLauncher } from '@/components/LearnHomeTour'
 
 const MAIN_SITE_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
@@ -309,8 +310,9 @@ export default function HomePage() {
 
   return (
     <main className="dw2-learn overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+      <LearnHomeTourLauncher />
       {/* HERO */}
-      <section className="phero">
+      <section className="phero" data-tour="learn-hero">
         <div className="hero-bg">
           <span className="dots" />
           <span className="b1" />
@@ -329,7 +331,7 @@ export default function HomePage() {
               <>
                 <h1>{t('welcomeBack', { name: firstName || (isAr ? 'متعلّمنا' : 'learner') })}</h1>
                 {current?.title && <p className="lede">{t('continueLine', { title: current.title })}</p>}
-                <div className="hero-ctas">
+                <div className="hero-ctas" data-tour="learn-continue">
                   <a className="btn btn-primary" href={current?.courseId ? `/${locale}/courses/${current.courseId}/learn` : `/${locale}/my-courses`}>
                     {t('continueCta')}
                     <Icon name="arrow" className="go" flip={isAr} />
@@ -404,7 +406,7 @@ export default function HomePage() {
       </section>
 
       {/* TRACKS (always rendered) */}
-      <section className="sec sec-alt">
+      <section className="sec sec-alt" data-tour="learn-tracks">
         <div className="wrap">
           <div className="sec-head">
             <span className="eyebrow">{t('tracksEyebrow')}</span>
@@ -465,7 +467,7 @@ export default function HomePage() {
       </section>
       {/* COURSES */}
       {courses.length > 0 && (
-        <section className="dw2-home-courses">
+        <section className="dw2-home-courses" data-tour="learn-courses">
           <div className="dw2-wrap">
             <div className="dw2-sec-head">
               <div>

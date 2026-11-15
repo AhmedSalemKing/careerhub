@@ -11,6 +11,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
 import { formatCoursePrice, formatSarAmount } from "../../../../lib/market";
+import { MyCoursesTourLauncher } from '@/components/MyCoursesTour'
 
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
@@ -170,7 +171,8 @@ export default function MyCoursesPage() {
 				`}</style>
 				<div style={{ padding: 'clamp(16px,3vw,32px)', maxWidth: '1400px', margin: '0 auto' }}>
 					{/* 1. Page header row */}
-					<div style={{
+					<MyCoursesTourLauncher />
+					<div data-tour="my-courses-header" style={{
 						display: 'flex',
 						justifyContent: 'space-between',
 						alignItems: 'flex-start',
@@ -317,7 +319,7 @@ export default function MyCoursesPage() {
 					)}
 
 					{/* 3. Filter bar */}
-					<div style={{
+					<div data-tour="my-courses-filters" style={{
 						display: 'flex',
 						gap: 10,
 						alignItems: 'center',
@@ -467,14 +469,14 @@ export default function MyCoursesPage() {
 							gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
 							gap: 16,
 						}} className="course-grid">
-							{filteredCourses.map((course: any) => {
+							{filteredCourses.map((course: any, courseIdx: number) => {
 								const title = getTitle(course, locale);
 								const statusConfig = getStatusConfig(course.status, course);
 								const enrollments = course._count?.enrollments || course.enrollmentsCount || course.enrollments || 0;
 								const coursePrice = course.price;
 
 								return (
-									<div key={course.id} style={{
+									<div key={course.id} {...(courseIdx === 0 ? { 'data-tour': 'my-courses-card' } : {})} style={{
 										background: 'var(--card-bg)',
 										border: '1px solid var(--line)',
 										borderRadius: 20,
