@@ -1286,7 +1286,7 @@ ${trackList}
               </div>
               <h2>{currentQuestion.question}</h2>
 
-              <div className="opts" role="radiogroup" aria-label={currentQuestion.question}>
+              <div className="opts" role="radiogroup" aria-label={currentQuestion.question} data-tour="assess-options">
                 {currentQuestion.options.map((opt, i) => {
                   const isSelected = selectedOption === opt
                   return (
@@ -1318,6 +1318,7 @@ ${trackList}
                   onClick={handleNext}
                   disabled={!selectedOption}
                   className="btn btn-primary"
+                  data-tour="assess-next"
                 >
                   {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
                   <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>

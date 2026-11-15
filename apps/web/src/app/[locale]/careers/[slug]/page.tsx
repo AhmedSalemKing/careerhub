@@ -14,6 +14,7 @@ import { Skeleton } from '../../../components/ui/Skeleton'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { fetchTrack, formatSalaryRange, type TrackConsultant, type TrackCourse, type TrackPackageInfo } from '../../../../lib/tracks'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
+import { CareerDetailTourLauncher } from '@/components/CareerDetailTour'
 import { EnrollConfirmModal } from '../../../../components/careers/EnrollConfirmModal'
 import { formatCurrency } from '../../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../../lib/marketConfig'
@@ -383,6 +384,7 @@ export default function CareerPathDetailPage() {
 
   return (
     <div className="dw2-page" dir={dir}>
+      <CareerDetailTourLauncher locale={locale} />
       {/* HERO */}
       <section
         className={'dw2-hero' + (track ? ' cover' : '')}
@@ -403,7 +405,7 @@ export default function CareerPathDetailPage() {
           <>
             <h1>{view.title}</h1>
             {view.description && <p className="dw2-lede">{view.description}</p>}
-            <div className="dw2-stats">
+            <div className="dw2-stats" data-tour="career-header">
               {isMock && <span className="dw2-stat-pill dw2-pill-yellow">{isAr ? 'بيانات تجريبية' : 'Sample data'}</span>}
               <span className="dw2-stat-pill">{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات` : `${view.coursesCount} courses`}</span>
               {view.durationText && <span className="dw2-stat-pill">{view.durationText}</span>}
@@ -413,7 +415,7 @@ export default function CareerPathDetailPage() {
               {view.vision2030 && <span className="dw2-stat-pill dw2-pill-green">{mkt.flag} {isAr ? 'متوافق مع ' : 'Aligned with '}{mkt.vision.name[lang]}</span>}
               {view.trackVision && view.trackVision.length > 0 && <VisionBadges vision={view.trackVision} locale={locale} compact />}
             </div>
-            <div className="dw2-cta-row">
+            <div className="dw2-cta-row" data-tour="career-cta">
               {enrollBtn()}
               <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
             </div>
@@ -426,7 +428,7 @@ export default function CareerPathDetailPage() {
           {/* MAIN */}
           <div className="dw2-path-main">
             {view.jobs.length > 0 && (
-              <section>
+              <section data-tour="career-jobs">
                 <h2>{isAr ? 'وظائف يؤهلك لها هذا المسار' : 'Jobs this path qualifies you for'}</h2>
                 <div className="dw2-jobs">
                   {view.jobs.map((j) => (
@@ -487,7 +489,7 @@ export default function CareerPathDetailPage() {
               </section>
             )}
 
-            <section>
+            <section data-tour="career-plan">
               <h2>{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
               {track && view.trackPackage ? (
                 <p className="dw2-sub" style={{ color: 'var(--brand)', fontWeight: 600 }}>{isAr ? `${Math.max(view.courses.length, view.trackPackage.courseCount).toLocaleString(nf)} دورة مشمولة في الباكدج` : `${Math.max(view.courses.length, view.trackPackage.courseCount)} courses included in the package`}</p>

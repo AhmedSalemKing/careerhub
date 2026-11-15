@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from
 import dynamic from 'next/dynamic'
 import { SECTION_SVGS, SECTION_LABELS } from './sections'
 import { RasheedAvatar } from '../../../components/CharacterDuo'
+import { AssessmentTourLauncher } from '@/components/AssessmentTour'
 
 const AIInterviewPage = dynamic(() => import('./AIInterviewPage'), { ssr: false })
 
@@ -44,13 +45,14 @@ function AssessmentContent() {
 
   return (
     <div dir="rtl" className="dw-assess assess-page">
+      <AssessmentTourLauncher locale="ar" />
       <section className="ri-hero">
         <div className="hero-bg" aria-hidden="true">
           <span className="dots" />
           <span className="b1" />
           <span className="b2" />
         </div>
-        <div className="wrap ri-center">
+        <div className="wrap ri-center" data-tour="assess-hero">
           <span className="eyebrow">{SECTION_SVGS[4]} مرشدك المهني بالذكاء الاصطناعي</span>
 
           <div className="r-figure ri-figure" aria-hidden="true">
@@ -78,7 +80,7 @@ function AssessmentContent() {
             <span className="muted small ri-meta">{clockIcon} نحو 15–20 دقيقة · مجاني · بالعربية</span>
           </div>
 
-          <div className={`ri-secs${sectionsVisible ? ' on' : ''}`}>
+          <div className={`ri-secs${sectionsVisible ? ' on' : ''}`} data-tour="assess-sections">
             <ol>
               {SECTION_LABELS.map((label, i) => (
                 <li key={label} style={{ '--d': `${i * 70}ms` } as CSSProperties}>

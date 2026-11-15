@@ -14,6 +14,7 @@ import { useMarket } from '@/app/contexts/MarketContext'
 import { MARKET_CONFIG, toLang } from '@/lib/marketConfig'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { useTracks, fetchTrack } from '@/lib/tracks'
+import { AssessmentResultTourLauncher } from '@/components/AssessmentResultTour'
 
 /* ── Display shape ───────────────────────────────────────── */
 interface ResultJob { title: string; description: string; salaryMin: number | null; salaryMax: number | null; vision2030: boolean }
@@ -226,6 +227,7 @@ export default function AssessmentResultPage() {
 
   return (
     <div dir="rtl" className="dw-result">
+      <AssessmentResultTourLauncher locale="ar" />
       <div className="rs-wrap">
         {/* Hero */}
         <header className="rs-hero">
@@ -235,7 +237,7 @@ export default function AssessmentResultPage() {
         </header>
 
         {/* Rasheed */}
-        <section className="rs-rasheed">
+        <section className="rs-rasheed" data-tour="result-rasheed">
           <span className="rs-avatar"><RasheedAvatar size={72} /></span>
           <div>
             <p className="rs-who"><b>رشيد</b> · مرشد DeveWay المهني بالذكاء الاصطناعي</p>
@@ -252,7 +254,7 @@ export default function AssessmentResultPage() {
             const hasSlug = !!t.trackSlug
             const href = `/${locale}/careers/${t.trackSlug}`
             return (
-              <article key={`${t.rank}-${t.trackName}`} className={`rs-card${featured ? ' featured' : ''}`} style={{ animationDelay: `${i * 140}ms` }}>
+              <article key={`${t.rank}-${t.trackName}`} className={`rs-card${featured ? ' featured' : ''}`} {...(featured ? { 'data-tour': 'result-top-card' } : i === 1 ? { 'data-tour': 'result-alt-cards' } : {})} style={{ animationDelay: `${i * 140}ms` }}>
                 {featured && <span className="rs-best"><Star size={13} aria-hidden="true" /> الأنسب لك</span>}
 
                 <header className="rs-head">
@@ -360,7 +362,7 @@ export default function AssessmentResultPage() {
         </div>
 
         {/* Next step */}
-        <div className="rs-next">
+        <div className="rs-next" data-tour="result-next">
           <p>خطوتك القادمة</p>
           <h3>اختر مسارك وابدأ أول كورس</h3>
           <Link href={`/${locale}/careers`}>تصفّح المسارات المهنية</Link>
@@ -380,7 +382,7 @@ export default function AssessmentResultPage() {
           تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
         </p>
         <div className="rs-cta">
-          <button type="button" className="btn btn-ghost" onClick={retake}><RotateCcw size={16} aria-hidden="true" /> أعد التقييم</button>
+          <button type="button" className="btn btn-ghost" onClick={retake} data-tour="result-retake"><RotateCcw size={16} aria-hidden="true" /> أعد التقييم</button>
           <a className="btn btn-primary" href={`${LEARN_URL.replace(/[/]+$/, '')}/${locale}`}>افتح «تعلّمي» <ArrowLeft size={16} aria-hidden="true" /></a>
         </div>
       </div>
