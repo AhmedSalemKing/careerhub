@@ -229,6 +229,13 @@ function SearchableSelect({
   )
 }
 
+const formatArabicDate = (dateStr: string) => {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 export default function CreateCoursePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -709,7 +716,7 @@ export default function CreateCoursePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>{isAr ? 'تاريخ البث' : 'Live Date'} *</label>
-                  <input type="date" min={new Date().toISOString().split('T')[0]}
+                  <input type="date" min={new Date().toISOString().split('T')[0]} max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     value={form.liveDate} onChange={e => set('liveDate', e.target.value)}
                     className={inputCls} />
                 </div>
@@ -793,7 +800,7 @@ export default function CreateCoursePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>{isAr ? 'التاريخ' : 'Date'} *</label>
-                  <input type="date" min={new Date().toISOString().split('T')[0]}
+                  <input type="date" min={new Date().toISOString().split('T')[0]} max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     value={form.offlineDate} onChange={e => set('offlineDate', e.target.value)}
                     className={inputCls} />
                 </div>
@@ -970,7 +977,7 @@ export default function CreateCoursePage() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--ink-2)', marginBottom: 4 }}>{isAr ? 'تاريخ البث' : 'Live Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{form.liveDate} {form.liveTime}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.liveDate)} {form.liveTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -1035,7 +1042,7 @@ export default function CreateCoursePage() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--ink-2)', marginBottom: 4 }}>{isAr ? 'التاريخ' : 'Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{form.offlineDate} {form.offlineTime}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.offlineDate)} {form.offlineTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>

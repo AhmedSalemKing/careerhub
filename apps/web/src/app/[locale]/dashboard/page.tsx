@@ -1578,16 +1578,6 @@ export default function DashboardPage() {
       iconBg: 'linear-gradient(135deg,#5120c8,#7c3aed)',
       chevronColor: '#5120c8',
     }
-    if (accountType === 'INSTRUCTOR') return {
-      icon: <BookOpen size={22} color="var(--primary-foreground)"/>,
-      title: 'إنشاء كورس جديد',
-      desc: 'ابدأ في تدريس وإنشاء محتوى تعليمي احترافي',
-      href: `/${locale}/dashboard/create-course`,
-      bg: 'linear-gradient(135deg,rgba(43,191,163,0.15),rgba(5,150,105,0.1))',
-      border: 'rgba(43,191,163,0.3)',
-      iconBg: 'linear-gradient(135deg,#2BBFA3,#059669)',
-      chevronColor: '#2BBFA3',
-    }
     if (accountType === 'CONSULTANT') return {
       icon: <Calendar size={22} color="var(--primary-foreground)"/>,
       title: 'جلساتي القادمة',

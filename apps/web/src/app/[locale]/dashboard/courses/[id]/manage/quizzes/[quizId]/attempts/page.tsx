@@ -42,6 +42,9 @@ export default function QuizAttemptsPage() {
 
   const attempts: any[] = data?.items ?? []
   const totalPages = data?.totalPages ?? 1
+  const quizTotal: number = Array.isArray(quiz?.questions)
+    ? quiz.questions.reduce((sum: number, q: any) => sum + (Number(q.points) || 0), 0)
+    : 0
 
   const back = () => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes`)
   const review = (aid: string) =>
@@ -122,7 +125,11 @@ export default function QuizAttemptsPage() {
                         </span>
                       </td>
                       <td {...(idx === 0 ? { 'data-tour': 'attempts-score' } : {})} className="px-4 py-3 font-semibold text-[var(--ink)]">
-                        {Math.round((a.totalScore ?? 0) * 100) / 100} / {Math.round((a.maxScore ?? 0) * 100) / 100}
+                        {(() => {
+                          const earned = Math.round((a.totalScore ?? 0) * 100) / 100
+                          const total = Number(a.maxScore) > 0 ? Number(a.maxScore) : quizTotal
+                          return total > 0 ? `${earned} / ${Math.round(total * 100) / 100}` : `${earned} نقطة`
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={a.passed ? 'PASSED' : 'FAILED'} />

@@ -6,8 +6,10 @@ import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   BookOpen, Users, Settings, Video, Plus, X, Upload, CheckCircle,
-  FileText, Image, File, Download, Eye, Trash2, Edit3, FileQuestion
+  FileText, Image, File, Download, Eye, Trash2, Edit3, FileQuestion, Share2, Loader2
 } from 'lucide-react'
+import { LEARN_URL } from '../../../../../../lib/constants'
+import { LiveManageTourLauncher } from '@/components/LiveManageTour'
 import { get, post, patch, del } from '../../../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../../../lib/upload-error'
 import {
@@ -941,6 +943,17 @@ function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarte
 function LiveManageView({ courseId, locale }: { courseId: string; locale: string }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
+  const [copied, setCopied] = useState(false)
+
+  // Student-facing course URL (no auth token, safe to share)
+  const copyCourseLink = async () => {
+    const url = `${LEARN_URL.replace(/\/+$/, '')}/${locale}/learn/${courseId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
 
   const { data: manageData, isLoading } = useQuery({
     queryKey: ['live-manage', courseId],
@@ -1124,7 +1137,8 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
       </div>
 
       {/* Page header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <LiveManageTourLauncher />
+      <div data-tour="live-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <span style={{
@@ -1143,19 +1157,36 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             تابع تفاصيل البث المباشر وأدر التسجيل الخاص به
           </p>
         </div>
-        <button
-          onClick={() => router.push(`/${locale}/dashboard/my-courses`)}
-          style={{
-            background: '#13161f', border: '1px solid #1e2333',
-            borderRadius: 10, padding: '8px 16px', color: '#9ca3af',
-            fontWeight: 300, fontSize: '0.85rem', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 8,
-            fontFamily: 'var(--font-ui)',
-          }}
-        >
-          <SvgBackArrow />
-          العودة إلى الكورسات
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            data-tour="live-share-btn"
+            onClick={copyCourseLink}
+            style={{
+              background: 'transparent', border: '1px solid #2d2060',
+              borderRadius: 10, padding: '6px 12px', color: copied ? '#10b981' : '#a78bfa',
+              fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            <Share2 size={14} />
+            {copied ? 'تم النسخ' : 'مشاركة رابط البث'}
+          </button>
+          <button
+            onClick={() => router.push(`/${locale}/dashboard/my-courses`)}
+            style={{
+              background: '#13161f', border: '1px solid #1e2333',
+              borderRadius: 10, padding: '8px 16px', color: '#9ca3af',
+              fontWeight: 300, fontSize: '0.85rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            <SvgBackArrow />
+            العودة إلى الكورسات
+          </button>
+        </div>
       </div>
 
       {/* Top info card */}
@@ -1214,7 +1245,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
         </div>
 
         {/* Right: status card */}
-        <div style={{
+        <div data-tour="live-status-badge" style={{
           minWidth: 220, background: '#0f1117', border: '1px solid #1e2333',
           borderRadius: 12, padding: 16,
         }}>
@@ -1273,7 +1304,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
         padding: 4, marginBottom: 20, overflowX: 'auto',
       }}>
         {tabs.map((tab, i) => (
-          <button key={tab} onClick={() => setActiveTab(i)} style={{
+          <button key={tab} data-tour={`live-tab-${['overview', 'recording', 'presenters', 'subscriptions', 'settings'][i]}`} onClick={() => setActiveTab(i)} style={{
             flex: 1, padding: '9px 16px', borderRadius: 8, border: 'none',
             background: activeTab === i ? '#7c3aed' : 'transparent',
             color: activeTab === i ? '#fff' : '#9ca3af',
@@ -1291,7 +1322,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
           {/* تفاصيل البث */}
-          <div style={{
+          <div data-tour="live-details" style={{
             background: '#13161f', border: '1px solid #1e2333',
             borderRadius: 14, padding: 20,
           }}>
@@ -1330,6 +1361,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                     fontSize: '0.78rem', fontWeight: 500,
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}>
+                    {badge.text === 'جارٍ التجهيز' && <Loader2 size={12} className="animate-spin" />}
                     {badge.text}
                     {badge.text === 'تم الانتهاء' && <SvgCheck />}
                   </span>
@@ -1479,6 +1511,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 </div>
               </div>
               <button
+                data-tour="live-go-to-course"
                 onClick={() => window.open(
                   learnUrlWithToken(`/ar/learn/${courseId}`), '_blank'
                 )}
