@@ -262,7 +262,7 @@ export function SearchBar() {
                       <a
                         key={course.id}
                         href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
-                        target="_blank"
+                        target="_self"
                         rel="noopener noreferrer"
                         onClick={() => setOpen(false)}
                         style={{

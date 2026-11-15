@@ -45,7 +45,7 @@ export function DashboardSidebar() {
           {/* External training link only */}
           <a
             href={learnUrlWithToken('/')}
-            target="_blank"
+            target="_self"
             rel="noopener noreferrer"
             className="block rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)]"
           >

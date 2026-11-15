@@ -88,7 +88,7 @@ export function CourseCard({
     <a
       ref={cardRef}
       href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
-      target="_blank"
+      target="_self"
       rel="noopener noreferrer"
       data-testid="course-card"
       className="course-card group block overflow-hidden rounded-2xl transition-all duration-500 ease-out"

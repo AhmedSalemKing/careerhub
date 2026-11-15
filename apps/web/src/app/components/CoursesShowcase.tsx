@@ -128,7 +128,7 @@ export function CoursesShowcase() {
         <div className="dw-tabs">
           <a
             href={learnUrlWithToken(`/${locale}/courses`)}
-            target="_blank"
+            target="_self"
             rel="noopener noreferrer"
             className="dw-tab dw-tab-active"
           >
@@ -192,7 +192,7 @@ export function CoursesShowcase() {
                     <h3>
                       <a
                         href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
-                        target="_blank"
+                        target="_self"
                         rel="noopener noreferrer"
                         className="dw-card-link"
                       >
@@ -237,7 +237,7 @@ export function CoursesShowcase() {
         <div className="dw-center-cta">
           <a
             href={learnUrlWithToken(`/${locale}`)}
-            target="_blank"
+            target="_self"
             rel="noopener noreferrer"
             className="btn btn-primary"
           >

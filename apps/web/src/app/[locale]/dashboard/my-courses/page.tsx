@@ -703,7 +703,7 @@ export default function MyCoursesPage() {
 													</>
 												) : (
 													<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)} data-tour="my-courses-continue-btn"
-														target="_blank"
+														target="_self"
 														rel="noopener noreferrer"
 														style={{
 															background: 'var(--primary)',

@@ -70,7 +70,7 @@ export function Footer() {
               <li><Link className="footer-link" href={`${base}/careers`}>{c.tracks}</Link></li>
               <li><Link className="footer-link" href={`${base}/register`}>{c.assessment}</Link></li>
               <li>
-                <a className="footer-link" href={learnUrlWithToken('/my-courses')} target="_blank" rel="noopener noreferrer">{c.myLearning}</a>
+                <a className="footer-link" href={learnUrlWithToken('/my-courses')} target="_self" rel="noopener noreferrer">{c.myLearning}</a>
               </li>
             </ul>
           </div>
