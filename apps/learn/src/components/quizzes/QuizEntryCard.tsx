@@ -42,6 +42,7 @@ export default function QuizEntryCard({
   const params = useParams()
   const router = useRouter()
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const courseId = params.courseId as string
 
   const { data } = useQuery({
@@ -86,7 +87,7 @@ export default function QuizEntryCard({
     ? `${quizHref}/result?aid=${viewAttempt!.id}`
     : quizHref
 
-  let label = 'ابدأ الاختبار'
+  let label = (isAr ? 'ابدأ الاختبار' : 'Start the quiz')
   let variant: 'primary' | 'secondary' | 'muted' = 'primary'
   let Icon = Play
   let disabled = false
@@ -95,42 +96,42 @@ export default function QuizEntryCard({
   let onClick: () => void = () => router.push(quizHref)
 
   if (attemptCount === 0) {
-    label = 'ابدأ الاختبار'
+    label = (isAr ? 'ابدأ الاختبار' : 'Start the quiz')
     variant = 'primary'
     Icon = Play
   } else if (last?.status === 'IN_PROGRESS') {
-    label = 'أكمل الاختبار'
+    label = (isAr ? 'أكمل الاختبار' : 'Continue the quiz')
     variant = 'primary'
     Icon = Play
   } else if (last?.status === 'SUBMITTED') {
-    label = 'قيد المراجعة…'
+    label = (isAr ? 'قيد المراجعة…' : 'Under review…')
     variant = 'muted'
     disabled = true
     Icon = Clock
   } else if (isGraded && best?.passed) {
-    label = 'عرض النتيجة'
+    label = (isAr ? 'عرض النتيجة' : 'View result')
     variant = 'secondary'
     Icon = CheckCircle2
     onClick = () => router.push(resultHref)
   } else if (isGraded && !best?.passed && canRetake) {
-    label = `إعادة المحاولة (${remaining === null || remaining === undefined ? '∞' : remaining})`
+    label = (isAr ? `إعادة المحاولة (${remaining === null || remaining === undefined ? '∞' : remaining})` : `Retake (${remaining === null || remaining === undefined ? '∞' : remaining})`)
     variant = 'primary'
     Icon = AlertCircle
   } else if (isGraded && !best?.passed && !canRetake) {
-    label = 'لا يمكن الإعادة'
+    label = (isAr ? 'لا يمكن الإعادة' : 'Cannot retake')
     variant = 'muted'
     disabled = true
     Icon = XCircle
-    helper = 'لا يمكن إعادة المحاولة — تواصل مع المحاضر'
+    helper = (isAr ? 'لا يمكن إعادة المحاولة — تواصل مع المحاضر' : 'You cannot retake — contact the instructor')
     secondaryHref = canShowResult ? resultHref : null
   }
 
   // The video gate applies only to actions that would START a quiz. Viewing an
   // already-submitted/graded result stays available while locked.
-  const startsQuiz = !disabled && onClick !== undefined && label !== 'عرض النتيجة'
+  const startsQuiz = !disabled && onClick !== undefined && label !== (isAr ? 'عرض النتيجة' : 'View result')
   if (locked && startsQuiz) {
     disabled = true
-    helper = lockHint ?? 'يجب مشاهدة الفيديو أولاً'
+    helper = lockHint ?? (isAr ? 'يجب مشاهدة الفيديو أولاً' : 'You must watch the video first')
   }
 
   const btnStyle: React.CSSProperties =
@@ -161,25 +162,25 @@ export default function QuizEntryCard({
             <div data-tour="player-quiz-attempts" className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--muted)]">
               <span className="flex items-center gap-1">
                 <FileQuestion className="h-3.5 w-3.5" />
-                {quiz._count.questions} سؤال
+                {quiz._count.questions} {isAr ? 'سؤال' : 'questions'}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {quiz.durationMinutes} دقيقة
+                {quiz.durationMinutes} {isAr ? 'دقيقة' : 'min'}
               </span>
-              <span>درجة النجاح: {quiz.passingScore}%</span>
+              <span>{isAr ? 'درجة النجاح:' : 'Passing score:'} {quiz.passingScore}%</span>
               {isGraded && best && (
                 <span className="font-semibold" style={{ color: best.passed ? '#10b981' : '#ef4444' }}>
-                  أفضل نتيجة: {Math.round(best.percentage)}%
+                  {isAr ? 'أفضل نتيجة:' : 'Best score:'} {Math.round(best.percentage)}%
                 </span>
               )}
               {isGraded && best && !best.passed && (
                 <span>
                   {remaining === null || remaining === undefined
-                    ? `محاولاتك المتبقية: غير محدودة (${attemptCount} محاولة حتى الآن)`
+                    ? (isAr ? `محاولاتك المتبقية: غير محدودة (${attemptCount} محاولة حتى الآن)` : `Your remaining attempts: unlimited (${attemptCount} attempts so far)`)
                     : remaining > 0
-                      ? `المحاولات المتبقية: ${remaining} من ${quiz.maxAttempts}`
-                      : 'لا توجد محاولات متبقية — تواصل مع المحاضر'}
+                      ? (isAr ? `المحاولات المتبقية: ${remaining} من ${quiz.maxAttempts}` : `Remaining attempts: ${remaining} of ${quiz.maxAttempts}`)
+                      : (isAr ? 'لا توجد محاولات متبقية — تواصل مع المحاضر' : 'No attempts remaining — contact the instructor')}
                 </span>
               )}
             </div>
@@ -206,7 +207,7 @@ export default function QuizEntryCard({
               href={secondaryHref}
               className="text-[11px] font-semibold text-[#5120c8] hover:opacity-80 transition-opacity duration-150"
             >
-              عرض نتيجتك
+              {isAr ? 'عرض نتيجتك' : 'View your result'}
             </a>
           )}
         </div>

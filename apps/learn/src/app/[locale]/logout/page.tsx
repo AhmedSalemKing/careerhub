@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { MAIN_URL } from '../../../lib/constants'
 import { clearAuthCookies } from '../../../lib/auth'
+import { useLocale } from 'next-intl'
 
 const AUTH_KEYS = [
   'deveway_token', 'deveway_refresh', 'deveway_user',
@@ -34,6 +35,7 @@ function isAllowedReturn(url: string): boolean {
 }
 
 export default function LogoutPage() {
+  const isAr = useLocale() === 'ar'
   useEffect(() => {
     // 1) Clear all auth keys
     AUTH_KEYS.forEach((k) => {
@@ -87,7 +89,7 @@ export default function LogoutPage() {
 
   return (
     <div
-      dir="rtl"
+      dir={isAr ? 'rtl' : 'ltr'}
       style={{
         minHeight: '100vh',
         display: 'flex',
@@ -111,7 +113,7 @@ export default function LogoutPage() {
           }}
         />
         <p style={{ fontSize: '0.95rem', opacity: 0.75, margin: 0 }}>
-          جارٍ تسجيل الخروج...
+          {isAr ? 'جارٍ تسجيل الخروج...' : 'Signing out...'}
         </p>
         <style>{`@keyframes dv-spin { to { transform: rotate(360deg) } }`}</style>
       </div>

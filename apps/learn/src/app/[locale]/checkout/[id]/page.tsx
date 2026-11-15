@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 
 export default function CheckoutPage() {
+  const isAr = useLocale() === 'ar'
   const params = useParams()
   const courseId = params.id as string
   const locale = useLocale()
@@ -14,10 +15,10 @@ export default function CheckoutPage() {
   }, [courseId, locale])
 
   return (
-    <div className="flex min-h-screen items-center justify-center" dir="rtl">
+    <div className="flex min-h-screen items-center justify-center" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="text-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-        <p style={{ color: 'var(--text-muted)' }}>جاري التحويل إلى صفحة الدفع...</p>
+        <p style={{ color: 'var(--text-muted)' }}>{isAr ? 'جاري التحويل إلى صفحة الدفع...' : 'Redirecting to the payment page...'}</p>
       </div>
     </div>
   )

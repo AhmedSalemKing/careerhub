@@ -6,6 +6,7 @@ import { MAIN_URL } from '../../../lib/constants'
 
 export default function LoginRedirectPage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
 
   useEffect(() => {
     // Preserve redirect param so main site can redirect back after login
@@ -20,7 +21,7 @@ export default function LoginRedirectPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-slate-400 text-sm">جارٍ التوجيه...</p>
+      <p className="text-slate-400 text-sm">{isAr ? 'جارٍ التوجيه...' : 'Redirecting...'}</p>
     </div>
   )
 }

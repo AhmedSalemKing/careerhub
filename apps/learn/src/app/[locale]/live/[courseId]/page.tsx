@@ -320,8 +320,8 @@ export default function LiveViewerPage() {
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
       </div>
-      <h2 style={{ color: '#f3f4f6', margin: 0, fontWeight: 700, fontSize: '1.5rem' }}>هذا البث غير موجود</h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>تأكد من صحة الرابط أو تواصل مع المحاضر.</p>
+      <h2 style={{ color: '#f3f4f6', margin: 0, fontWeight: 700, fontSize: '1.5rem' }}>{isAr ? 'هذا البث غير موجود' : 'This stream does not exist'}</h2>
+      <p style={{ color: '#6b7280', margin: 0 }}>{isAr ? 'تأكد من صحة الرابط أو تواصل مع المحاضر.' : 'Check that the link is correct or contact the instructor.'}</p>
       <button
         onClick={() => router.push(`/${locale}/courses`)}
         style={{
@@ -330,7 +330,7 @@ export default function LiveViewerPage() {
           fontFamily: "'PingAR', sans-serif",
         }}
       >
-        تصفح الكورسات
+        {isAr ? 'تصفح الكورسات' : 'Browse courses'}
       </button>
     </div>
   )
@@ -356,7 +356,7 @@ export default function LiveViewerPage() {
           background: '#f59e0b', display: 'inline-block',
           animation: 'endedPulse 2s ease-in-out infinite',
         }} />
-        البث انتهى
+        {isAr ? 'البث انتهى' : 'The stream has ended'}
       </div>
 
       <div style={{
@@ -396,7 +396,7 @@ export default function LiveViewerPage() {
         fontWeight: 700, fontSize: 'clamp(1.8rem, 5vw, 2.4rem)',
         color: '#f3f4f6', margin: '0 0 0.75rem', textAlign: 'center',
       }}>
-        انتهى البث المباشر
+        {isAr ? 'انتهى البث المباشر' : 'The live stream has ended'}
       </h1>
 
       <p style={{
@@ -404,8 +404,8 @@ export default function LiveViewerPage() {
         margin: '0 0 2.5rem', textAlign: 'center',
       }}>
         {recordingUrl
-          ? 'يمكنك مشاهدة التسجيل الآن'
-          : 'سيتوفر التسجيل قريباً بعد انتهاء المعالجة'}
+          ? (isAr ? 'يمكنك مشاهدة التسجيل الآن' : 'You can watch the recording now')
+          : (isAr ? 'سيتوفر التسجيل قريباً بعد انتهاء المعالجة' : 'The recording will be available soon after processing finishes')}
       </p>
 
       {recordingUrl && (
@@ -420,7 +420,7 @@ export default function LiveViewerPage() {
             boxShadow: '0 0 32px #7c3aed44',
           }}
         >
-          شاهد التسجيل في الكورس
+          {isAr ? 'شاهد التسجيل في الكورس' : 'Watch the recording in the course'}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />

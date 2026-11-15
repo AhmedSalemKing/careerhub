@@ -74,7 +74,7 @@ export default function GradesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6" dir="rtl">
+      <div className="min-h-screen p-6" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="mx-auto max-w-5xl space-y-4">
           <div className="h-10 w-56 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -104,7 +104,7 @@ export default function GradesPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
+    <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir={isAr ? 'rtl' : 'ltr'}>
       <GradesTourLauncher />
       <div data-tour="grades-header" className="border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">

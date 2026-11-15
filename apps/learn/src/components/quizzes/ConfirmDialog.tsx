@@ -1,4 +1,5 @@
 'use client'
+import { useLocale } from 'next-intl'
 import { useEffect } from 'react'
 
 interface ConfirmDialogProps {
@@ -16,12 +17,15 @@ export default function ConfirmDialog({
   isOpen,
   title,
   message,
-  confirmLabel = 'تأكيد',
-  cancelLabel = 'إلغاء',
+  confirmLabel,
+  cancelLabel,
   confirmDestructive = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const isAr = useLocale() === 'ar'
+  const confirmText = confirmLabel ?? (isAr ? 'تأكيد' : 'Confirm')
+  const cancelText = cancelLabel ?? (isAr ? 'إلغاء' : 'Cancel')
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
@@ -50,7 +54,7 @@ export default function ConfirmDialog({
             onClick={onCancel}
             className="rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150"
           >
-            {cancelLabel}
+            {cancelText}
           </button>
           <button
             type="button"
@@ -59,7 +63,7 @@ export default function ConfirmDialog({
               confirmDestructive ? 'bg-[#ef4444]' : 'bg-[#5120c8]'
             }`}
           >
-            {confirmLabel}
+            {confirmText}
           </button>
         </div>
       </div>

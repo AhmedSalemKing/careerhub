@@ -26,8 +26,8 @@ export default function EnrollPaymentPage() {
     : 'SAR'
   const SAR_TO_EGP = 15.0027
   const fallbackDisplay = market === 'EGP'
-    ? (amount * SAR_TO_EGP).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
-    : amount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س'
+    ? (amount * SAR_TO_EGP).toLocaleString(isAr ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (isAr ? ' ج.م' : ' EGP')
+    : amount.toLocaleString(isAr ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (isAr ? ' ر.س' : ' SAR')
   const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : fallbackDisplay
   const title = searchParams.get('title') || ''
   const courseType = searchParams.get('type') || 'recorded'

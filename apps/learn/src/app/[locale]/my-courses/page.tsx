@@ -112,6 +112,7 @@ function ErrorMessage({
   message,
   subMessage 
 }: ErrorMessageProps) {
+  const isAr = useLocale() === 'ar'
   const [retrying, setRetrying] = useState(false)
   
   const handleRetry = async () => {
@@ -147,19 +148,19 @@ function ErrorMessage({
         {retrying ? (
           <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
             <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-          </svg> جاري المحاولة...</>
+          </svg> {isAr ? 'جاري المحاولة...' : 'Retrying...'}</>
         ) : (
           <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="23 4 23 10 17 10"/>
             <polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg> إعادة المحاولة</>
+          </svg> {isAr ? 'إعادة المحاولة' : 'Try again'}</>
         )}
       </button>
 
       <Link href="/ar/courses" className="mt-4 flex items-center gap-2 text-sm transition-colors hover:opacity-80" style={{ color: 'var(--primary)' }}>
         <Search className="h-4 w-4" />
-        تصفح جميع الكورسات المتاحة
+        {isAr ? 'تصفح جميع الكورسات المتاحة' : 'Browse all available courses'}
       </Link>
     </div>
   )
@@ -383,14 +384,14 @@ export default function MyCoursesPage() {
                       s.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' :
                       'bg-gray-500/20 text-gray-400'
                     }`}>
-                      {s.status === 'CONFIRMED' ? <><CheckCircle className="h-3 w-3 inline mr-1" />مؤكد</> : s.status === 'PENDING' ? <><Clock className="h-3 w-3 inline mr-1" />معلقة</> : <><XCircle className="h-3 w-3 inline mr-1" />ملغية</>}
+                      {s.status === 'CONFIRMED' ? <><CheckCircle className="h-3 w-3 inline mr-1" />{isAr ? 'مؤكد' : 'Confirmed'}</> : s.status === 'PENDING' ? <><Clock className="h-3 w-3 inline mr-1" />{isAr ? 'معلقة' : 'Pending'}</> : <><XCircle className="h-3 w-3 inline mr-1" />{isAr ? 'ملغية' : 'Cancelled'}</>}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {s.scheduledAt ? formatDate(s.scheduledAt, locale) : ''}
                     </span>
                   </div>
                   <p className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-                    {s.topic || 'جلسة إرشادية'}
+                    {s.topic || (isAr ? 'جلسة إرشادية' : 'Mentoring session')}
                   </p>
                   <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <span className="flex items-center gap-1"><Users className="h-4 w-4" />{s.meetingMethod || 'Online'}</span>
@@ -462,7 +463,7 @@ export default function MyCoursesPage() {
                       </div>
                     )}
                     <span className={`absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-bold ${course.status === 'PUBLISHED' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}`}>
-                      {course.status === 'PUBLISHED' ? '✓ منشور' : '✎ مسودة'}
+                      {course.status === 'PUBLISHED' ? (isAr ? '✓ منشور' : '✓ Published') : (isAr ? '✎ مسودة' : '✎ Draft')}
                     </span>
                   </div>
                   <div className="p-5">

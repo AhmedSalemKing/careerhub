@@ -4,6 +4,8 @@ import { Component, ReactNode } from 'react'
 interface Props { children: ReactNode; fallback?: ReactNode }
 interface State { hasError: boolean; error?: Error }
 
+const isArPath = () => typeof window === 'undefined' || !/^\/en(\/|$)/.test(window.location.pathname)
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
@@ -27,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
           border: '1px solid var(--border)', margin: '16px 0',
         }}>
           <p style={{ color: 'var(--muted)', fontSize: '14px' }}>
-            حدث خطأ في تحميل هذا القسم
+            {isArPath() ? 'حدث خطأ في تحميل هذا القسم' : 'An error occurred while loading this section'}
           </p>
           <button
             onClick={() => this.setState({ hasError: false })}
@@ -37,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
               background: '#5120C8', color: '#fff',
               cursor: 'pointer', fontSize: '13px',
             }}>
-            إعادة المحاولة
+            {isArPath() ? 'إعادة المحاولة' : 'Try again'}
           </button>
         </div>
       )

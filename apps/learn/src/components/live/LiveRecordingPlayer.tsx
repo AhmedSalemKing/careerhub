@@ -21,7 +21,9 @@ import Hls from "hls.js";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 /** Shown when the stream cannot be played at all. */
-const ERROR_MESSAGE = "تعذّر تشغيل الفيديو — حاول مرة أخرى لاحقاً";
+const ERROR_MESSAGE_AR = "تعذّر تشغيل الفيديو — حاول مرة أخرى لاحقاً";
+const ERROR_MESSAGE_EN = "Could not play the video — please try again later";
+const errorMessage = () => (typeof window !== 'undefined' && /^\/en(\/|$)/.test(window.location.pathname) ? ERROR_MESSAGE_EN : ERROR_MESSAGE_AR);
 
 export interface LiveRecordingPlayerProps {
 	src: string | null;
@@ -144,7 +146,7 @@ export default function LiveRecordingPlayer({
 					<div className="flex flex-col items-center gap-2 text-center">
 						<AlertCircle size={28} style={{ color: "#f87171" }} />
 						<p className="text-sm font-bold" style={{ color: "#ffffff" }}>
-							{ERROR_MESSAGE}
+							{errorMessage()}
 						</p>
 					</div>
 				</div>
