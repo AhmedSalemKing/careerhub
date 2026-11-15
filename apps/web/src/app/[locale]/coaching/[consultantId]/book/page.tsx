@@ -116,6 +116,7 @@ export default function BookConsultingPage() {
   const [availability, setAvailability] = useState<Record<string, { total: number; free: number }>>({})
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [duration, setDuration] = useState(60)
+  const [durationPicked, setDurationPicked] = useState(false)
   const [topic, setTopic] = useState('')
   const [notes, setNotes] = useState('')
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -238,6 +239,10 @@ export default function BookConsultingPage() {
   const handleBook = async () => {
     setErrorMessage(null)
 
+    if (!durationPicked) {
+      setErrorMessage(isAr ? 'الرجاء اختيار مدة الجلسة' : 'Please choose a session duration')
+      return
+    }
     if (!selectedSlot) {
       setErrorMessage(isAr ? 'الرجاء اختيار وقت للجلسة' : 'Please select a session time')
       return
@@ -276,7 +281,7 @@ export default function BookConsultingPage() {
     : formatDateOnly(new Date(`${selectedDate}T12:00:00`), locale)
   const summaryTime = selectedSlot ? formatTimeOnly(selectedSlot, locale) : ''
 
-  const canSubmit = Boolean(selectedSlot && topic.trim() && !booking)
+  const canSubmit = Boolean(durationPicked && selectedSlot && topic.trim() && !booking)
   const displayName = userName(consultant)
   const freeSlots = slots.filter((slot) => slot.available).length
 
@@ -335,7 +340,7 @@ export default function BookConsultingPage() {
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setDuration(option)}
+                      onClick={() => { setDuration(option); setDurationPicked(true) }}
                       aria-pressed={active}
                       className="rounded-xl border p-3 text-center transition-all duration-150 hover:-translate-y-px"
                       style={{
@@ -357,7 +362,7 @@ export default function BookConsultingPage() {
               </div>
             </section>
 
-            <section className={card} style={cardStyle}>
+            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked}>
               <StepTitle number={2}>{isAr ? 'اختر التاريخ' : 'Choose a date'}</StepTitle>
               <StayPicker
                 value={selectedDate}
@@ -375,7 +380,7 @@ export default function BookConsultingPage() {
               </p>
             </section>
 
-            <section className={card} style={cardStyle}>
+            <section className={card} style={{ ...cardStyle, ...(durationPicked ? {} : { opacity: 0.5, pointerEvents: 'none' }) }} aria-disabled={!durationPicked}>
               <StepTitle number={3}>{isAr ? 'اختر الوقت' : 'Choose a time'}</StepTitle>
 
               {loadingSlots ? (

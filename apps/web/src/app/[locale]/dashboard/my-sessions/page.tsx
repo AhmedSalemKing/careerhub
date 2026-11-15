@@ -166,7 +166,7 @@ export default function MySessionsPage() {
               <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
-              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+              <button title={isAr ? 'اختر مرشداً لبدء حجز جلسة' : 'Choose a mentor to start booking a session'} onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
               </button>
             </div>
@@ -212,6 +212,11 @@ export default function MySessionsPage() {
             <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
               {activeTab === 'upcoming' ? (isAr ? 'احجز جلستك الأولى' : 'Book your first session') : (isAr ? 'لا توجد جلسات هنا' : 'No sessions here')}
             </p>
+            {activeTab === 'upcoming' && (
+              <p style={{ color: 'var(--ink-3)', fontSize: 12, margin: '0 0 14px' }}>
+                {isAr ? 'اختر مرشداً لبدء حجز جلسة' : 'Choose a mentor to start booking a session'}
+              </p>
+            )}
             {activeTab === 'upcoming' && (
               <button onClick={() => router.push(`/${locale}/coaching`)} style={{ padding: '11px 26px', borderRadius: 11, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
                 {isAr ? 'احجز جلسة' : 'Book a Session'}
