@@ -97,6 +97,8 @@ export function HomeTour({ locale = 'ar', isOpen, onClose, autoStart = true }: H
       animate: true,
       smoothScroll: true,
       allowClose: true,
+      allowKeyboardControl: true,
+      showButtons: ['next', 'previous', 'close'],
       overlayOpacity: 0.65,
       stagePadding: 10,
       stageRadius: 12,

@@ -25,6 +25,7 @@ const nextConfig = {
   },
   reactStrictMode: false,
   poweredByHeader: false,
+  compress: true,
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

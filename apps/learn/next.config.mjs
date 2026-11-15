@@ -23,6 +23,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   poweredByHeader: false,
+  compress: true,
   images: {
     domains: ['localhost', 'supabase.co', 'cloudflare.com', 'imagedelivery.net'],
     formats: ['image/avif', 'image/webp'],
