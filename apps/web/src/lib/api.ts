@@ -22,6 +22,10 @@ export const api = axios.create({
   timeout: 60000, // 60s for cold starts
 })
 
+/** Locale of the page that made the request, so auth redirects keep /en or /ar. */
+const uiLoc = (): 'ar' | 'en' =>
+  typeof window !== 'undefined' && /^\/en(\/|$)/.test(window.location.pathname) ? 'en' : 'ar'
+
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
@@ -103,32 +107,32 @@ api.interceptors.response.use(
       // Check specific error codes
       if (code === 'ACCOUNT_BANNED' || message.includes('محظور')) {
         clearAuth()
-        window.location.href = '/ar/banned'
+        window.location.href = `/${uiLoc()}/banned`
         return Promise.reject(error)
       }
 
       if (code === 'ACCOUNT_REJECTED' || message.includes('رفض')) {
         clearAuth()
-        window.location.href = '/ar/rejected'
+        window.location.href = `/${uiLoc()}/rejected`
         return Promise.reject(error)
       }
 
       if (code === 'ACCOUNT_DELETED' || message.includes('no longer exists') || message.includes('not found')) {
         clearAuth()
-        window.location.href = '/ar/login?error=account_deleted'
+        window.location.href = `/${uiLoc()}/login?error=account_deleted`
         return Promise.reject(error)
       }
 
       if (code === 'ACCOUNT_INACTIVE') {
         clearAuth()
-        window.location.href = '/ar/login?error=account_inactive'
+        window.location.href = `/${uiLoc()}/login?error=account_inactive`
         return Promise.reject(error)
       }
 
       // Regular 401 - invalid token, redirect to login if not already there
       clearAuth()
       if (!isAuthPath && !isRegisterPath) {
-        window.location.href = '/ar/login'
+        window.location.href = `/${uiLoc()}/login`
       }
     }
 

@@ -15,7 +15,7 @@ export default function GoogleAuthSuccess() {
   useEffect(() => {
     const dataParam = searchParams.get('data')
     if (!dataParam) {
-      router.push('/ar/login?error=no_data')
+      router.push(`/${isAr ? 'ar' : 'en'}/login?error=no_data`)
       return
     }
 
@@ -31,7 +31,7 @@ export default function GoogleAuthSuccess() {
         }
 
         if (!accessToken) {
-          router.push('/ar/login')
+          router.push(`/${isAr ? 'ar' : 'en'}/login`)
           return
         }
 
@@ -49,7 +49,7 @@ export default function GoogleAuthSuccess() {
         }
 
         if (!user || !user.id) {
-          router.push('/ar/login')
+          router.push(`/${isAr ? 'ar' : 'en'}/login`)
           return
         }
 
@@ -65,7 +65,7 @@ export default function GoogleAuthSuccess() {
         const dest = user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN' ? 'admin' : 'dashboard'
         window.location.href = learnSyncUrl(`${window.location.origin}/${locale}/${dest}`, locale, accessToken)
       } catch (e) {
-        router.push('/ar/login?error=parse_failed')
+        router.push(`/${isAr ? 'ar' : 'en'}/login?error=parse_failed`)
       }
     }
 

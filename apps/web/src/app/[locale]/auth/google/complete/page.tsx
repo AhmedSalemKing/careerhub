@@ -19,7 +19,7 @@ export default function GoogleCompleteProfile() {
 
   useEffect(() => {
     const dataParam = searchParams.get('data')
-    if (!dataParam) { router.push('/ar/login'); return }
+    if (!dataParam) { router.push(`/${isAr ? 'ar' : 'en'}/login`); return }
     try {
       const data = JSON.parse(decodeURIComponent(dataParam))
       setUserData(data)
@@ -33,7 +33,7 @@ export default function GoogleCompleteProfile() {
       setUser(data)
       window.dispatchEvent(new Event('auth:updated'))
     } catch {
-      router.push('/ar/login?error=parse_failed')
+      router.push(`/${isAr ? 'ar' : 'en'}/login?error=parse_failed`)
     }
   }, [searchParams, router, setToken, setUser])
 

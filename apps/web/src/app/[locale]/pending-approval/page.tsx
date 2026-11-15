@@ -43,7 +43,7 @@ export default function PendingApprovalPage() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/ar/login')
+      router.push(`/${isAr ? 'ar' : 'en'}/login`)
       return
     }
 
@@ -103,7 +103,7 @@ export default function PendingApprovalPage() {
         {isAr ? 'للأ��ف تم رفض طلبك. يمكنك التواصل مع الدعم لمزيد من المعلومات.' : 'Unfortunately your request was rejected. You can contact support for more information.'}
       </p>
       <button
-        onClick={() => { router.push('/ar/login') }}
+        onClick={() => { router.push(`/${isAr ? 'ar' : 'en'}/login`) }}
         style={{
           padding: '12px 28px', background: '#5120c8', color: '#fff',
           borderRadius: 12, border: 'none', cursor: 'pointer',
