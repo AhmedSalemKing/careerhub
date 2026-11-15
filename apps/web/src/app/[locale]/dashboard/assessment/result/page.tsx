@@ -141,7 +141,9 @@ export default function AssessmentResultPage() {
     () => careers.map((c) =>
       platformTracks.find((t) => t.slug === c.trackSlug) ??
       platformTracks.find((t) => t.slug === (c.nameEn ?? '').toLowerCase().replace(/\s+/g, '-')) ??
-      platformTracks.find((t) => t.name === c.name)),
+      platformTracks.find((t) => t.name === c.name) ??
+      // Loose match: the AI sometimes words a career slightly differently from the track name
+      platformTracks.find((t) => !!c.name && c.name.length > 3 && (t.name.includes(c.name) || c.name.includes(t.name)))),
     [careers, platformTracks],
   )
   const details = useQueries({
@@ -350,9 +352,10 @@ export default function AssessmentResultPage() {
                         {featured ? 'ابدأ هذا المسار' : 'عرض المسار'} <ArrowLeft size={15} aria-hidden="true" />
                       </Link>
                     ) : (
-                      <button type="button" className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} disabled>
-                        {featured ? 'ابدأ هذا المسار' : 'عرض المسار'} <ArrowLeft size={15} aria-hidden="true" />
-                      </button>
+                      // No matching platform track yet: send the user to the full list instead of a dead button
+                      <Link className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} href={`/${locale}/careers`}>
+                        تصفّح المسارات المتاحة <ArrowLeft size={15} aria-hidden="true" />
+                      </Link>
                     )}
                   </span>
                 </footer>

@@ -560,7 +560,7 @@ export default function CareerPathDetailPage() {
           {/* SIDEBAR (sticky) */}
           <aside className="dw2-path-sidebar">
             {track && view.trackPackage && (
-              <div className="dw2-pcard featured">
+              <div className="dw2-pcard featured" data-tour="career-package">
                 <div className="dw2-card-top"><span>{isAr ? 'سعر واحد للمسار كاملًا' : 'One price for the whole track'}</span></div>
                 <div className="dw2-big-price">{money(view.trackPackage.price)}</div>
                 {view.trackPackage.originalPrice != null && view.trackPackage.discountPct != null && (
@@ -576,7 +576,7 @@ export default function CareerPathDetailPage() {
             )}
 
             {track && !view.trackPackage && (
-              <div className="dw2-pcard featured">
+              <div className="dw2-pcard featured" data-tour="career-package">
                 <div className="dw2-card-top">
                   <span>{isAr ? 'سعر واحد للمسار كاملًا' : 'One price for the whole track'}</span>
                   <span className="dw2-badge">{isAr ? 'قريباً' : 'Coming soon'}</span>
@@ -587,7 +587,7 @@ export default function CareerPathDetailPage() {
             )}
 
             {showFullPricing && (
-              <div className="dw2-pcard featured">
+              <div className="dw2-pcard featured" data-tour="career-package">
                 <div className="dw2-card-top">
                   <span>{isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}</span>
                   {isMock && <span className="dw2-badge">{isAr ? 'نموذج' : 'Sample'}</span>}
