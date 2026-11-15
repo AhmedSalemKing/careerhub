@@ -166,10 +166,15 @@ const EMPTY_FORM = {
   notes: '',
 }
 
-function formatHours(totalMinutes: number) {
+function formatHours(totalMinutes: number, isAr = true) {
   if (!totalMinutes || totalMinutes <= 0) return '—'
   const hours = Math.floor(totalMinutes / 60)
   const mins = totalMinutes % 60
+  if (!isAr) {
+    if (mins === 0) return `${hours} h`
+    if (hours === 0) return `${mins} min`
+    return `${hours} h ${mins} min`
+  }
   if (mins === 0) return `${hours} ساعة`
   if (hours === 0) return `${mins} دقيقة`
   return `${hours} ساعة و${mins} دقيقة`
@@ -607,7 +612,7 @@ export default function InstructorReportsClient({ country }: { country: string }
             <StatCard
               icon={Clock}
               label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
-              value={formatHours(totals.minutes)}
+              value={formatHours(totals.minutes, isAr)}
             />
           </div>
 
@@ -1165,7 +1170,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               style={{ ...inputStyle, marginBottom: 4 }}
             />
             <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-              {formatHours(Number(form.durationMinutes) || 0)}
+              {formatHours(Number(form.durationMinutes) || 0, isAr)}
             </div>
 
             <label style={labelStyle}>{isAr ? 'الحالة' : 'Status'}</label>

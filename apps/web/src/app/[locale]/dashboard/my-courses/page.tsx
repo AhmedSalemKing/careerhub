@@ -32,6 +32,8 @@ function getTitle(c: any, locale: string) {
 	return c.titleEn || c.titleAr || c.title || "Untitled";
 }
 
+const STATUS_EN: Record<string, string> = { ended: 'Stream ended', live: 'Live', published: 'Published', draft: 'Draft', pending: 'Pending review', rejected: 'Rejected' }
+
 function getStatusConfig(status: string, course: any) {
 	// Check for live course ended
 	if (course?.type === "live" && course?.liveStatus === "ended") {
@@ -154,7 +156,7 @@ export default function MyCoursesPage() {
 
 	return (
 		<AuthGate>
-			<div dir="rtl" style={{
+			<div dir={isAr ? 'rtl' : 'ltr'} style={{
 				width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
 				background: 'var(--bg)',
 				minHeight: '100vh',
@@ -536,7 +538,7 @@ export default function MyCoursesPage() {
 														animation: statusConfig.pulse ? 'pulse 1.5s ease-in-out infinite' : 'none',
 													}} />
 												)}
-												{isAr ? statusConfig.ar : (statusConfig.key === 'rejected' ? 'مرفوض' : statusConfig.ar)}
+												{isAr ? statusConfig.ar : (STATUS_EN[statusConfig.key] ?? statusConfig.ar)}
 											</div>
 										</div>
 

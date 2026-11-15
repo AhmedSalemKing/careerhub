@@ -52,7 +52,7 @@ export default function QuizAttemptsPage() {
     router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/attempts/${aid}`)
 
   return (
-    <div className="p-6" dir="rtl">
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <div className="flex items-center gap-4">
           <button

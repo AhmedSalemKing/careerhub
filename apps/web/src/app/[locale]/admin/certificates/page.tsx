@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
 import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
@@ -21,6 +21,7 @@ type AdminCert = {
 }
 
 export default function AdminCertificatesPage() {
+  const isAr = useLocale() === 'ar'
   const t = useTranslations('adminCertificatesPage')
   const c = useTranslations('common')
   const e = useTranslations('errors')
@@ -78,10 +79,10 @@ export default function AdminCertificatesPage() {
               <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
                 <tr>
                   <th className="px-4 py-3 text-right font-medium">{t('th_serial')}</th>
-                  <th className="px-4 py-3 text-right font-medium">المستخدم</th>
-                  <th className="px-4 py-3 text-right font-medium">الكورس</th>
+                  <th className="px-4 py-3 text-right font-medium">{isAr ? 'المستخدم' : 'User'}</th>
+                  <th className="px-4 py-3 text-right font-medium">{isAr ? 'الكورس' : 'Course'}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('th_issued')}</th>
-                  <th className="px-4 py-3 text-right font-medium">عرض</th>
+                  <th className="px-4 py-3 text-right font-medium">{isAr ? 'عرض' : 'View'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,7 +103,7 @@ export default function AdminCertificatesPage() {
                           className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
                         >
                           <Award size={12} />
-                          عرض
+                          {isAr ? 'عرض' : 'View'}
                           <ExternalLink size={10} />
                         </a>
                       ) : (
@@ -114,7 +115,7 @@ export default function AdminCertificatesPage() {
               </tbody>
             </table>
             <div className="px-4 py-3 text-xs text-[color:var(--muted)] border-t border-[color:var(--border)]">
-              إجمالي: {items.length} شهادة
+              {isAr ? 'إجمالي:' : 'Total:'} {items.length} {isAr ? 'شهادة' : 'certificates'}
             </div>
           </div>
         ) : (

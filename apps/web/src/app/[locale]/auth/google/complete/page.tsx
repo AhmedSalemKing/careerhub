@@ -4,8 +4,10 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { api } from '@/lib/api'
 import { GraduationCap, User, Briefcase, Clock } from 'lucide-react'
+import { useLocale } from 'next-intl'
 
 export default function GoogleCompleteProfile() {
+  const isAr = useLocale() === 'ar'
   const searchParams = useSearchParams()
   const router = useRouter()
   const { setUser, setToken } = useAuthStore()
@@ -79,23 +81,23 @@ export default function GoogleCompleteProfile() {
             />
           )}
           <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-            أهلاً {userData.profile?.firstName}!
+            {isAr ? 'أهلاً' : 'Welcome'} {userData.profile?.firstName}!
           </h2>
           <p style={{ color: '#94a3b8', fontSize: 15 }}>
-            تم ربط حسابك بـ Google بنجاح. اختر نوع حسابك للمتابعة.
+            {isAr ? 'تم ربط حسابك بـ Google بنجاح. اختر نوع حسابك للمتابعة.' : 'Your Google account was linked successfully. Choose your account type to continue.'}
           </p>
         </div>
 
         {/* Account type cards */}
         <div style={{ marginBottom: 24 }}>
           <label style={{ color: '#94a3b8', fontSize: 14, display: 'block', marginBottom: 12 }}>
-            نوع الحساب
+            {isAr ? 'نوع الحساب' : 'Account type'}
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { value: 'STUDENT', label: 'مستخدم', icon: GraduationCap, desc: 'أريد التعلم واكتساب مهارات جديدة' },
-              { value: 'INSTRUCTOR', label: 'محاضر', icon: User, desc: 'أريد تدريس ومشاركة معرفتي' },
-              { value: 'CONSULTANT', label: 'مرشد', icon: Briefcase, desc: 'أريد تقديم جلسات إرشادية' },
+              { value: 'STUDENT', label: (isAr ? 'مستخدم' : 'User'), icon: GraduationCap, desc: (isAr ? 'أريد التعلم واكتساب مهارات جديدة' : 'I want to learn and gain new skills') },
+              { value: 'INSTRUCTOR', label: (isAr ? 'محاضر' : 'Instructor'), icon: User, desc: (isAr ? 'أريد تدريس ومشاركة معرفتي' : 'I want to teach and share my knowledge') },
+              { value: 'CONSULTANT', label: (isAr ? 'مرشد' : 'Mentor'), icon: Briefcase, desc: (isAr ? 'أريد تقديم جلسات إرشادية' : 'I want to offer mentoring sessions') },
             ].map(type => (
               <div
                 key={type.value}
@@ -128,7 +130,7 @@ export default function GoogleCompleteProfile() {
             fontSize: 16, fontWeight: 700, transition: 'all 0.2s ease',
           }}
         >
-          {loading ? 'جاري الحفظ...' : 'متابعة →'}
+          {loading ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'متابعة →' : 'Continue →')}
         </button>
       </div>
     </div>

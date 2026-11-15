@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { get } from '@/lib/api'
 import { Clock, CheckCircle2, XCircle, RefreshCw } from 'lucide-react'
+import { useLocale } from 'next-intl'
 
 export default function PendingApprovalPage() {
+  const isAr = useLocale() === 'ar'
   const router = useRouter()
   const store = useAuthStore()
   const { user, token } = store
@@ -66,8 +68,8 @@ export default function PendingApprovalPage() {
       }}>
         <CheckCircle2 size={40} color="#16a34a" />
       </div>
-      <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>تمت الموافقة على حسابك!</h2>
-      <p style={{ color: '#86efac', fontSize: 16 }}>جاري تحويلك للداشبورد...</p>
+      <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{isAr ? 'تمت الموافقة على حسابك!' : 'Your account has been approved!'}</h2>
+      <p style={{ color: '#86efac', fontSize: 16 }}>{isAr ? 'جاري تحويلك للداشبورد...' : 'Redirecting you to the dashboard...'}</p>
       <div style={{
         width: 200, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden',
       }}>
@@ -96,9 +98,9 @@ export default function PendingApprovalPage() {
       }}>
         <XCircle size={40} color="#ef4444" />
       </div>
-      <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>تم رفض طلب انضمامك</h2>
+      <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{isAr ? 'تم رفض طلب انضمامك' : 'Your join request was rejected'}</h2>
       <p style={{ color: '#94a3b8', fontSize: 15, textAlign: 'center', maxWidth: 400 }}>
-        للأ��ف تم رفض طلبك. يمكنك التواصل مع الدعم لمزيد من المعلومات.
+        {isAr ? 'للأ��ف تم رفض طلبك. يمكنك التواصل مع الدعم لمزيد من المعلومات.' : 'Unfortunately your request was rejected. You can contact support for more information.'}
       </p>
       <button
         onClick={() => { router.push('/ar/login') }}
@@ -108,7 +110,7 @@ export default function PendingApprovalPage() {
           fontSize: 15, fontWeight: 600,
         }}
       >
-        العودة لتسجيل الدخول
+        {isAr ? 'العودة لتسجيل الدخول' : 'Back to sign in'}
       </button>
     </div>
   )
@@ -140,11 +142,10 @@ export default function PendingApprovalPage() {
 
       <div style={{ textAlign: 'center' }}>
         <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 700, marginBottom: 12 }}>
-          طلبك قيد المراجعة
+          {isAr ? 'طلبك قيد المراجعة' : 'Your request is under review'}
         </h2>
         <p style={{ color: '#94a3b8', fontSize: 16, lineHeight: 1.7, maxWidth: 420 }}>
-          شكرا لانضمامك لـ DeveWay! يقوم فريقنا بمراجعة طلبك.
-          ستتم إعادة توجيهك تلقائيا فور الموافقة.
+          {isAr ? 'شكرا لانضمامك لـ DeveWay! يقوم فريقنا بمراجعة طلبك. ستتم إعادة توجيهك تلقائيا فور الموافقة.' : 'Thank you for joining DeveWay! Our team is reviewing your request. You will be redirected automatically once it is approved.'}
         </p>
       </div>
 
@@ -156,11 +157,11 @@ export default function PendingApprovalPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
           <RefreshCw size={14} color="#6b7280" style={{ animation: 'spin 2s linear infinite' }} />
           <span style={{ color: '#6b7280', fontSize: 13 }}>
-            يتم التحقق تلقائيا كل 15 ثانية
+            {isAr ? 'يتم التحقق تلقائيا كل 15 ثانية' : 'Checked automatically every 15 seconds'}
           </span>
         </div>
         <span style={{ color: '#4b5563', fontSize: 12 }}>
-          عدد المحاولات: {checkCount}
+          {isAr ? 'عدد المحاولات:' : 'Attempts:'} {checkCount}
         </span>
       </div>
 

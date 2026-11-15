@@ -12,6 +12,8 @@ import {
   Key, LogOut, UserPlus, Search, PlusCircle,
 } from 'lucide-react'
 
+const uiAr = () => typeof document === 'undefined' || document.documentElement.lang !== 'en'
+
 const TABS = [
   { id: 'overview', icon: LayoutDashboard, labelAr: 'نظرة عامة', labelEn: 'Overview' },
   { id: 'activity', icon: Activity, labelAr: 'سجل النشاط', labelEn: 'Activity' },
@@ -82,7 +84,7 @@ function paymentTitle(item: any, isAr: boolean) {
 }
 
 function formatCurrency(amount: number, display?: string | null) {
-  return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  return display ?? `${Number(amount ?? 0).toLocaleString(uiAr() ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${uiAr() ? 'ر.س' : 'SAR'}`
 }
 
 function displayTotal(items: any[], displayKey: string, rawTotal: number, egpProbe?: string): string {
@@ -93,9 +95,9 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number, egpPro
       const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
       return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
     }, 0)
-    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+    return `${Math.round(egpTotal).toLocaleString(uiAr() ? 'ar-EG' : 'en-US')} ${uiAr() ? 'ج.م' : 'EGP'}`
   }
-  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  return `${(rawTotal ?? 0).toLocaleString(uiAr() ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${uiAr() ? 'ر.س' : 'SAR'}`
 }
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {

@@ -7,6 +7,10 @@ import { DollarSign, Users, BookOpen, TrendingUp, Download, Eye } from 'lucide-r
 import { formatCoursePrice, formatMoney } from '@/lib/market'
 import { useAuthStore } from '@/stores/authStore'
 
+const SESSION_STATUS_EN: Record<string, string> = {
+  PENDING_APPROVAL: 'Pending approval', AWAITING_PAYMENT: 'Pending payment', CONFIRMED: 'Confirmed', IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed', CANCELLED: 'Cancelled', RESCHEDULE_REQUESTED: 'Reschedule requested',
+}
 const SESSION_STATUS_AR: Record<string, string> = {
   PENDING_APPROVAL: 'بانتظار الموافقة', AWAITING_PAYMENT: 'بانتظار الدفع', CONFIRMED: 'مؤكدة',
   IN_PROGRESS: 'جارية', COMPLETED: 'مكتملة', CANCELLED: 'ملغاة', RESCHEDULE_REQUESTED: 'طلب إعادة جدولة',
@@ -99,7 +103,7 @@ function ConsultantRevenue() {
                       <td style={td}>{x.topic || x.sessionName || '—'}</td>
                       <td style={td}>{x.actualDuration || x.duration ? `${x.actualDuration || x.duration} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
                       <td style={{ ...td, fontWeight: 700 }}>{formatMoney(x.price, x.priceDisplay)}</td>
-                      <td style={td}>{isAr ? (SESSION_STATUS_AR[x.status] ?? x.status) : x.status}</td>
+                      <td style={td}>{(isAr ? SESSION_STATUS_AR : SESSION_STATUS_EN)[x.status] ?? x.status}</td>
                     </tr>
                   ))}
                 </tbody>

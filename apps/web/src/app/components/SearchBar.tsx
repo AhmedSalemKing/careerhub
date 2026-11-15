@@ -200,7 +200,7 @@ export function SearchBar() {
             />
 
             {query && (
-              <button onClick={clear} aria-label="مسح البحث" style={{
+              <button onClick={clear} aria-label={isAr ? 'مسح البحث' : 'Clear search'} style={{
                 background: 'none', border: 'none',
                 cursor: 'pointer', padding: 2,
                 color: 'var(--muted-foreground)',

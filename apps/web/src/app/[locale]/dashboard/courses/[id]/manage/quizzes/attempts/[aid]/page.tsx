@@ -97,7 +97,7 @@ export default function ReviewAttemptPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4" dir="rtl">
+      <div className="p-6 space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="h-10 w-64 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
         <div className="h-40 animate-pulse rounded-[14px] bg-[color:var(--surface-2)]" />
       </div>
@@ -106,7 +106,7 @@ export default function ReviewAttemptPage() {
 
   if (!attempt) {
     return (
-      <div className="p-6 text-center" dir="rtl">
+      <div className="p-6 text-center" dir={isAr ? 'rtl' : 'ltr'}>
         <p className="text-[color:var(--ink-2)]">{isAr ? 'المحاولة غير موجودة' : 'Attempt not found'}</p>
       </div>
     )
@@ -119,7 +119,7 @@ export default function ReviewAttemptPage() {
     setGrades((g) => ({ ...g, [answerId]: { ...(g[answerId] ?? { manualGrade: '0', feedback: '' }), [key]: value } }))
 
   return (
-    <div className="p-6" dir="rtl">
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <div className="flex items-center gap-4">
           <button

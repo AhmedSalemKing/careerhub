@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SUPPORT_EMAIL } from '../../../components/legal/legalDefaults'
+import { useLocale } from 'next-intl'
 
 export const metadata: Metadata = {
   title: 'Contact Us | DeveWay',
@@ -7,12 +8,13 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
+  const isAr = useLocale() === 'ar'
   return (
     <main style={{ maxWidth: '600px', margin: '4rem auto', textAlign: 'center', padding: '0 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem' }}>تواصل معنا</h1>
-      <p style={{ color: '#888', marginBottom: '1.5rem' }}>يسعدنا تلقّي رسائلكم واستفساراتكم</p>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem' }}>{isAr ? 'تواصل معنا' : 'Contact us'}</h1>
+      <p style={{ color: '#888', marginBottom: '1.5rem' }}>{isAr ? 'يسعدنا تلقّي رسائلكم واستفساراتكم' : 'We are glad to receive your messages and questions'}</p>
       <div style={{ marginBottom: '0.5rem' }}>
-        <strong>البريد الإلكتروني: </strong>
+        <strong>{isAr ? 'البريد الإلكتروني:' : 'Email:'} </strong>
         <a href={`mailto:${SUPPORT_EMAIL}`} dir="ltr" style={{ textDecoration: 'underline' }}>{SUPPORT_EMAIL}</a>
       </div>
       <p dir="ltr" style={{ color: '#888' }}>{SUPPORT_EMAIL}</p>

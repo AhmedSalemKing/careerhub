@@ -287,7 +287,7 @@ function AddLectureModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-2xl rounded-3xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         
         {/* Header */}
@@ -1620,7 +1620,7 @@ export default function ManageCoursePage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4" dir="rtl">
+      <div className="p-6 space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="h-8 w-48 animate-pulse rounded bg-[color:var(--surface-2)]" />
         <div className="h-48 animate-pulse rounded-2xl bg-[color:var(--surface)]" />
       </div>
@@ -1629,7 +1629,7 @@ export default function ManageCoursePage() {
 
   if (!course) {
     return (
-      <div className="p-6 text-center" dir="rtl">
+      <div className="p-6 text-center" dir={isAr ? 'rtl' : 'ltr'}>
         <p className="text-[color:var(--ink-2)]">{isAr ? 'الكورس غير موجود أو ليس لديك صلاحية إدارته.' : 'The course does not exist or you do not have permission to manage it.'}</p>
       </div>
     )
@@ -1647,7 +1647,7 @@ export default function ManageCoursePage() {
         <LiveManageView courseId={courseId} locale={locale} />
       ) : (
       <>
-        <div className="p-6" dir="rtl">
+        <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
         <CourseManageTourLauncher />
         {/* Header */}
         <div className="mb-6" data-tour="manage-header">

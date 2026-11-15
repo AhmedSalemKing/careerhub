@@ -3,14 +3,15 @@ import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { applySiteSettings } from '../../../components/Providers'
 import { Home, MessageSquare, FileText, Save, DollarSign } from 'lucide-react'
+import { useLocale } from 'next-intl'
 
 type SiteConfig = Record<string, any>
 
 const TABS = [
-  { id: 'landing', label: 'الصفحة الرئيسية', icon: Home },
-  { id: 'testimonials', label: 'آراء المستخدمين', icon: MessageSquare },
-  { id: 'pages', label: 'الصفحات', icon: FileText },
-  { id: 'pricing', label: 'أسعار الصرف', icon: DollarSign },
+  { id: 'landing', label: 'الصفحة الرئيسية', labelEn: 'Home page', icon: Home },
+  { id: 'testimonials', label: 'آراء المستخدمين', labelEn: 'Testimonials', icon: MessageSquare },
+  { id: 'pages', label: 'الصفحات', labelEn: 'Pages', icon: FileText },
+  { id: 'pricing', label: 'أسعار الصرف', labelEn: 'Exchange rates', icon: DollarSign },
 ]
 
   const inputStyle: React.CSSProperties = {
@@ -34,6 +35,7 @@ const TABS = [
   }
 
 export default function CMSSettingsPage() {
+  const isAr = useLocale() === 'ar'
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -124,7 +126,7 @@ export default function CMSSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-gray-400 text-sm">جاري التحميل...</div>
+        <div className="text-gray-400 text-sm">{isAr ? 'جاري التحميل...' : 'Loading...'}</div>
       </div>
     )
   }
@@ -137,10 +139,10 @@ export default function CMSSettingsPage() {
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: 900, color: 'var(--foreground)' }}>
-          إعدادات المنصة
+          {isAr ? 'إعدادات المنصة' : 'Platform settings'}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 'clamp(12px, 2.5vw, 14px)', marginTop: '4px' }}>
-          تحكم في مظهر ومحتوى الموقع بالكامل
+          {isAr ? 'تحكم في مظهر ومحتوى الموقع بالكامل' : 'Control the look and content of the whole site'}
         </p>
       </div>
 
@@ -168,7 +170,7 @@ export default function CMSSettingsPage() {
               }}
             >
               <Icon className="h-4 w-4" />
-              <span>{tab.label}</span>
+              <span>{isAr ? tab.label : tab.labelEn}</span>
             </button>
           )
         })}
@@ -181,9 +183,9 @@ export default function CMSSettingsPage() {
           {activeTab === 'landing' && (
             <>
               <div style={cardStyle}>
-                <SectionTitle label="القسم الرئيسي (Hero)" />
+                <SectionTitle label={isAr ? 'القسم الرئيسي (Hero)' : 'Main section (Hero)'} />
                 <div style={{ marginTop: '12px' }}>
-                  <Label text="العنوان" />
+                  <Label text={isAr ? 'العنوان' : 'Title'} />
                   <input
                     type="text"
                     value={g('hero.title', '')}
@@ -192,7 +194,7 @@ export default function CMSSettingsPage() {
                   />
                 </div>
                 <div style={{ marginTop: '12px' }}>
-                  <Label text="الوصف" />
+                  <Label text={isAr ? 'الوصف' : 'Description'} />
                   <textarea
                     value={g('hero.subtitle', '')}
                     onChange={(e) => set('hero.subtitle', e.target.value)}
@@ -201,7 +203,7 @@ export default function CMSSettingsPage() {
                   />
                 </div>
                 <div style={{ marginTop: '12px' }}>
-                  <Label text="نص الزر" />
+                  <Label text={isAr ? 'نص الزر' : 'Button text'} />
                   <input
                     type="text"
                     value={g('hero.ctaText', '')}
@@ -212,12 +214,12 @@ export default function CMSSettingsPage() {
               </div>
 
               <div style={cardStyle}>
-                <SectionTitle label="الإحصائيات" />
+                <SectionTitle label={isAr ? 'الإحصائيات' : 'Statistics'} />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full" style={{ marginTop: '12px' }}>
                   {[
-                    { key: 'landing.stats.courses', label: 'عدد الكورسات' },
-                    { key: 'landing.stats.coaches', label: 'عدد المدربين' },
-                    { key: 'landing.stats.students', label: 'عدد الطلاب' },
+                    { key: 'landing.stats.courses', label: (isAr ? 'عدد الكورسات' : 'Number of courses') },
+                    { key: 'landing.stats.coaches', label: (isAr ? 'عدد المدربين' : 'Number of instructors') },
+                    { key: 'landing.stats.students', label: (isAr ? 'عدد الطلاب' : 'Number of students') },
                   ].map(({ key, label }) => (
                     <div key={key}>
                       <Label text={label} />
@@ -239,7 +241,7 @@ export default function CMSSettingsPage() {
             <div style={cardStyle}>
               <SectionTitle label="آراء المستخدمين" />
               <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '4px' }}>
-                أضف أو عدّل آراء المستخدمين التي تظهر في الصفحة الرئيسية
+                {isAr ? 'أضف أو عدّل آراء المستخدمين التي تظهر في الصفحة الرئيسية' : 'Add or edit the testimonials that appear on the home page'}
               </p>
               <div style={{ marginTop: '16px' }}>
                 {(Array.isArray(g('testimonials.items')) ? g('testimonials.items') : []).map((item: any, idx: number) => (
@@ -264,7 +266,7 @@ export default function CMSSettingsPage() {
                           background: 'none', border: 'none', cursor: 'pointer',
                         }}
                       >
-                        حذف
+                        {isAr ? 'حذف' : 'Delete'}
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ marginBottom: '12px' }}>
@@ -276,7 +278,7 @@ export default function CMSSettingsPage() {
                           items[idx] = { ...items[idx], name: e.target.value }
                           set('testimonials.items', items)
                         }}
-                        placeholder="الاسم"
+                        placeholder={isAr ? 'الاسم' : 'Name'}
                         style={inputStyle}
                       />
                       <input
@@ -287,7 +289,7 @@ export default function CMSSettingsPage() {
                           items[idx] = { ...items[idx], role: e.target.value }
                           set('testimonials.items', items)
                         }}
-                        placeholder="الوظيفة"
+                        placeholder={isAr ? 'الوظيفة' : 'Job title'}
                         style={inputStyle}
                       />
                     </div>
@@ -299,7 +301,7 @@ export default function CMSSettingsPage() {
                         set('testimonials.items', items)
                       }}
                       rows={2}
-                      placeholder="نص الرأي"
+                      placeholder={isAr ? 'نص الرأي' : 'Testimonial text'}
                       style={{ ...inputStyle, resize: 'vertical' }}
                     />
                   </div>
@@ -317,7 +319,7 @@ export default function CMSSettingsPage() {
                     fontSize: 'clamp(13px, 3vw, 15px)', cursor: 'pointer', marginTop: '8px',
                   }}
                 >
-                  + إضافة رأي جديد
+                  {isAr ? '+ إضافة رأي جديد' : '+ Add a new testimonial'}
                 </button>
               </div>
             </div>
@@ -328,7 +330,7 @@ export default function CMSSettingsPage() {
             <div style={cardStyle}>
               <SectionTitle label="أسعار الصرف" />
               <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '-8px', marginBottom: '16px' }}>
-                تُستخدم لتحويل الأسعار تلقائيًا حسب بلد المستخدم
+                {isAr ? 'تُستخدم لتحويل الأسعار تلقائيًا حسب بلد المستخدم' : 'Used to convert prices automatically based on the user\'s country'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ marginTop: '12px' }}>
                 <div>
@@ -365,7 +367,7 @@ export default function CMSSettingsPage() {
                 }}
               >
                 <Save className="h-4 w-4" />
-                {ratesSaved ? 'تم الحفظ' : ratesSaving ? 'جاري الحفظ...' : 'حفظ أسعار الصرف'}
+                {ratesSaved ? (isAr ? 'تم الحفظ' : 'Saved') : ratesSaving ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ أسعار الصرف' : 'Save exchange rates')}
               </button>
             </div>
           )}
@@ -374,8 +376,8 @@ export default function CMSSettingsPage() {
           {activeTab === 'pages' && (
             <>
               {[
-                { key: 'pages.privacy', label: 'سياسة الخصوصية' },
-                { key: 'pages.terms', label: 'الشروط والأحكام' },
+                { key: 'pages.privacy', label: (isAr ? 'سياسة الخصوصية' : 'Privacy policy') },
+                { key: 'pages.terms', label: (isAr ? 'الشروط والأحكام' : 'Terms and conditions') },
               ].map(({ key, label }) => (
                 <div key={key} style={cardStyle}>
                   <SectionTitle label={label} />
@@ -420,7 +422,7 @@ export default function CMSSettingsPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}
         >
-          <Save className="h-4 w-4" /> {saving ? 'جاري الحفظ...' : 'حفظ جميع الإعدادات'}
+          <Save className="h-4 w-4" /> {saving ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ جميع الإعدادات' : 'Save all settings')}
         </button>
       </div>
     </div>

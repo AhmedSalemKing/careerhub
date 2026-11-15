@@ -1,4 +1,5 @@
 'use client'
+import { useLocale } from 'next-intl'
 interface VerifiedBadgeProps {
   size?: 'xs' | 'sm' | 'md' | 'lg'
   showTooltip?: boolean
@@ -6,12 +7,13 @@ interface VerifiedBadgeProps {
 }
 
 export default function VerifiedBadge({ size = 'sm', showTooltip = true, onAvatar = false }: VerifiedBadgeProps) {
+  const isAr = useLocale() === 'ar'
   const sizes = { xs: 16, sm: 20, md: 24, lg: 28 }
   const px = sizes[size]
 
   return (
     <div
-      title={showTooltip ? 'موثق الهوية رسمياً' : undefined}
+      title={showTooltip ? (isAr ? 'موثق الهوية رسمياً' : 'Officially verified identity') : undefined}
       style={{
         width: px,
         height: px,

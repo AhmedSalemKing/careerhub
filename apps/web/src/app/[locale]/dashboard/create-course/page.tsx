@@ -451,7 +451,7 @@ export default function CreateCoursePage() {
 
   return (
     <AuthGate>
-      <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+      <div className="p-6 max-w-2xl mx-auto" dir={isAr ? 'rtl' : 'ltr'}>
         <CreateCourseTourLauncher />
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-madinet text-[var(--ink)]">

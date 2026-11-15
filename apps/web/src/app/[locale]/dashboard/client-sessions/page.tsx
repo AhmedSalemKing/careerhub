@@ -324,7 +324,7 @@ export default function ClientSessionsPage() {
 
   return (
     <div
-      dir="rtl"
+      dir={isAr ? 'rtl' : 'ltr'}
       className="min-h-screen pb-20"
       style={{ background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
     >

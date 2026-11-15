@@ -44,7 +44,7 @@ export default function ManageQuizzesPage() {
   const list = Array.isArray(quizzes) ? quizzes : []
 
   return (
-    <div className="p-6" dir="rtl">
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button

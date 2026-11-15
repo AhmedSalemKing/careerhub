@@ -500,13 +500,13 @@ export default function AdminUsersPage() {
             </div>
             
             <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, textAlign: 'center', marginBottom: 12 }}>
-              تأكيد تغيير الدور
+              {isAr ? 'تأكيد تغيير الدور' : 'Confirm role change'}
             </h3>
             
             <p style={{ color: 'var(--muted)', fontSize: 14, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
-              هل تريد تغيير دور <strong style={{ color: 'var(--foreground)' }}>{confirmDialog.userName}</strong> من{' '}
+              {isAr ? 'هل تريد تغيير دور' : 'Do you want to change the role of'} <strong style={{ color: 'var(--foreground)' }}>{confirmDialog.userName}</strong> {isAr ? 'من' : 'from'}{' '}
               <span style={{ color: '#5120c8', fontWeight: 500 }}>{roleLabels[confirmDialog.currentRole]}</span>{' '}
-              إلى{' '}
+              {isAr ? 'إلى' : 'to'}{' '}
               <span style={{ color: '#16a34a', fontWeight: 500 }}>{roleLabels[confirmDialog.newRole]}</span>
             </p>
             
@@ -516,7 +516,7 @@ export default function AdminUsersPage() {
                 borderRadius: 10, padding: '10px 14px', marginBottom: 20,
               }}>
                 <p style={{ color: '#fca5a5', fontSize: 13, margin: 0 }}>
-                  تحذير: ستمنح هذا المستخدم صلاحيات الأدمن الكاملة
+                  {isAr ? 'تحذير: ستمنح هذا المستخدم صلاحيات الأدمن الكاملة' : 'Warning: you will grant this user full admin permissions'}
                 </p>
               </div>
             )}
@@ -531,7 +531,7 @@ export default function AdminUsersPage() {
                   fontSize: 15, fontWeight: 500,
                 }}
               >
-                تأكيد التغيير
+                {isAr ? 'تأكيد التغيير' : 'Confirm change'}
               </button>
               <button
                 onClick={() => setConfirmDialog(null)}
@@ -542,7 +542,7 @@ export default function AdminUsersPage() {
                   cursor: 'pointer', fontSize: 15, fontWeight: 500,
                 }}
               >
-                إلغاء
+                {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             </div>
           </div>

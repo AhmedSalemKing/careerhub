@@ -352,7 +352,7 @@ export default function QuizBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4" dir="rtl">
+      <div className="p-6 space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="h-10 w-64 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
         <div className="h-40 animate-pulse rounded-[14px] bg-[color:var(--surface-2)]" />
       </div>
@@ -361,14 +361,14 @@ export default function QuizBuilderPage() {
 
   if (!quiz) {
     return (
-      <div className="p-6 text-center" dir="rtl">
+      <div className="p-6 text-center" dir={isAr ? 'rtl' : 'ltr'}>
         <p className="text-[color:var(--ink-2)]">{isAr ? 'الاختبار غير موجود' : 'Quiz not found'}</p>
       </div>
     )
   }
 
   return (
-    <div className="p-6" dir="rtl">
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <QuizBuilderTourLauncher />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <button

@@ -10,6 +10,7 @@ import { useMarket } from '../contexts/MarketContext'
 import { formatCurrency } from '../../lib/formatCurrency'
 import { toMarketAmount } from '../../lib/marketConfig'
 import { SmartImage } from '@/components/SmartImage'
+import { useLocale } from 'next-intl'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -28,6 +29,7 @@ type CartItem = {
 }
 
 export function CartIcon() {
+  const isAr = useLocale() === 'ar'
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
   const { market } = useMarket()
@@ -51,7 +53,7 @@ export function CartIcon() {
     mutationFn: (courseId: string) => del(`/cart/remove/${courseId}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cart'] })
-      notify.info('تمت إزالة الكورس من السلة')
+      notify.info((isAr ? 'تمت إزالة الكورس من السلة' : 'Course removed from the cart'))
     },
   })
 
@@ -72,7 +74,7 @@ export function CartIcon() {
       <button
         onClick={() => setOpen(true)}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[color:var(--surface-2)] transition"
-        aria-label="سلة الشراء"
+        aria-label={isAr ? 'سلة الشراء' : 'Shopping cart'}
       >
         <ShoppingCart className="h-5 w-5 text-[color:var(--muted)]" />
         {items.length > 0 && (
@@ -91,16 +93,16 @@ export function CartIcon() {
           />
           <div
             className="fixed left-0 top-0 z-50 h-full w-80 bg-[color:var(--surface)] border-r border-[color:var(--border)] shadow-2xl flex flex-col"
-            dir="rtl"
+            dir={isAr ? 'rtl' : 'ltr'}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
               <h2 className="text-xl font-bold font-madinet text-foreground">
-                سلة الشراء ({items.length})
+                {isAr ? 'سلة الشراء (' : 'Shopping cart ('}{items.length})
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                aria-label="إغلاق"
+                aria-label={isAr ? 'إغلاق' : 'Close'}
                 className="rounded-xl p-2 hover:bg-[color:var(--surface-2)] transition"
               >
                 <X className="h-5 w-5" />
@@ -112,8 +114,8 @@ export function CartIcon() {
               {items.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-[color:var(--muted)]">
                   <ShoppingCart className="h-16 w-16 mb-4 opacity-20" />
-                  <p className="text-lg font-semibold">السلة فارغة</p>
-                  <p className="text-sm mt-1">أضف كورسات لبدء التعلم</p>
+                  <p className="text-lg font-semibold">{isAr ? 'السلة فارغة' : 'Your cart is empty'}</p>
+                  <p className="text-sm mt-1">{isAr ? 'أضف كورسات لبدء التعلم' : 'Add courses to start learning'}</p>
                 </div>
               ) : (
                 items.map((item) => {
@@ -143,7 +145,7 @@ export function CartIcon() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">
-                          {item.course?.titleAr || item.course?.titleEn || 'كورس'}
+                          {item.course?.titleAr || item.course?.titleEn || (isAr ? 'كورس' : 'Course')}
                         </p>
                         <p className="text-primary font-bold text-sm">
                           {formatCoursePrice(item.course || {})}
@@ -151,7 +153,7 @@ export function CartIcon() {
                       </div>
                       <button
                         onClick={() => removeItem.mutate(item.courseId)}
-                        aria-label="إزالة من السلة"
+                        aria-label={isAr ? 'إزالة من السلة' : 'Remove from the cart'}
                         className="shrink-0 rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 transition"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -166,14 +168,14 @@ export function CartIcon() {
             {items.length > 0 && (
               <div className="border-t border-[color:var(--border)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[color:var(--muted)]">الإجمالي:</span>
+                  <span className="text-[color:var(--muted)]">{isAr ? 'الإجمالي:' : 'Total:'}</span>
                   <span className="text-xl font-bold text-primary">{formatCurrency(toMarketAmount(total, market), market, 'ar')}</span>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
                   className="w-full rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 transition flex items-center justify-center gap-2"
                 >
-                  إتمام الشراء
+                  {isAr ? 'إتمام الشراء' : 'Checkout'}
                   <ArrowRight className="h-5 w-5" />
                 </button>
               </div>

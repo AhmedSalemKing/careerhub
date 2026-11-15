@@ -1,5 +1,6 @@
 'use client'
 import { useEffect } from 'react'
+import { useLocale } from 'next-intl'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -14,11 +15,14 @@ interface ConfirmModalProps {
 
 export default function ConfirmModal({
   isOpen, title, message,
-  confirmLabel = 'تأكيد',
-  cancelLabel = 'إلغاء',
+  confirmLabel,
+  cancelLabel,
   confirmDestructive = false,
   onConfirm, onCancel,
 }: ConfirmModalProps) {
+  const isAr = useLocale() === 'ar'
+  const confirmText = confirmLabel ?? (isAr ? 'تأكيد' : 'Confirm')
+  const cancelText = cancelLabel ?? (isAr ? 'إلغاء' : 'Cancel')
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
@@ -115,7 +119,7 @@ export default function ConfirmModal({
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            {cancelLabel}
+            {cancelText}
           </button>
           <button
             onClick={onConfirm}
@@ -131,7 +135,7 @@ export default function ConfirmModal({
                 : '0 4px 12px rgba(81,32,200,0.3)',
             }}
           >
-            {confirmLabel}
+            {confirmText}
           </button>
         </div>
       </div>

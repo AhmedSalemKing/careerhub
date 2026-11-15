@@ -184,7 +184,7 @@ export default function EarningsPage() {
   if (!mounted || loading) {
     return (
       <div
-        dir="rtl"
+        dir={isAr ? 'rtl' : 'ltr'}
         className="flex min-h-[50vh] flex-col items-center justify-center gap-2"
         style={{ background: 'var(--bg)', color: 'var(--ink-2)', fontFamily: 'var(--font-body)' }}
       >
@@ -198,7 +198,7 @@ export default function EarningsPage() {
 
   return (
     <div
-      dir="rtl"
+      dir={isAr ? 'rtl' : 'ltr'}
       className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
       style={{ background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
     >

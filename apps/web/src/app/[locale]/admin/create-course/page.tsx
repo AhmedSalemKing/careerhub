@@ -76,7 +76,7 @@ async function uploadVideoFile(
         reject(err)
       }
     }
-    xhr.onerror = () => reject(new Error('تعذر الاتصال بالخادم، تحقق من اتصالك'))
+    xhr.onerror = () => reject(new Error((document.documentElement.lang !== 'en' ? 'تعذر الاتصال بالخادم، تحقق من اتصالك' : 'Could not reach the server, check your connection')))
     xhr.open('POST', `${API_URL}/upload/video`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
@@ -457,7 +457,7 @@ export default function AdminCreateCoursePage() {
                 <input
                   value={form.titleAr}
                   onChange={(e) => set('titleAr', e.target.value)}
-                  placeholder="مثال: مقدمة في البرمجة"
+                  placeholder={isAr ? 'مثال: مقدمة في البرمجة' : 'Example: Introduction to programming'}
                   style={inputStyle}
                 />
               </div>
@@ -480,7 +480,7 @@ export default function AdminCreateCoursePage() {
                 <textarea
                   value={form.descriptionAr}
                   onChange={(e) => set('descriptionAr', e.target.value)}
-                  placeholder="وصف الكورس..."
+                  placeholder={isAr ? 'وصف الكورس...' : 'Course description...'}
                   rows={3}
                   style={{ ...inputStyle, resize: 'none' }}
                 />

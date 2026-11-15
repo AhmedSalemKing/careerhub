@@ -7,11 +7,12 @@ export function FloatingAIButton() {
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const locale = useLocale()
+  const isAr = locale === 'ar'
 
   const items = [
     {
-      label: 'مقابلة مع AI',
-      sub:   '30 دقيقة · محادثة ذكية',
+      label: (isAr ? 'مقابلة مع AI' : 'Interview with AI'),
+      sub:   (isAr ? '30 دقيقة · محادثة ذكية' : '30 minutes · smart conversation'),
       path:  `/${locale}/dashboard/assessment?mode=interview`,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -20,8 +21,8 @@ export function FloatingAIButton() {
       ),
     },
     {
-      label: 'اختبار تفاعلي',
-      sub:   '20 دقيقة · أسئلة ذكية',
+      label: (isAr ? 'اختبار تفاعلي' : 'Interactive quiz'),
+      sub:   (isAr ? '20 دقيقة · أسئلة ذكية' : '20 minutes · smart questions'),
       path:  `/${locale}/dashboard/assessment?mode=quiz`,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

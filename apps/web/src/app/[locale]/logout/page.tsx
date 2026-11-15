@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { removeRefreshToken, removeToken, removeUser } from '../../../lib/auth'
+import { useLocale } from 'next-intl'
 
 /**
  * Web-side logout landing page. Learn redirects here after clearing its own
@@ -24,6 +25,7 @@ const COOKIE_NAMES = [
 ]
 
 export default function WebLogoutPage() {
+  const isAr = useLocale() === 'ar'
   useEffect(() => {
     // Shared helpers first (they also clear the domain-scoped cookies)
     try { removeToken(); removeRefreshToken(); removeUser() } catch {}
@@ -60,7 +62,7 @@ export default function WebLogoutPage() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <p style={{ fontFamily: 'sans-serif', color: 'var(--muted-foreground, #888)' }}>
-        جاري تسجيل الخروج...
+        {isAr ? 'جاري تسجيل الخروج...' : 'Signing out...'}
       </p>
     </div>
   )

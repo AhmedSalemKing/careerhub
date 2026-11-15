@@ -70,6 +70,7 @@ function getBgColor(type: string): string {
 }
 
 export function NotificationBell() {
+  const isAr = useLocale() === 'ar'
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const qc = useQueryClient()
@@ -129,7 +130,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[color:var(--surface-2)] transition"
-        aria-label="الإشعارات"
+        aria-label={isAr ? 'الإشعارات' : 'Notifications'}
       >
         <Bell className="h-5 w-5 text-[color:var(--muted)]" />
         {unreadCount > 0 && (
@@ -144,17 +145,17 @@ export function NotificationBell() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
             className="absolute left-0 z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden"
-            dir="rtl"
+            dir={isAr ? 'rtl' : 'ltr'}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[color:var(--border)] p-4">
-              <h3 className="font-bold font-madinet text-foreground">الإشعارات</h3>
+              <h3 className="font-bold font-madinet text-foreground">{isAr ? 'الإشعارات' : 'Notifications'}</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllRead.mutate()}
                   className="text-xs text-primary hover:underline"
                 >
-                  تعليم الكل كمقروء
+                  {isAr ? 'تعليم الكل كمقروء' : 'Mark all as read'}
                 </button>
               )}
             </div>
@@ -164,7 +165,7 @@ export function NotificationBell() {
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-[color:var(--muted)]">
                   <Bell className="mx-auto mb-2 h-8 w-8 opacity-30" />
-                  <p className="text-sm">لا توجد إشعارات</p>
+                  <p className="text-sm">{isAr ? 'لا توجد إشعارات' : 'No notifications'}</p>
                 </div>
               ) : (
                 notifications.map((n) => (

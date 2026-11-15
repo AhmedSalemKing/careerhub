@@ -396,7 +396,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
 
   return (
     <div className="book-overlay" onClick={onClose}>
-      <div className="book-modal" dir="rtl" role="dialog" aria-modal="true" aria-label={isAr ? 'احجز جلسة مع مرشد' : 'Book a session with a mentor'} onClick={(e) => e.stopPropagation()}>
+      <div className="book-modal" dir={isAr ? 'rtl' : 'ltr'} role="dialog" aria-modal="true" aria-label={isAr ? 'احجز جلسة مع مرشد' : 'Book a session with a mentor'} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="book-close" onClick={onClose} aria-label={isAr ? 'إغلاق' : 'Close'}>×</button>
 
         <div className="book-head">

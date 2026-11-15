@@ -4,8 +4,10 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { api } from '@/lib/api'
 import { learnSyncUrl } from '@/lib/learn-link'
+import { useLocale } from 'next-intl'
 
 export default function GoogleAuthSuccess() {
+  const isAr = useLocale() === 'ar'
   const searchParams = useSearchParams()
   const router = useRouter()
   const { setUser, setToken } = useAuthStore()
@@ -80,7 +82,7 @@ export default function GoogleAuthSuccess() {
         borderTopColor: 'transparent', borderRadius: '50%',
         animation: 'spin 1s linear infinite',
       }} />
-      <p style={{ color: '#94a3b8' }}>جاري تسجيل الدخول...</p>
+      <p style={{ color: '#94a3b8' }}>{isAr ? 'جاري تسجيل الدخول...' : 'Signing in...'}</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )

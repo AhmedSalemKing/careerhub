@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { formatCoursePrice } from '../../../../lib/market'
+import { useLocale } from 'next-intl'
 
 type PathOption = { id: string; title: string; slug?: string }
 type CourseRow = {
@@ -22,6 +23,7 @@ const FALLBACK_PATHS: PathOption[] = [
 ]
 
 export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const isAr = useLocale() === 'ar'
   const [builtIn, setBuiltIn] = useState<PathOption[]>([])
   const [apiTracks, setApiTracks] = useState<PathOption[]>([])
   const paths = useMemo(() => {
@@ -99,10 +101,10 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
 
   async function submit() {
     setError(null)
-    if (!pathId) return setError('اختر المسار المهني')
-    if (selected.length === 0) return setError('اختر كورسًا واحدًا على الأقل')
+    if (!pathId) return setError((isAr ? 'اختر المسار المهني' : 'Choose the career path'))
+    if (selected.length === 0) return setError((isAr ? 'اختر كورسًا واحدًا على الأقل' : 'Choose at least one course'))
     const final = Number(finalPrice)
-    if (!finalPrice || !isFinite(final) || final <= 0) return setError('أدخل السعر النهائي')
+    if (!finalPrice || !isFinite(final) || final <= 0) return setError((isAr ? 'أدخل السعر النهائي' : 'Enter the final price'))
 
     setSubmitting(true)
     try {
@@ -120,7 +122,7 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
       const m = e?.response?.data?.message
       setError(
         (Array.isArray(m) ? m.join(' - ') : m) ||
-          (e?.response?.status === 404 ? 'خدمة الباكدجات غير متاحة بعد' : 'تعذر إنشاء الباكدج، حاول مرة أخرى'),
+          (e?.response?.status === 404 ? (isAr ? 'خدمة الباكدجات غير متاحة بعد' : 'The packages service is not available yet') : (isAr ? 'تعذر إنشاء الباكدج، حاول مرة أخرى' : 'Could not create the package, please try again')),
       )
     } finally {
       setSubmitting(false)
@@ -129,20 +131,20 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
 
   return (
     <div className="dw2-pk-overlay" onClick={onClose}>
-      <div className="dw2-pk-box" dir="rtl" role="dialog" aria-modal="true" aria-label="إنشاء باكدج مسار" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="dw2-pk-close" onClick={onClose} aria-label="إغلاق">×</button>
-        <h2 className="dw2-pk-title">إنشاء باكدج مسار</h2>
+      <div className="dw2-pk-box" dir="rtl" role="dialog" aria-modal="true" aria-label={isAr ? 'إنشاء باكدج مسار' : 'Create a path package'} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="dw2-pk-close" onClick={onClose} aria-label={isAr ? 'إغلاق' : 'Close'}>×</button>
+        <h2 className="dw2-pk-title">{isAr ? 'إنشاء باكدج مسار' : 'Create a path package'}</h2>
 
-        <label className="dw2-pk-label">المسار المهني</label>
+        <label className="dw2-pk-label">{isAr ? 'المسار المهني' : 'Career path'}</label>
         <select className="dw2-pk-input" value={pathId} onChange={(e) => setPathId(e.target.value)}>
-          <option value="">اختر المسار</option>
+          <option value="">{isAr ? 'اختر المسار' : 'Choose the path'}</option>
           {paths.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
         </select>
 
-        <label className="dw2-pk-label">الكورسات المضمّنة في الباكدج</label>
-        <input className="dw2-pk-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث عن كورس..." />
+        <label className="dw2-pk-label">{isAr ? 'الكورسات المضمّنة في الباكدج' : 'Courses included in the package'}</label>
+        <input className="dw2-pk-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isAr ? 'ابحث عن كورس...' : 'Search for a course...'} />
         <div className="dw2-pk-list">
-          {filtered.length === 0 && <p className="dw2-pk-empty">لا توجد كورسات</p>}
+          {filtered.length === 0 && <p className="dw2-pk-empty">{isAr ? 'لا توجد كورسات' : 'No courses'}</p>}
           {filtered.map((c) => (
             <label key={c.id} className="dw2-pk-row">
               <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} />
@@ -157,7 +159,7 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
             {selected.map((id) => (
               <span key={id} className="dw2-pk-tag">
                 {byId.get(id)?.title ?? id}
-                <button type="button" onClick={() => toggle(id)} aria-label="إزالة">×</button>
+                <button type="button" onClick={() => toggle(id)} aria-label={isAr ? 'إزالة' : 'Remove'}>×</button>
               </span>
             ))}
           </div>
@@ -165,29 +167,29 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
 
         <div className="dw2-pk-prices">
           <div>
-            <label className="dw2-pk-label">السعر قبل الخصم (اختياري)</label>
+            <label className="dw2-pk-label">{isAr ? 'السعر قبل الخصم (اختياري)' : 'Price before discount (optional)'}</label>
             <div className="dw2-pk-suffix">
-              <input className="dw2-pk-input" type="number" min={0} value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="٣٬٠٠٠" />
-              <span>ر.س</span>
+              <input className="dw2-pk-input" type="number" min={0} value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder={isAr ? '٣٬٠٠٠' : '3,000'} />
+              <span>{isAr ? 'ر.س' : 'SAR'}</span>
             </div>
           </div>
           <div>
-            <label className="dw2-pk-label">السعر النهائي</label>
+            <label className="dw2-pk-label">{isAr ? 'السعر النهائي' : 'Final price'}</label>
             <div className="dw2-pk-suffix">
-              <input className="dw2-pk-input" type="number" min={0} value={finalPrice} onChange={(e) => setFinalPrice(e.target.value)} placeholder="٢٬٩٠٠" />
-              <span>ر.س</span>
+              <input className="dw2-pk-input" type="number" min={0} value={finalPrice} onChange={(e) => setFinalPrice(e.target.value)} placeholder={isAr ? '٢٬٩٠٠' : '2,900'} />
+              <span>{isAr ? 'ر.س' : 'SAR'}</span>
             </div>
           </div>
         </div>
 
-        <label className="dw2-pk-label">ملاحظة (اختياري)</label>
+        <label className="dw2-pk-label">{isAr ? 'ملاحظة (اختياري)' : 'Note (optional)'}</label>
         <textarea className="dw2-pk-input" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
 
         <button type="button" className="dw2-pk-submit" onClick={submit} disabled={submitting}>
-          {submitting ? 'جارٍ الإنشاء...' : 'إنشاء الباكدج'}
+          {submitting ? (isAr ? 'جارٍ الإنشاء...' : 'Creating...') : (isAr ? 'إنشاء الباكدج' : 'Create the package')}
         </button>
         {error && <p className="dw2-pk-error" role="alert">{error}</p>}
-        <button type="button" className="dw2-pk-cancel" onClick={onClose}>إلغاء</button>
+        <button type="button" className="dw2-pk-cancel" onClick={onClose}>{isAr ? 'إلغاء' : 'Cancel'}</button>
       </div>
     </div>
   )

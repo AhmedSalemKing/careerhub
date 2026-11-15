@@ -1,7 +1,9 @@
 'use client'
 import { ShieldX, Mail } from 'lucide-react'
+import { useLocale } from 'next-intl'
 
 export default function BannedPage() {
+  const isAr = useLocale() === 'ar'
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -15,16 +17,15 @@ export default function BannedPage() {
       }}>
         <ShieldX size={44} color="#ef4444" />
       </div>
-      <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>تم حظر حسابك</h1>
+      <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>{isAr ? 'تم حظر حسابك' : 'Your account has been banned'}</h1>
       <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 420, lineHeight: 1.7 }}>
-        تم حظر حسابك بشكل دائم بسبب انتهاك شروط الاستخدام.
-        لا يمكنك الوصول إلى المنصة.
+        {isAr ? 'تم حظر حسابك بشكل دائم بسبب انتهاك شروط الاستخدام. لا يمكنك الوصول إلى المنصة.' : 'Your account has been permanently banned for violating the terms of use. You cannot access the platform.'}
       </p>
       <p style={{ color: '#6b7280', fontSize: 14 }}>
-        للتواصل مع الدعم: support@deveway.com
+        {isAr ? 'للتواصل مع الدعم: support@deveway.com' : 'To contact support: support@deveway.com'}
       </p>
       <a
-        href="mailto:support@deveway.com?subject=طلب رفع الحظر"
+        href={isAr ? 'mailto:support@deveway.com?subject=طلب رفع الحظر' : 'mailto:support@deveway.com?subject=Ban removal request'}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '12px 24px', background: 'transparent', color: '#fff',
@@ -32,7 +33,7 @@ export default function BannedPage() {
           fontSize: 15, fontWeight: 600, textDecoration: 'none',
         }}
       >
-        <Mail size={16} /> تواصل مع الدعم
+        <Mail size={16} /> {isAr ? 'تواصل مع الدعم' : 'Contact support'}
       </a>
     </div>
   )

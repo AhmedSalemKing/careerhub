@@ -484,7 +484,7 @@ export default function ScheduleClient() {
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
-    <div dir="rtl" style={{ background:'var(--bg)', color:'var(--ink)', padding:20, minHeight:'100vh' }}>
+    <div dir={isAr ? 'rtl' : 'ltr'} style={{ background:'var(--bg)', color:'var(--ink)', padding:20, minHeight:'100vh' }}>
       <ScheduleTourLauncher />
 
       {/* Page title */}

@@ -11,6 +11,8 @@ import {
   CheckCircle, XCircle, Clock, Users, Eye,
 } from 'lucide-react'
 
+const uiAr = () => typeof document === 'undefined' || document.documentElement.lang !== 'en'
+
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
   const isEGP = sample.includes('ج.م')
@@ -19,9 +21,9 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number): strin
       const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
       return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
     }, 0)
-    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+    return `${Math.round(egpTotal).toLocaleString(uiAr() ? 'ar-EG' : 'en-US')} ${uiAr() ? 'ج.م' : 'EGP'}`
   }
-  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  return `${(rawTotal ?? 0).toLocaleString(uiAr() ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${uiAr() ? 'ر.س' : 'SAR'}`
 }
 
 function MapPin(props: any) {
@@ -311,7 +313,7 @@ export default function AdminSessionsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-medium text-sm" style={{ color: '#10b981' }}>
-                          {s.priceDisplay ?? `${Number(s.price ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
+                          {s.priceDisplay ?? `${Number(s.price ?? 0).toLocaleString(uiAr() ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${uiAr() ? 'ر.س' : 'SAR'}`}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">

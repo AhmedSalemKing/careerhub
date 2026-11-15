@@ -95,7 +95,7 @@ export default function NewQuizPage() {
   }
 
   return (
-    <div className="p-6" dir="rtl">
+    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <button
           type="button"

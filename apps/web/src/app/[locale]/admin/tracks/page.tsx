@@ -427,11 +427,11 @@ export default function AdminTracksPage() {
               {tab === 'basics' && (
                 <>
                   <div className="tk-grid2">
-                    <Field label="اسم المسار (عربي)"><input dir="rtl" value={f.nameAr} onChange={(e) => set({ nameAr: e.target.value })} /></Field>
+                    <Field label={isAr ? 'اسم المسار (عربي)' : 'Track name (Arabic)'}><input dir="rtl" value={f.nameAr} onChange={(e) => set({ nameAr: e.target.value })} /></Field>
                     <Field label="Track name (English)">
                       <input dir="ltr" value={f.nameEn} onChange={(e) => set({ nameEn: e.target.value, ...(f.slugTouched ? {} : { slug: slugify(e.target.value) }) })} />
                     </Field>
-                    <Field label="الوصف (عربي)"><textarea dir="rtl" rows={3} value={f.descAr} onChange={(e) => set({ descAr: e.target.value })} /></Field>
+                    <Field label={isAr ? 'الوصف (عربي)' : 'Description (Arabic)'}><textarea dir="rtl" rows={3} value={f.descAr} onChange={(e) => set({ descAr: e.target.value })} /></Field>
                     <Field label="Description (English)"><textarea dir="ltr" rows={3} value={f.descEn} onChange={(e) => set({ descEn: e.target.value })} /></Field>
                     <div className="tk-span2">
                       <Field label={isAr ? 'المستوى (اختيار سريع)' : 'Level (quick pick)'}>
@@ -443,7 +443,7 @@ export default function AdminTracksPage() {
                         />
                       </Field>
                     </div>
-                    <Field label="المستوى (عربي)"><input dir="rtl" value={f.level} onChange={(e) => set({ level: e.target.value })} placeholder="مبتدئ ← متوسط" /></Field>
+                    <Field label={isAr ? 'المستوى (عربي)' : 'Level (Arabic)'}><input dir="rtl" value={f.level} onChange={(e) => set({ level: e.target.value })} placeholder="مبتدئ ← متوسط" /></Field>
                     <Field label="Level (English)"><input dir="ltr" value={f.levelEn} onChange={(e) => set({ levelEn: e.target.value })} placeholder="Beginner → Intermediate" /></Field>
                     <Field label={isAr ? 'عدد الأسابيع' : 'Weeks'}><input type="number" min={1} value={f.weeks} onChange={(e) => set({ weeks: e.target.value })} /></Field>
                     <Field label={isAr ? 'اللغات' : 'Languages'}><input value={f.languages} onChange={(e) => set({ languages: e.target.value })} /></Field>
@@ -502,9 +502,9 @@ export default function AdminTracksPage() {
               {tab === 'content' && (
                 <>
                   <div className="tk-grid2">
-                    <Tags label="المهارات (عربي)" value={f.skills} onChange={(v) => set({ skills: v })} dir="rtl" />
+                    <Tags label={isAr ? 'المهارات (عربي)' : 'Skills (Arabic)'} value={f.skills} onChange={(v) => set({ skills: v })} dir="rtl" />
                     <Tags label="Skills (English)" value={f.skillsEn} onChange={(v) => set({ skillsEn: v })} dir="ltr" />
-                    <Tags label="الخدمات المجانية (عربي)" value={f.freeItemsAr} onChange={(v) => set({ freeItemsAr: v })} dir="rtl" />
+                    <Tags label={isAr ? 'الخدمات المجانية (عربي)' : 'Free services (Arabic)'} value={f.freeItemsAr} onChange={(v) => set({ freeItemsAr: v })} dir="rtl" />
                     <Tags label="Free items (English)" value={f.freeItemsEn} onChange={(v) => set({ freeItemsEn: v })} dir="ltr" />
                   </div>
                   <label className="tk-block-title">{isAr ? 'الدورات' : 'Courses'}</label>
@@ -528,9 +528,9 @@ export default function AdminTracksPage() {
                           />
                         </Field>
                         <div className="tk-grid2">
-                          <Field label="العنوان (عربي)"><input dir="rtl" value={c.titleAr} onChange={(e) => upd({ titleAr: e.target.value })} /></Field>
+                          <Field label={isAr ? 'العنوان (عربي)' : 'Title (Arabic)'}><input dir="rtl" value={c.titleAr} onChange={(e) => upd({ titleAr: e.target.value })} /></Field>
                           <Field label="Title (English)"><input dir="ltr" value={c.titleEn} onChange={(e) => upd({ titleEn: e.target.value })} /></Field>
-                          <Field label="النوع (عربي)"><input dir="rtl" value={c.type} onChange={(e) => upd({ type: e.target.value })} placeholder="ذاتي / مباشر" /></Field>
+                          <Field label={isAr ? 'النوع (عربي)' : 'Type (Arabic)'}><input dir="rtl" value={c.type} onChange={(e) => upd({ type: e.target.value })} placeholder="ذاتي / مباشر" /></Field>
                           <Field label="Type (English)"><input dir="ltr" value={c.typeEn} onChange={(e) => upd({ typeEn: e.target.value })} placeholder="Self-paced / Live" /></Field>
                         </div>
                         <div className="tk-grid4">
@@ -558,9 +558,9 @@ export default function AdminTracksPage() {
                           <button type="button" className="tk-icon" onClick={() => set({ jobs: f.jobs.filter((_, k) => k !== i) })} aria-label="remove"><Trash2 size={15} /></button>
                         </div>
                         <div className="tk-grid2">
-                          <Field label="عنوان الوظيفة (عربي)"><input dir="rtl" value={j.titleAr} onChange={(e) => upd({ titleAr: e.target.value })} /></Field>
+                          <Field label={isAr ? 'عنوان الوظيفة (عربي)' : 'Job title (Arabic)'}><input dir="rtl" value={j.titleAr} onChange={(e) => upd({ titleAr: e.target.value })} /></Field>
                           <Field label="Job title (English)"><input dir="ltr" value={j.titleEn} onChange={(e) => upd({ titleEn: e.target.value })} /></Field>
-                          <Field label="الوصف (عربي)"><input dir="rtl" value={j.descAr} onChange={(e) => upd({ descAr: e.target.value })} /></Field>
+                          <Field label={isAr ? 'الوصف (عربي)' : 'Description (Arabic)'}><input dir="rtl" value={j.descAr} onChange={(e) => upd({ descAr: e.target.value })} /></Field>
                           <Field label="Description (English)"><input dir="ltr" value={j.descEn} onChange={(e) => upd({ descEn: e.target.value })} /></Field>
                         </div>
                         <div className="tk-sal">
@@ -591,8 +591,8 @@ export default function AdminTracksPage() {
                     ))}
                   </div>
                   <div className="tk-grid2">
-                    <Field label="وصف رؤية السعودية (عربي)"><textarea dir="rtl" rows={2} value={f.visionDescKSA} onChange={(e) => set({ visionDescKSA: e.target.value })} placeholder="التحول الرقمي ممكّن أساسي لرؤية 2030." /></Field>
-                    <Field label="وصف رؤية مصر (عربي)"><textarea dir="rtl" rows={2} value={f.visionDescEG} onChange={(e) => set({ visionDescEG: e.target.value })} /></Field>
+                    <Field label={isAr ? 'وصف رؤية السعودية (عربي)' : 'Saudi vision description (Arabic)'}><textarea dir="rtl" rows={2} value={f.visionDescKSA} onChange={(e) => set({ visionDescKSA: e.target.value })} placeholder="التحول الرقمي ممكّن أساسي لرؤية 2030." /></Field>
+                    <Field label={isAr ? 'وصف رؤية مصر (عربي)' : 'Egypt vision description (Arabic)'}><textarea dir="rtl" rows={2} value={f.visionDescEG} onChange={(e) => set({ visionDescEG: e.target.value })} /></Field>
                   </div>
                   <div className="tk-preview">
                     <span className="tk-block-title">{isAr ? 'معاينة' : 'Preview'}</span>
