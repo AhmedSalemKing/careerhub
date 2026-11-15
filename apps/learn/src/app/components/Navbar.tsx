@@ -271,6 +271,7 @@ export function Navbar() {
     { key: 'mentors', href: `${MAIN_URL}/${locale}/coaching`, label: locale === 'ar' ? 'للمرشدين' : 'For Mentors', external: true },
   ]
   const isActive = (href: string) => pathname === href
+  const hideSearch = /^\/[^/]+\/?$/.test(pathname || '') || /^\/[^/]+\/learn\/[^/]+/.test(pathname || '')
 
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ['navbar-notifications-unread'],
@@ -323,7 +324,7 @@ export function Navbar() {
           <nav className="nav" aria-label="Main">{links.map((l) => renderLink(l))}</nav>
 
           <div className="hdr-tools">
-            <span className="hide-sm"><SearchBar /></span>
+            {!hideSearch && <span className="hide-sm"><SearchBar /></span>}
             <MarketSwitcher />
             <LanguageSwitcher />
             <ThemeToggle />
@@ -376,9 +377,11 @@ export function Navbar() {
           <div className="px-4 py-5 space-y-5">
             <nav className="flex flex-col gap-0.5">{links.map((l) => renderLink(l, true))}</nav>
 
-            <div className="flex flex-wrap items-center gap-2 px-1" style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-              <SearchBar />
-            </div>
+            {!hideSearch && (
+              <div className="flex flex-wrap items-center gap-2 px-1" style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
+                <SearchBar />
+              </div>
+            )}
 
             {isLoggedIn ? (
               <div className="flex gap-2.5 pt-4" style={{ borderTop: '1px solid var(--line)' }}>

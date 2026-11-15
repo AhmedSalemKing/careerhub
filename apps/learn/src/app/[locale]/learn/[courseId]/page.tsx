@@ -33,9 +33,6 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Download,
-	Share2,
-	MessageSquare,
-	ThumbsUp,
 	TrendingUp,
 	Loader2,
 	Gift,
@@ -2820,83 +2817,6 @@ function MetaItem({
 										</div>
 									</div>
 								)}
-
-								{/* Interaction Buttons */}
-								<div data-tour="player-lesson-actions"
-									className="mt-8 pt-8 flex items-center gap-3 flex-wrap"
-									style={{ borderTop: `1px solid ${borderColor}` }}>
-									<button
-										className="
-                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200
-                    "
-										style={{
-											color: textSecondary,
-											background: "transparent",
-											border: `1.5px solid ${borderColor}`,
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.background = `${green}08`;
-											e.currentTarget.style.color = green;
-											e.currentTarget.style.borderColor = `${green}25`;
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.background = "transparent";
-											e.currentTarget.style.color = textSecondary;
-											e.currentTarget.style.borderColor = borderColor;
-										}}>
-										<ThumbsUp className="h-4 w-4" />
-										<span>{t('helpful')}</span>
-									</button>
-
-									<button
-										className="
-                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200
-                    "
-										style={{
-											color: textSecondary,
-											background: "transparent",
-											border: `1.5px solid ${borderColor}`,
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.background = `${blueColor}08`;
-											e.currentTarget.style.color = blueColor;
-											e.currentTarget.style.borderColor = `${blueColor}25`;
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.background = "transparent";
-											e.currentTarget.style.color = textSecondary;
-											e.currentTarget.style.borderColor = borderColor;
-										}}>
-										<MessageSquare className="h-4 w-4" />
-										<span>{t('askQuestion')}</span>
-									</button>
-
-									<button
-										className="
-                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200
-                    "
-										style={{
-											color: textSecondary,
-											background: "transparent",
-											border: `1.5px solid ${borderColor}`,
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.background = `${purple}08`;
-											e.currentTarget.style.color = purple;
-											e.currentTarget.style.borderColor = `${purple}25`;
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.background = "transparent";
-											e.currentTarget.style.color = textSecondary;
-											e.currentTarget.style.borderColor = borderColor;
-										}}>
-										<Share2 className="h-4 w-4" />
-										<span>{t('share')}</span>
-									</button>
-								</div>
 
 							</div>
 						</>
