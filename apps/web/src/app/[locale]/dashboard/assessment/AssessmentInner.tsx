@@ -48,7 +48,7 @@ function AssessmentContent() {
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className="dw-assess assess-page">
-      <AssessmentTourLauncher locale="ar" />
+      <AssessmentTourLauncher locale={locale} />
       <section className="ri-hero">
         <div className="hero-bg" aria-hidden="true">
           <span className="dots" />

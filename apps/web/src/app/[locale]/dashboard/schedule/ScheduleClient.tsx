@@ -555,12 +555,12 @@ export default function ScheduleClient() {
       {/* Legend */}
       <div data-tour="schedule-legend" style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14, flexWrap:'wrap' }}>
         {[
-          { label:'مؤكدة',             color:'#3b82f6' },
-          { label:'جارية الآن',        color:'#8b5cf6' },
-          { label:'مكتملة',            color:'#22c55e' },
-          { label:'بانتظار الدفع',    color:'#eab308' },
-          { label:'بانتظار الموافقة', color:'var(--ink-3)' },
-          { label:'ملغاة',             color:'#ef4444' },
+          { label: isAr ? 'مؤكدة' : 'Confirmed', color:'#3b82f6' },
+          { label: isAr ? 'جارية الآن' : 'In progress', color:'#8b5cf6' },
+          { label: isAr ? 'مكتملة' : 'Completed', color:'#22c55e' },
+          { label: isAr ? 'بانتظار الدفع' : 'Awaiting payment', color:'#eab308' },
+          { label: isAr ? 'بانتظار الموافقة' : 'Awaiting approval', color:'var(--ink-3)' },
+          { label: isAr ? 'ملغاة' : 'Cancelled', color:'#ef4444' },
         ].map(({ label, color }: { label: string; color: string }) => (
           <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />

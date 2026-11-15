@@ -232,7 +232,7 @@ export default function AssessmentResultPage() {
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className="dw-result">
-      <AssessmentResultTourLauncher locale="ar" />
+      <AssessmentResultTourLauncher locale={locale} />
       <div className="rs-wrap">
         {/* Hero */}
         <header className="rs-hero">
