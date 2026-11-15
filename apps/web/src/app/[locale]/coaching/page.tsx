@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import {
-  Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
+  Sparkles, ArrowLeft, ArrowRight, LogIn, Users, CalendarDays, Star,
   PenLine, UserRound, ShieldCheck, Lock, Mail, KeyRound, FileText, MapPin, Briefcase, Clock, Languages, MessageSquare,
 } from 'lucide-react'
 import { get } from '@/lib/api'
@@ -17,23 +17,23 @@ import { CoachingTourLauncher } from '@/components/CoachingTour'
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
 
 const STEPS = [
-  { Icon: LogIn, t: 'قدّم طلبك', d: 'أخبرنا بمجالك وخبرتك واللغات التي تتحدثها.' },
-  { Icon: Users, t: 'نطابقك', d: 'نربطك بالمسارات والمتعلّمين في مجالك.' },
-  { Icon: CalendarDays, t: 'حدّد مواعيدك', d: 'انشر أوقاتك في تقويمك، ويحجز المتعلّمون من داخل DeveWay.' },
-  { Icon: Star, t: 'أرشد واحصل على أجرك', d: 'قدّم العيادات والمراجعات والجلسات الفردية، بأجر عن كل جلسة.' },
+  { Icon: LogIn, t: ['قدّم طلبك', 'Apply'], d: ['أخبرنا بمجالك وخبرتك واللغات التي تتحدثها.', 'Tell us your field, experience and the languages you speak.'] },
+  { Icon: Users, t: ['نطابقك', 'We match you'], d: ['نربطك بالمسارات والمتعلّمين في مجالك.', 'We connect you with the tracks and learners in your field.'] },
+  { Icon: CalendarDays, t: ['حدّد مواعيدك', 'Set your availability'], d: ['انشر أوقاتك في تقويمك، ويحجز المتعلّمون من داخل DeveWay.', 'Publish your times in your calendar, and learners book from inside DeveWay.'] },
+  { Icon: Star, t: ['أرشد واحصل على أجرك', 'Mentor and get paid'], d: ['قدّم العيادات والمراجعات والجلسات الفردية، بأجر عن كل جلسة.', 'Run clinics, reviews and one-to-one sessions, paid per session.'] },
 ]
 
 const METHODS = [
-  { Icon: Users, t: 'العيادات الجماعية', d: 'مرشد واحد ومتعلّمون كثر؛ تجيب عن الأسئلة وتعالج المشكلات الشائعة.' },
-  { Icon: PenLine, t: 'مراجعات الخبراء', d: 'راجع سيرة ذاتية أو ملف أعمال أو مشروعًا وأرسل ملاحظات مكتوبة أو مسجّلة، دون موعد مباشر.' },
-  { Icon: UserRound, t: 'الجلسات الفردية', d: 'مراجعات الجاهزية والمقابلات التجريبية عند محطات المسار.' },
+  { Icon: Users, t: ['العيادات الجماعية', 'Group clinics'], d: ['مرشد واحد ومتعلّمون كثر؛ تجيب عن الأسئلة وتعالج المشكلات الشائعة.', 'One mentor and many learners; you answer questions and tackle common problems.'] },
+  { Icon: PenLine, t: ['مراجعات الخبراء', 'Expert reviews'], d: ['راجع سيرة ذاتية أو ملف أعمال أو مشروعًا وأرسل ملاحظات مكتوبة أو مسجّلة، دون موعد مباشر.', 'Review a CV, portfolio or project and send written or recorded feedback, with no live appointment.'] },
+  { Icon: UserRound, t: ['الجلسات الفردية', 'One-to-one sessions'], d: ['مراجعات الجاهزية والمقابلات التجريبية عند محطات المسار.', 'Readiness reviews and mock interviews at track milestones.'] },
 ]
 
 const WHO = [
-  'خبرة لا تقل عن 5 سنوات في أحد مجالاتنا الستة',
-  'القدرة على الإرشاد بالعربية أو الإنجليزية أو كلتيهما',
-  'معرفة بسوق العمل السعودي أو المصري',
-  'تواصل واضح ومشجّع',
+  ['خبرة لا تقل عن 5 سنوات في أحد مجالاتنا الستة', 'At least 5 years of experience in one of our six fields'],
+  ['القدرة على الإرشاد بالعربية أو الإنجليزية أو كلتيهما', 'Able to mentor in Arabic, English or both'],
+  ['معرفة بسوق العمل السعودي أو المصري', 'Knowledge of the Saudi or Egyptian job market'],
+  ['تواصل واضح ومشجّع', 'Clear, encouraging communication'],
 ]
 
 // Illustrated cast copied verbatim from the reference design, converted to JSX.
@@ -262,15 +262,15 @@ function Cast({ ids, size }: { ids: CharId[]; size: number }) {
 }
 
 const LOCKED_FIELDS = [
-  { Icon: UserRound, label: 'الاسم الكامل' },
-  { Icon: Mail, label: 'البريد الإلكتروني' },
-  { Icon: KeyRound, label: 'كلمة المرور' },
-  { Icon: FileText, label: 'السيرة الذاتية (PDF أو Word)' },
-  { Icon: MapPin, label: 'الدولة' },
-  { Icon: Briefcase, label: 'المجال التخصصي' },
-  { Icon: Clock, label: 'سنوات الخبرة' },
-  { Icon: Languages, label: 'لغات الإرشاد' },
-  { Icon: MessageSquare, label: 'ملاحظات إضافية' },
+  { Icon: UserRound, label: ['الاسم الكامل', 'Full name'] },
+  { Icon: Mail, label: ['البريد الإلكتروني', 'Email'] },
+  { Icon: KeyRound, label: ['كلمة المرور', 'Password'] },
+  { Icon: FileText, label: ['السيرة الذاتية (PDF أو Word)', 'CV (PDF or Word)'] },
+  { Icon: MapPin, label: ['الدولة', 'Country'] },
+  { Icon: Briefcase, label: ['المجال التخصصي', 'Specialty'] },
+  { Icon: Clock, label: ['سنوات الخبرة', 'Years of experience'] },
+  { Icon: Languages, label: ['لغات الإرشاد', 'Mentoring languages'] },
+  { Icon: MessageSquare, label: ['ملاحظات إضافية', 'Additional notes'] },
 ] as const
 
 /* ───────────────────────── types ───────────────────────── */
@@ -305,6 +305,9 @@ function initials(c: Consultant): string {
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
+  const L = isAr ? 0 : 1
+  const Arrow = isAr ? ArrowLeft : ArrowRight
   const { market } = useMarket()
 
   const [showCoaches, setShowCoaches] = useState(false)
@@ -354,7 +357,7 @@ export default function CoachingPage() {
   }
 
   return (
-    <main className="dw-home cch" dir="rtl" lang="ar">
+    <main className="dw-home cch" dir={isAr ? 'rtl' : 'ltr'} lang={locale}>
       <style>{CSS}</style>
       <CoachingTourLauncher />
 
@@ -363,39 +366,39 @@ export default function CoachingPage() {
         <div className="cch-bg" aria-hidden="true"><span className="cch-dots" /><span className="cch-b1" /><span className="cch-b2" /></div>
         <div className="cch-in cch-intro-grid">
           <div className="cch-copy">
-            <span className="cch-eyebrow">للمرشدين</span>
-            <h1>للمرشدين</h1>
-            <p className="cch-lede">شارك خبرتك مع المتعلّمين في اللحظات التي يصنع فيها الإرشاد الفرق الأكبر.</p>
-            <p className="cch-pill"><Sparkles size={16} aria-hidden="true" />مرونة كاملة، أجر عن كل جلسة، بالعربية أو الإنجليزية.</p>
+            <span className="cch-eyebrow">{isAr ? 'للمرشدين' : 'For Mentors'}</span>
+            <h1>{isAr ? 'للمرشدين' : 'For Mentors'}</h1>
+            <p className="cch-lede">{isAr ? 'شارك خبرتك مع المتعلّمين في اللحظات التي يصنع فيها الإرشاد الفرق الأكبر.' : 'Share your experience with learners at the moments when mentoring makes the biggest difference.'}</p>
+            <p className="cch-pill"><Sparkles size={16} aria-hidden="true" />{isAr ? 'مرونة كاملة، أجر عن كل جلسة، بالعربية أو الإنجليزية.' : 'Full flexibility, paid per session, in Arabic or English.'}</p>
 
             <div className="cch-actions" data-tour="coaching-hero-btns">
               <a className="cch-cta primary" href="#mentor-apply" onClick={(e) => { e.preventDefault(); scrollTo('mentor-apply') }}>
-                قدّم كمرشد<ArrowLeft size={18} aria-hidden="true" />
+                {isAr ? 'قدّم كمرشد' : 'Apply as a mentor'}<Arrow size={18} aria-hidden="true" />
               </a>
-              <a className="cch-cta ghost" href="#mentor-portal" onClick={(e) => { e.preventDefault(); scrollTo('mentor-portal') }}>افتح بوابة المرشدين</a>
+              <a className="cch-cta ghost" href="#mentor-portal" onClick={(e) => { e.preventDefault(); scrollTo('mentor-portal') }}>{isAr ? 'افتح بوابة المرشدين' : 'Open the mentor portal'}</a>
             </div>
           </div>
 
           <div className="phero-media">
-            <div className="ph scene" role="img" aria-label="للمرشدين">
+            <div className="ph scene" role="img" aria-label={isAr ? 'للمرشدين' : 'For Mentors'}>
               <span className="sc-orb o1"></span>
               <span className="sc-orb o2"></span>
               <div className="duo n2">
                 <span className="duo-p" style={{ ['--i' as string]: 0 }}>
                   <Char id="eg7" />
-                  <em className="duo-flag eg">مصر</em>
+                  <em className="duo-flag eg">{isAr ? 'مصر' : 'Egypt'}</em>
                 </span>
                 <span className="duo-p" style={{ ['--i' as string]: 1 }}>
                   <Char id="sa5" />
-                  <em className="duo-flag sa">السعودية</em>
+                  <em className="duo-flag sa">{isAr ? 'السعودية' : 'Saudi Arabia'}</em>
                 </span>
               </div>
             </div>
             <div className="float f-live" style={{ position: 'absolute', top: 'auto', bottom: '-20px', insetInlineStart: '-14px' }}>
               <Cast ids={['sa5', 'eg7', 'eg4']} size={34} />
               <div>
-                <p className="f-label">العيادات الجماعية</p>
-                <p className="f-title">الأحد · 7:00 مساءً</p>
+                <p className="f-label">{isAr ? 'العيادات الجماعية' : 'Group clinics'}</p>
+                <p className="f-title">{isAr ? 'الأحد · 7:00 مساءً' : 'Sunday · 7:00 PM'}</p>
               </div>
             </div>
           </div>
@@ -405,13 +408,13 @@ export default function CoachingPage() {
       {/* D) HOW IT WORKS */}
       <section className="cch-band alt">
         <div className="cch-in">
-          <div className="cch-head"><span className="cch-eyebrow">كيف نعمل</span><h2>كيف يعمل الإرشاد مع DeveWay</h2></div>
+          <div className="cch-head"><span className="cch-eyebrow">{isAr ? 'كيف نعمل' : 'How we work'}</span><h2>{isAr ? 'كيف يعمل الإرشاد مع DeveWay' : 'How mentoring works with DeveWay'}</h2></div>
           <ol className="cch-steps" data-tour="coaching-how-it-works">
             {STEPS.map(({ Icon, t, d }, i) => (
-              <li key={t} className="cch-step">
+              <li key={t[0]} className="cch-step">
                 <span className="cch-step-ic"><Icon size={22} aria-hidden="true" /><span className="cch-step-n">{i + 1}</span></span>
-                <h3>{t}</h3>
-                <p>{d}</p>
+                <h3>{t[L]}</h3>
+                <p>{d[L]}</p>
               </li>
             ))}
           </ol>
@@ -422,30 +425,30 @@ export default function CoachingPage() {
       <section className="cch-band">
         <div className="cch-in cch-split rev">
           <div className="split-media rv">
-            <div className="ph scene" role="img" aria-label="طرق الإرشاد">
+            <div className="ph scene" role="img" aria-label={isAr ? 'طرق الإرشاد' : 'Mentoring methods'}>
               <span className="sc-orb o1"></span>
               <span className="sc-orb o2"></span>
               <div className="duo n1">
                 <span className="duo-p" style={{ ['--i' as string]: 0 }}>
                   <Char id="eg4" />
-                  <em className="duo-flag eg">مصر</em>
+                  <em className="duo-flag eg">{isAr ? 'مصر' : 'Egypt'}</em>
                 </span>
               </div>
             </div>
           </div>
           <div>
-            <div className="cch-head tight"><span className="cch-eyebrow">للمرشدين</span><h2>طرق الإرشاد</h2></div>
+            <div className="cch-head tight"><span className="cch-eyebrow">{isAr ? 'للمرشدين' : 'For Mentors'}</span><h2>{isAr ? 'طرق الإرشاد' : 'Mentoring methods'}</h2></div>
             <div className="cch-feats" data-tour="coaching-types">
               {METHODS.map(({ Icon, t, d }, mi) => (
-                <div key={t} className="cch-feat" {...(mi === 0 ? { 'data-tour': 'coaching-clinics' } : {})}>
+                <div key={t[0]} className="cch-feat" {...(mi === 0 ? { 'data-tour': 'coaching-clinics' } : {})}>
                   <span className="cch-feat-ic"><Icon size={20} aria-hidden="true" /></span>
-                  <div><h4>{t}</h4><p>{d}</p></div>
+                  <div><h4>{t[L]}</h4><p>{d[L]}</p></div>
                 </div>
               ))}
             </div>
-            <p className="cch-note"><ShieldCheck size={18} aria-hidden="true" /><span>يدعم المرشدون جاهزية المتعلّم، ولا يضمنون وظيفة ولا يعملون كجهات توظيف.</span></p>
+            <p className="cch-note"><ShieldCheck size={18} aria-hidden="true" /><span>{isAr ? 'يدعم المرشدون جاهزية المتعلّم، ولا يضمنون وظيفة ولا يعملون كجهات توظيف.' : 'Mentors support learner readiness; they do not guarantee a job and do not act as recruiters.'}</span></p>
             <a className="cch-cta primary" href="#mentor-apply" onClick={(e) => { e.preventDefault(); scrollTo('mentor-apply') }}>
-              قدّم كمرشد<ArrowLeft size={18} aria-hidden="true" />
+              {isAr ? 'قدّم كمرشد' : 'Apply as a mentor'}<Arrow size={18} aria-hidden="true" />
             </a>
           </div>
         </div>
@@ -456,14 +459,14 @@ export default function CoachingPage() {
         <div className="wrap split" style={{ alignItems: 'start' }}>
           <div className="rv">
             <div className="sec-head">
-              <span className="eyebrow">قدّم كمرشد</span>
-              <h2 className="h2">من نبحث عنه</h2>
+              <span className="eyebrow">{isAr ? 'قدّم كمرشد' : 'Apply as a mentor'}</span>
+              <h2 className="h2">{isAr ? 'من نبحث عنه' : 'Who we look for'}</h2>
             </div>
             <ul className="checks" style={{ fontSize: '17px' }}>
               {WHO.map((x) => (
-                <li key={x}>
+                <li key={x[0]}>
                   <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                  <span>{x}</span>
+                  <span>{x[L]}</span>
                 </li>
               ))}
             </ul>
@@ -474,20 +477,20 @@ export default function CoachingPage() {
 
           <div className="cch-lock rv" aria-disabled="true" data-tour="coaching-apply-form">
             <div className="cch-lock-head">
-              <h2>طلب الانضمام كمرشد</h2>
+              <h2>{isAr ? 'طلب الانضمام كمرشد' : 'Mentor application'}</h2>
               <span className="cch-lock-badge" aria-hidden="true"><Lock size={16} /></span>
             </div>
             <ul className="cch-lock-grid" data-tour="coaching-apply-fields">
               {LOCKED_FIELDS.map(({ Icon, label }) => (
-                <li key={label} className="cch-lock-chip">
+                <li key={label[0]} className="cch-lock-chip">
                   <Icon size={15} aria-hidden="true" />
-                  <span>{label}</span>
+                  <span>{label[L]}</span>
                 </li>
               ))}
             </ul>
             <button type="button" className="cch-lock-btn" disabled>
               <Lock size={16} aria-hidden="true" />
-              التسجيل مغلق حالياً
+              {isAr ? 'التسجيل مغلق حالياً' : 'Registration is currently closed'}
             </button>
           </div>
         </div>
@@ -496,10 +499,10 @@ export default function CoachingPage() {
       {/* H) CURRENT COACHES */}
       <section className="cch-band" id="mentor-portal">
         <div className="cch-in">
-          <div className="cch-head center"><span className="cch-eyebrow">للمرشدين</span><h2>المرشدون الحاليون</h2></div>
+          <div className="cch-head center"><span className="cch-eyebrow">{isAr ? 'للمرشدين' : 'For Mentors'}</span><h2>{isAr ? 'المرشدون الحاليون' : 'Current mentors'}</h2></div>
           <div className="cch-center" data-tour="coaching-current-mentors">
             <button type="button" className="cch-cta ghost" onClick={toggleCoaches} aria-expanded={showCoaches}>
-              {showCoaches ? 'إخفاء المرشدين' : 'عرض المرشدين الحاليين'}
+              {showCoaches ? (isAr ? 'إخفاء المرشدين' : 'Hide mentors') : (isAr ? 'عرض المرشدين الحاليين' : 'Show current mentors')}
             </button>
           </div>
 
@@ -512,15 +515,15 @@ export default function CoachingPage() {
               )}
               {coachesError && !coachesLoading && (
                 <p className="cch-state">
-                  تعذّر تحميل المرشدين.{' '}
-                  <button type="button" className="cch-link" onClick={() => void loadCoaches()}>إعادة المحاولة</button>
+                  {isAr ? 'تعذّر تحميل المرشدين.' : 'Could not load mentors.'}{' '}
+                  <button type="button" className="cch-link" onClick={() => void loadCoaches()}>{isAr ? 'إعادة المحاولة' : 'Try again'}</button>
                 </p>
               )}
-              {!coachesLoading && !coachesError && coachesLoaded && coaches.length === 0 && <p className="cch-state">لا يوجد مرشدون لعرضهم حاليًا.</p>}
+              {!coachesLoading && !coachesError && coachesLoaded && coaches.length === 0 && <p className="cch-state">{isAr ? 'لا يوجد مرشدون لعرضهم حاليًا.' : 'No mentors to show right now.'}</p>}
               {!coachesLoading && coaches.length > 0 && (
                 <div className="cch-grid">
                   {coaches.map((c) => {
-                    const name = `${c.profile?.firstName ?? ''} ${c.profile?.lastName ?? ''}`.trim() || 'مرشد'
+                    const name = `${c.profile?.firstName ?? ''} ${c.profile?.lastName ?? ''}`.trim() || (isAr ? 'مرشد' : 'Mentor')
                     const years = Number(c.profile?.yearsExperience) || 0
                     const rate = Number(c.profile?.sessionPrice ?? c.hourlyRate ?? 0) || 0
                     const mins = Number(c.profile?.sessionDuration) || 60
@@ -529,17 +532,17 @@ export default function CoachingPage() {
                       <article key={c.id} className="cch-coach">
                         <UserAvatar user={{ avatar: c.profile?.avatar, gender: c.profile?.gender, name }} size={64} />
                         <h3>{name}</h3>
-                        <span className="cch-spec">{c.profile?.speciality || 'إرشاد مهني'}</span>
-                        {years > 0 && <p className="cch-meta">{years} سنة خبرة</p>}
+                        <span className="cch-spec">{c.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}</span>
+                        {years > 0 && <p className="cch-meta">{isAr ? `${years} سنة خبرة` : `${years} years of experience`}</p>}
                         {rate > 0 && (
                           <p className="cch-price">
-                            <strong>{formatCurrency(toMarketAmount(rate, market), market, 'ar')}</strong>
-                            <span> / {mins} دقيقة</span>
+                            <strong>{formatCurrency(toMarketAmount(rate, market), market, locale)}</strong>
+                            <span> / {mins} {isAr ? 'دقيقة' : 'min'}</span>
                           </p>
                         )}
                         <div className="cch-btns">
-                          <button type="button" className="cch-cta ghost" onClick={() => setSelectedMentor(c)}>تفاصيل</button>
-                          <a className="cch-cta primary" href={href}>احجز الآن</a>
+                          <button type="button" className="cch-cta ghost" onClick={() => setSelectedMentor(c)}>{isAr ? 'تفاصيل' : 'Details'}</button>
+                          <a className="cch-cta primary" href={href}>{isAr ? 'احجز الآن' : 'Book now'}</a>
                         </div>
                       </article>
                     )
@@ -608,7 +611,7 @@ const CSS = `
 .cch-feat-ic { flex-shrink: 0; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--wash); color: var(--brand); }
 .cch-feat h4 { margin: 0 0 4px; font-size: 15px; }
 .cch-feat p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-2); }
-.cch-lock { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); direction: rtl; text-align: right; }
+.cch-lock { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); direction: inherit; text-align: start; }
 .cch-lock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .cch-lock-head h2 { margin: 0; font-size: 20px; font-weight: 800; color: var(--ink); }
 .cch-lock-badge { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--wash); color: var(--brand); flex: none; }

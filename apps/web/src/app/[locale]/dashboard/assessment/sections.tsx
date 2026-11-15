@@ -43,6 +43,15 @@ export const SECTION_LABELS = [
   'الجاهزية المهنية',
 ] as const
 
+export const SECTION_LABELS_EN = [
+  'Understanding you',
+  'Career interests',
+  'Skills and abilities',
+  'Professional behavior',
+  'Motivation and work environment',
+  'Career readiness',
+] as const
+
 // Same artwork as the round avatar, with the crop widened to show the whole figure.
 const RASHEED_FIGURE = RASHEED_AVATAR.replace('viewBox="45 42 70 70"', 'viewBox="28 20 104 152"')
 

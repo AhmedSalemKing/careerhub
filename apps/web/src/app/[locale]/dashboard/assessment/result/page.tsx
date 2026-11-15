@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQueries } from '@tanstack/react-query'
 import {
-  Star, CheckCircle, Briefcase, BookOpen, Wrench, Award, ArrowLeft, RotateCcw, TrendingUp, Info, Sparkles,
+  Star, CheckCircle, Briefcase, BookOpen, Wrench, Award, ArrowLeft, ArrowRight, RotateCcw, TrendingUp, Info, Sparkles,
 } from 'lucide-react'
 import { RasheedAvatar } from '@/app/components/CharacterDuo'
 import { useAuthStore } from '@/stores/authStore'
@@ -84,9 +84,9 @@ function cleanGreeting(name: string, note: string): string {
   return text
 }
 
-const fmtK = (n: number) => (n / 1000).toLocaleString('ar-EG', { maximumFractionDigits: 1 })
+const fmtK = (n: number, nf: string) => (n / 1000).toLocaleString(nf, { maximumFractionDigits: 1 })
 
-function MatchRing({ value, index }: { value: number; index: number }) {
+function MatchRing({ value, index, nf, pctSign }: { value: number; index: number; nf: string; pctSign: string }) {
   const r = 27
   const len = 2 * Math.PI * r
   const pct = Math.min(100, Math.max(0, value))
@@ -110,7 +110,7 @@ function MatchRing({ value, index }: { value: number; index: number }) {
           strokeDashoffset={on ? len * (1 - pct / 100) : len}
         />
       </svg>
-      <b>{pct.toLocaleString('ar-EG')}٪</b>
+      <b>{pct.toLocaleString(nf)}{pctSign}</b>
     </span>
   )
 }
@@ -121,6 +121,9 @@ export default function AssessmentResultPage() {
   const user = useAuthStore((s) => s.user)
   const { market, config } = useMarket()
   const lang = toLang(locale)
+  const isAr = locale === 'ar'
+  const nf = isAr ? 'ar-EG' : 'en-US'
+  const Arrow = isAr ? ArrowLeft : ArrowRight
 
   const [stored, setStored] = useState<Stored | null>(null)
   const [checked, setChecked] = useState(false)
@@ -135,7 +138,7 @@ export default function AssessmentResultPage() {
   }, [])
 
   // Real tracks (admin-managed): jobs, courses, vision text and the package price come from here.
-  const { data: platformTracks = [] } = useTracks('ar')
+  const { data: platformTracks = [] } = useTracks(locale)
   const careers = stored?.result?.topCareers ?? []
   const matched = useMemo(
     () => careers.map((c) =>
@@ -148,8 +151,8 @@ export default function AssessmentResultPage() {
   )
   const details = useQueries({
     queries: matched.map((tk) => ({
-      queryKey: ['track', tk?.slug ?? 'none', 'ar'],
-      queryFn: () => fetchTrack(tk!.slug, 'ar'),
+      queryKey: ['track', tk?.slug ?? 'none', locale],
+      queryFn: () => fetchTrack(tk!.slug, locale),
       enabled: !!tk,
       staleTime: 60_000,
     })),
@@ -185,7 +188,7 @@ export default function AssessmentResultPage() {
         reasons: [c.reason, ...(c.strengths ?? [])].filter((x): x is string => !!x),
         jobs: (tk?.jobs ?? []).slice(0, 3).map((j) => {
           const sal = market === 'EG' ? j.salaryEG : j.salaryKSA
-          return { title: j.titleAr || j.title, description: j.desc, salaryMin: sal.min, salaryMax: sal.max, vision2030: j.vision.includes(market) }
+          return { title: (isAr ? j.titleAr : '') || j.title, description: j.desc, salaryMin: sal.min, salaryMax: sal.max, vision2030: j.vision.includes(market) }
         }),
         courses: (inPkg.length ? inPkg : all).map((x) => ({ name: x.title, weeks: x.weeks })),
         skills: tk?.skills?.length ? tk.skills : (c.skillsToLearn ?? []),
@@ -212,13 +215,13 @@ export default function AssessmentResultPage() {
 
   if (!data) {
     return (
-      <div dir="rtl" className="dw-result">
+      <div dir={isAr ? 'rtl' : 'ltr'} className="dw-result">
         <div className="rs-empty">
           <Info size={28} aria-hidden="true" />
-          <h2>لم يتم العثور على نتائج</h2>
-          <p>لا توجد نتيجة تقييم محفوظة في هذه الجلسة.</p>
+          <h2>{isAr ? 'لم يتم العثور على نتائج' : 'No results found'}</h2>
+          <p>{isAr ? 'لا توجد نتيجة تقييم محفوظة في هذه الجلسة.' : 'There is no saved assessment result in this session.'}</p>
           <Link className="btn btn-primary" href={`/${locale}/dashboard/assessment`}>
-            العودة إلى التقييم <ArrowLeft size={16} aria-hidden="true" />
+            {isAr ? 'العودة إلى التقييم' : 'Back to the assessment'} <Arrow size={16} aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -228,23 +231,23 @@ export default function AssessmentResultPage() {
   const lowHours = data.weeklyHours != null && data.weeklyHours <= 5
 
   return (
-    <div dir="rtl" className="dw-result">
+    <div dir={isAr ? 'rtl' : 'ltr'} className="dw-result">
       <AssessmentResultTourLauncher locale="ar" />
       <div className="rs-wrap">
         {/* Hero */}
         <header className="rs-hero">
-          <span className="rs-saved"><Sparkles size={13} aria-hidden="true" /> حُفظت في «تعلّمي»</span>
-          <h1>ترشيحات رشيد لك</h1>
-          <p>بناءً على إجاباتك. هذه اقتراحات تساعدك على القرار، وليست ضمانًا.</p>
+          <span className="rs-saved"><Sparkles size={13} aria-hidden="true" /> {isAr ? 'حُفظت في «تعلّمي»' : 'Saved to "My Learning"'}</span>
+          <h1>{isAr ? 'ترشيحات رشيد لك' : 'Recommendations from Rashid for you'}</h1>
+          <p>{isAr ? 'بناءً على إجاباتك. هذه اقتراحات تساعدك على القرار، وليست ضمانًا.' : 'Based on your answers. These suggestions help you decide; they are not a guarantee.'}</p>
         </header>
 
         {/* Rasheed */}
         <section className="rs-rasheed" data-tour="result-rasheed">
           <span className="rs-avatar"><RasheedAvatar size={72} /></span>
           <div>
-            <p className="rs-who"><b>رشيد</b> · مرشد DeveWay المهني بالذكاء الاصطناعي</p>
-            <p className="rs-sub">هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.</p>
-            {data.personalityNote && <p className="rs-note">{data.userName ? `${data.userName}، ` : ''}{cleanGreeting(data.userName, data.personalityNote)}</p>}
+            <p className="rs-who"><b>{isAr ? 'رشيد' : 'Rashid'}</b> · {isAr ? 'مرشد DeveWay المهني بالذكاء الاصطناعي' : 'DeveWay AI career guide'}</p>
+            <p className="rs-sub">{isAr ? 'هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.' : 'This is what I found. Every suggestion comes with my reasons, so you can decide what suits you.'}</p>
+            {data.personalityNote && <p className="rs-note">{data.userName ? `${data.userName}${isAr ? '،' : ','} ` : ''}{cleanGreeting(data.userName, data.personalityNote)}</p>}
             {data.motivationalNote && <p className="rs-motive">{data.motivationalNote}</p>}
           </div>
         </section>
@@ -257,23 +260,23 @@ export default function AssessmentResultPage() {
             const href = `/${locale}/careers/${t.trackSlug}`
             return (
               <article key={`${t.rank}-${t.trackName}`} className={`rs-card${featured ? ' featured' : ''}`} {...(featured ? { 'data-tour': 'result-top-card' } : i === 1 ? { 'data-tour': 'result-alt-cards' } : {})} style={{ animationDelay: `${i * 140}ms` }}>
-                {featured && <span className="rs-best"><Star size={13} aria-hidden="true" /> الأنسب لك</span>}
+                {featured && <span className="rs-best"><Star size={13} aria-hidden="true" /> {isAr ? 'الأنسب لك' : 'Best match'}</span>}
 
                 <header className="rs-head">
                   <div className="rs-head-text">
-                    {!featured && <span className="rs-rank">الخيار {t.rank.toLocaleString('ar-EG')}</span>}
+                    {!featured && <span className="rs-rank">{isAr ? 'الخيار' : 'Option'} {t.rank.toLocaleString(nf)}</span>}
                     <h2>{t.trackName}</h2>
                     {t.trackDescription && <p>{t.trackDescription}</p>}
                   </div>
                   <div className="rs-match">
-                    <MatchRing value={t.matchPercentage} index={i} />
-                    <small>توافق</small>
+                    <MatchRing value={t.matchPercentage} index={i} nf={nf} pctSign={isAr ? '٪' : '%'} />
+                    <small>{isAr ? 'توافق' : 'Match'}</small>
                   </div>
                 </header>
 
                 {t.reasons.length > 0 && (
                   <section className="rs-sec">
-                    <h3><CheckCircle size={14} aria-hidden="true" /> لماذا يناسبك</h3>
+                    <h3><CheckCircle size={14} aria-hidden="true" /> {isAr ? 'لماذا يناسبك' : 'Why it suits you'}</h3>
                     <ul className="rs-reasons">
                       {t.reasons.map((r) => (
                         <li key={r}><CheckCircle size={14} aria-hidden="true" /><span>{r}</span></li>
@@ -284,7 +287,7 @@ export default function AssessmentResultPage() {
 
                 {t.jobs.length > 0 && (
                   <section className="rs-sec">
-                    <h3><Briefcase size={14} aria-hidden="true" /> الوظائف ذات الصلة</h3>
+                    <h3><Briefcase size={14} aria-hidden="true" /> {isAr ? 'الوظائف ذات الصلة' : 'Related jobs'}</h3>
                     <ul className="rs-jobs">
                       {t.jobs.map((j) => (
                         <li key={j.title}>
@@ -294,11 +297,11 @@ export default function AssessmentResultPage() {
                             {(j.salaryMin != null || j.salaryMax != null) && (
                               <span className="rs-sal">
                                 <TrendingUp size={13} aria-hidden="true" />
-                                <b>{j.salaryMin != null && j.salaryMax != null ? `${fmtK(j.salaryMin)} – ${fmtK(j.salaryMax)}` : fmtK((j.salaryMin ?? j.salaryMax) as number)} ألف {config.currencySymbol[lang]}</b>
+                                <b>{j.salaryMin != null && j.salaryMax != null ? `${fmtK(j.salaryMin, nf)} – ${fmtK(j.salaryMax, nf)}` : fmtK((j.salaryMin ?? j.salaryMax) as number, nf)} {isAr ? 'ألف' : 'K'} {config.currencySymbol[lang]}</b>
                                 <small>/ {config.salaryUnit[lang]}</small>
                               </span>
                             )}
-                            {j.vision2030 && <span className="rs-v2030">رؤية 2030</span>}
+                            {j.vision2030 && <span className="rs-v2030">{isAr ? 'رؤية 2030' : 'Vision 2030'}</span>}
                           </span>
                         </li>
                       ))}
@@ -308,13 +311,13 @@ export default function AssessmentResultPage() {
 
                 {t.courses.length > 0 && (
                   <section className="rs-sec">
-                    <h3><BookOpen size={14} aria-hidden="true" /> الدورات المشمولة <span className="rs-count">{t.courses.length.toLocaleString('ar-EG')}</span></h3>
+                    <h3><BookOpen size={14} aria-hidden="true" /> {isAr ? 'الدورات المشمولة' : 'Included courses'} <span className="rs-count">{t.courses.length.toLocaleString(nf)}</span></h3>
                     <ol className="rs-courses">
                       {t.courses.map((c, n) => (
                         <li key={`${n}-${c.name}`}>
                           <span className="rs-n">{(n + 1).toLocaleString('ar-EG')}</span>
                           <b>{c.name}</b>
-                          {c.weeks > 0 && <small>{c.weeks.toLocaleString('ar-EG')} أسبوع</small>}
+                          {c.weeks > 0 && <small>{c.weeks.toLocaleString(nf)} {isAr ? 'أسبوع' : (c.weeks === 1 ? 'week' : 'weeks')}</small>}
                         </li>
                       ))}
                     </ol>
@@ -323,7 +326,7 @@ export default function AssessmentResultPage() {
 
                 {t.skills.length > 0 && (
                   <section className="rs-sec">
-                    <h3><Wrench size={14} aria-hidden="true" /> المهارات التي ستبنيها</h3>
+                    <h3><Wrench size={14} aria-hidden="true" /> {isAr ? 'المهارات التي ستبنيها' : 'Skills you will build'}</h3>
                     <div className="rs-skills">{t.skills.map((s) => <span key={s}>{s}</span>)}</div>
                   </section>
                 )}
@@ -332,7 +335,7 @@ export default function AssessmentResultPage() {
                   <section className="rs-vision">
                     <span className="rs-vlogo"><img src={VISION_LOGO[t.vision]} alt={MARKET_CONFIG[t.vision].vision.name[lang]} /></span>
                     <div>
-                      <p className="rs-vname"><Award size={13} aria-hidden="true" /> متوافق مع {MARKET_CONFIG[t.vision].vision.name[lang]}</p>
+                      <p className="rs-vname"><Award size={13} aria-hidden="true" /> {isAr ? 'متوافق مع' : 'Aligned with'} {MARKET_CONFIG[t.vision].vision.name[lang]}</p>
                       {t.vision2030Text && <p>{t.vision2030Text}</p>}
                     </div>
                   </section>
@@ -341,20 +344,20 @@ export default function AssessmentResultPage() {
                 <footer className="rs-foot">
                   {t.price != null && (
                     <span className="rs-price">
-                      <small>سعر واحد شامل</small>
+                      <small>{isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}</small>
                       <b>{formatCurrency(packagePrice(t.price, market), market, locale)}</b>
-                      <span className="rs-sample">نموذج</span>
+                      <span className="rs-sample">{isAr ? 'نموذج' : 'Sample'}</span>
                     </span>
                   )}
                   <span className="rs-actions">
                     {hasSlug ? (
                       <Link className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} href={href}>
-                        {featured ? 'ابدأ هذا المسار' : 'عرض المسار'} <ArrowLeft size={15} aria-hidden="true" />
+                        {featured ? (isAr ? 'ابدأ هذا المسار' : 'Start this path') : (isAr ? 'عرض المسار' : 'View path')} <Arrow size={15} aria-hidden="true" />
                       </Link>
                     ) : (
                       // No matching platform track yet: send the user to the full list instead of a dead button
                       <Link className={`btn ${featured ? 'btn-primary' : 'btn-ghost'} btn-sm`} href={`/${locale}/careers`}>
-                        تصفّح المسارات المتاحة <ArrowLeft size={15} aria-hidden="true" />
+                        {isAr ? 'تصفّح المسارات المتاحة' : 'Browse available paths'} <Arrow size={15} aria-hidden="true" />
                       </Link>
                     )}
                   </span>
@@ -366,27 +369,27 @@ export default function AssessmentResultPage() {
 
         {/* Next step */}
         <div className="rs-next" data-tour="result-next">
-          <p>خطوتك القادمة</p>
-          <h3>اختر مسارك وابدأ أول كورس</h3>
-          <Link href={`/${locale}/careers`}>تصفّح المسارات المهنية</Link>
+          <p>{isAr ? 'خطوتك القادمة' : 'Your next step'}</p>
+          <h3>{isAr ? 'اختر مسارك وابدأ أول كورس' : 'Choose your path and start your first course'}</h3>
+          <Link href={`/${locale}/careers`}>{isAr ? 'تصفّح المسارات المهنية' : 'Browse career paths'}</Link>
         </div>
 
         {/* Footer */}
         {lowHours && (
           <p className="rs-info">
             <Info size={15} aria-hidden="true" />
-            <span>مع أقل من {(data.weeklyHours as number).toLocaleString('ar-EG')} ساعات أسبوعيًا، نقترح دورة واحدة في كل مرة.</span>
+            <span>{isAr ? `مع أقل من ${(data.weeklyHours as number).toLocaleString(nf)} ساعات أسبوعيًا، نقترح دورة واحدة في كل مرة.` : `With under ${(data.weeklyHours as number).toLocaleString(nf)} hours a week, we suggest one course at a time.`}</span>
           </p>
         )}
         <p className="rs-fine">
-          تعرض الرواتب النطاق الشهري الإجمالي المعتاد في السوق الذي اخترته، بجميع مستويات الخبرة. يبدأ المنضمون الجدد عادةً قرب الحد الأدنى.
+          {isAr ? 'تعرض الرواتب النطاق الشهري الإجمالي المعتاد في السوق الذي اخترته، بجميع مستويات الخبرة. يبدأ المنضمون الجدد عادةً قرب الحد الأدنى.' : 'Salaries show the typical total monthly range in the market you chose, across all experience levels. New joiners usually start near the lower end.'}
         </p>
         <p className="rs-fine">
-          تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
+          {isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : 'Vision 2030 badges follow the market you chose at the top of the page. Alignment reflects the DeveWay reading of the stated national priorities, not an official endorsement.'}
         </p>
         <div className="rs-cta">
-          <button type="button" className="btn btn-ghost" onClick={retake} data-tour="result-retake"><RotateCcw size={16} aria-hidden="true" /> أعد التقييم</button>
-          <a className="btn btn-primary" href={`${LEARN_URL.replace(/[/]+$/, '')}/${locale}`}>افتح «تعلّمي» <ArrowLeft size={16} aria-hidden="true" /></a>
+          <button type="button" className="btn btn-ghost" onClick={retake} data-tour="result-retake"><RotateCcw size={16} aria-hidden="true" /> {isAr ? 'أعد التقييم' : 'Retake the assessment'}</button>
+          <a className="btn btn-primary" href={`${LEARN_URL.replace(/[/]+$/, '')}/${locale}`}>{isAr ? 'افتح «تعلّمي»' : 'Open "My Learning"'} <Arrow size={16} aria-hidden="true" /></a>
         </div>
       </div>
     </div>

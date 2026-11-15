@@ -66,12 +66,12 @@ interface QuizResult {
 }
 
 const PHASES = [
-  { id: 'profiling',   label: 'فهم المستخدم' },
-  { id: 'interests',   label: 'الاهتمامات المهنية' },
-  { id: 'skills',      label: 'المهارات والقدرات' },
-  { id: 'behavioral',  label: 'السلوك المهني' },
-  { id: 'motivation',  label: 'الدوافع وبيئة العمل' },
-  { id: 'readiness',   label: 'الجاهزية المهنية' },
+  { id: 'profiling',   label: 'فهم المستخدم', labelEn: 'Understanding you' },
+  { id: 'interests',   label: 'الاهتمامات المهنية', labelEn: 'Career interests' },
+  { id: 'skills',      label: 'المهارات والقدرات', labelEn: 'Skills and abilities' },
+  { id: 'behavioral',  label: 'السلوك المهني', labelEn: 'Professional behavior' },
+  { id: 'motivation',  label: 'الدوافع وبيئة العمل', labelEn: 'Motivation and work environment' },
+  { id: 'readiness',   label: 'الجاهزية المهنية', labelEn: 'Career readiness' },
 ]
 
 const ALL_QUESTIONS = [
@@ -683,13 +683,14 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 export function QuizResultCard({ result, answers, onRestart }: { result: QuizResult; answers: Record<string, string>; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const RC_COLORS = ['var(--brand)', 'var(--purple)', 'var(--lavender)']
   const { market, config } = useMarket()
   const currency = config.currency
   const lang = toLang(locale)
 
   // Real tracks from the admin API: jobs, courses, vision and package price come from here.
-  const { data: tracks = [] } = useTracks('ar')
+  const { data: tracks = [] } = useTracks(locale)
   const matchTrack = (c: QuizResult['topCareers'][number]): Track | undefined =>
     tracks.find((t) => t.slug === c.trackSlug) ??
     tracks.find((t) => t.slug === c.nameEn.toLowerCase().replace(/\s+/g, '-')) ??
@@ -697,8 +698,8 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
   const matched = result.topCareers.map(matchTrack)
   const details = useQueries({
     queries: matched.map((tk) => ({
-      queryKey: ['track', tk?.slug ?? 'none', 'ar'],
-      queryFn: () => fetchTrack(tk!.slug, 'ar'),
+      queryKey: ['track', tk?.slug ?? 'none', locale],
+      queryFn: () => fetchTrack(tk!.slug, locale),
       enabled: !!tk,
       staleTime: 60_000,
     })),
@@ -731,13 +732,13 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
   } as const
 
   return (
-    <div dir="rtl" className="dw-assess" style={{ overflowY: 'auto' }}>
+    <div dir={isAr ? 'rtl' : 'ltr'} className="dw-assess" style={{ overflowY: 'auto' }}>
       <style>{INTERVIEW_CSS}</style>
       <div className="wrap assess" style={{ maxWidth: '1240px' }}>
         <div className="a-top">
-          <span className="eyebrow">{SECTION_SVGS[4]} نتائج تقييمك جاهزة</span>
-          <h1>ترشيحات رشيد لك</h1>
-          <p className="lede">بناءً على إجاباتك. هذه اقتراحات تساعدك على القرار، وليست ضمانًا.</p>
+          <span className="eyebrow">{SECTION_SVGS[4]} {isAr ? 'نتائج تقييمك جاهزة' : 'Your assessment results are ready'}</span>
+          <h1>{isAr ? 'ترشيحات رشيد لك' : 'Recommendations from Rashid for you'}</h1>
+          <p className="lede">{isAr ? 'بناءً على إجاباتك. هذه اقتراحات تساعدك على القرار، وليست ضمانًا.' : 'Based on your answers. These suggestions help you decide; they are not a guarantee.'}</p>
         </div>
 
         <div className="r-intro r-intro-lg">
@@ -746,8 +747,8 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
             <RasheedAvatar size={52} />
           </span>
           <div className="r-bubble">
-            <b>رشيد</b> <span className="muted small">· مرشد DeveWay المهني بالذكاء الاصطناعي</span>
-            <p>هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.</p>
+            <b>{isAr ? 'رشيد' : 'Rashid'}</b> <span className="muted small">· {isAr ? 'مرشد DeveWay المهني بالذكاء الاصطناعي' : 'DeveWay AI career guide'}</span>
+            <p>{isAr ? 'هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.' : 'This is what I found. Every suggestion comes with my reasons, so you can decide what suits you.'}</p>
             <p>{result.summary}</p>
             {result.personalNote && <p className="pill" style={{ marginTop: 8 }}>{result.personalNote}</p>}
           </div>
@@ -776,7 +777,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                 <header className="rc-head">
                   <span className="rc-ic" style={{ background: RC_COLORS[i % RC_COLORS.length] }}>{SECTION_SVGS[5]}</span>
                   <div className="rc-title">
-                    <span className="rc-rank">{i === 0 ? <>{SECTION_SVGS[0]} الأنسب لك</> : `الخيار ${i + 1}`}</span>
+                    <span className="rc-rank">{i === 0 ? <>{SECTION_SVGS[0]} {isAr ? 'الأنسب لك' : 'Best match'}</> : (isAr ? `الخيار ${i + 1}` : `Option ${i + 1}`)}</span>
                     <h3>{tk?.name ?? career.name}</h3>
                     <p>{tk?.description ? tk.description : career.nameEn}</p>
                   </div>
@@ -801,13 +802,13 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                       </svg>
                       <b>{career.match}%</b>
                     </span>
-                    <small>توافق</small>
+                    <small>{isAr ? 'توافق' : 'Match'}</small>
                   </div>
                 </header>
 
                 <div className="rc-grid">
                   <section className="rc-sec rc-why">
-                    <h4>{SECTION_SVGS[5]} لماذا يناسبك</h4>
+                    <h4>{SECTION_SVGS[5]} {isAr ? 'لماذا يناسبك' : 'Why it suits you'}</h4>
                     <ul className="reasons">
                       <li>{CHECK_SVG}<span>{career.reason}</span></li>
                       {career.strengths?.map(s => (
@@ -818,7 +819,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
 
                   {jobs.length > 0 ? (
                     <section className="rc-sec">
-                      <h4>{SECTION_SVGS[2]} الوظائف ذات الصلة</h4>
+                      <h4>{SECTION_SVGS[2]} {isAr ? 'الوظائف ذات الصلة' : 'Related jobs'}</h4>
                       <ul className="jobs">
                         {jobs.map((j) => {
                           const sal = market === 'EG' ? j.salaryEG : j.salaryKSA
@@ -826,7 +827,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                           return (
                             <li key={j.title}>
                               <span className="j-main">
-                                <span className="j-name">{j.titleAr || j.title}</span>
+                                <span className="j-name">{(isAr ? j.titleAr : '') || j.title}</span>
                                 {j.desc && <span className="j-desc">{j.desc}</span>}
                                 {salary && <span className="j-sal"><b>{salary}</b><small>/ {config.salaryUnit[lang]}</small></span>}
                               </span>
@@ -837,20 +838,20 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                     </section>
                   ) : (
                     <section className="rc-sec">
-                      <h4>{SECTION_SVGS[2]} خطوتك القادمة</h4>
+                      <h4>{SECTION_SVGS[2]} {isAr ? 'خطوتك القادمة' : 'Your next step'}</h4>
                       <p className="rc-step">{career.nextStep}</p>
                     </section>
                   )}
 
                   {courses.length > 0 && (
                     <section className="rc-sec">
-                      <h4>{SECTION_SVGS[1]} الدورات المشمولة <span className="pill pill-muted">{courses.length}</span></h4>
+                      <h4>{SECTION_SVGS[1]} {isAr ? 'الدورات المشمولة' : 'Included courses'} <span className="pill pill-muted">{courses.length}</span></h4>
                       <ol className="rc-courses">
                         {courses.map((c, n) => (
                           <li key={`${c.order}-${c.title}`}>
                             <span className="c-n">{n + 1}</span>
                             <b>{c.title}</b>
-                            {c.weeks > 0 && <small>{c.weeks} أسبوع</small>}
+                            {c.weeks > 0 && <small>{c.weeks} {isAr ? 'أسبوع' : (c.weeks === 1 ? 'week' : 'weeks')}</small>}
                           </li>
                         ))}
                       </ol>
@@ -858,7 +859,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                   )}
 
                   <section className="rc-sec">
-                    <h4>{SECTION_SVGS[3]} المهارات التي ستبنيها</h4>
+                    <h4>{SECTION_SVGS[3]} {isAr ? 'المهارات التي ستبنيها' : 'Skills you will build'}</h4>
                     <div className="skills">{skills.map(s => <span key={s}>{s}</span>)}</div>
                   </section>
                 </div>
@@ -867,7 +868,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
                   <div className="rc-vision">
                     <span className="v-logo"><img src={VISION_LABEL[vision].logo} alt={VISION_LABEL[vision].name} /></span>
                     <div>
-                      <p className="v-name">متوافق مع {VISION_LABEL[vision].name}</p>
+                      <p className="v-name">{isAr ? 'متوافق مع' : 'Aligned with'} {VISION_LABEL[vision].name}</p>
                       {visionDesc && <p>{visionDesc}</p>}
                     </div>
                   </div>
@@ -875,18 +876,18 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
 
                 <footer className="rc-foot">
                   {pkg ? (
-                    <span className="rc-price"><small>سعر واحد شامل</small><b>{formatCurrency(market === 'EG' ? Math.round(pkg.price * config.salaryMultiplier) : pkg.price, market, locale)}</b></span>
+                    <span className="rc-price"><small>{isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}</small><b>{formatCurrency(market === 'EG' ? Math.round(pkg.price * config.salaryMultiplier) : pkg.price, market, locale)}</b></span>
                   ) : <span />}
                   <span className="rc-actions">
                     {tk && (
-                      <a className="btn btn-ghost btn-sm" href={`/${locale}/careers/${tk.slug}`}>عرض المسار</a>
+                      <a className="btn btn-ghost btn-sm" href={`/${locale}/careers/${tk.slug}`}>{isAr ? 'عرض المسار' : 'View path'}</a>
                     )}
                     <button
                       type="button"
                       className={`btn ${i === 0 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                       onClick={() => startPath(i)}
                     >
-                      ابدأ هذا المسار
+                      {isAr ? 'ابدأ هذا المسار' : 'Start this path'}
                       <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
                   </span>
@@ -898,19 +899,19 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
 
         {lowHours && (
           <p className="note info" style={{ marginTop: 20 }}>
-            <span>مع أقل من 5 ساعات أسبوعيًا، نقترح دورة واحدة في كل مرة.</span>
+            <span>{isAr ? 'مع أقل من 5 ساعات أسبوعيًا، نقترح دورة واحدة في كل مرة.' : 'With under 5 hours a week, we suggest one course at a time.'}</span>
           </p>
         )}
         <p className="muted small" style={{ textAlign: 'center', marginTop: 10 }}>
-          تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
+          {isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : 'Vision 2030 badges follow the market you chose at the top of the page. Alignment reflects the DeveWay reading of the stated national priorities, not an official endorsement.'}
         </p>
 
         <div className="rc-bottom">
           <button type="button" className="btn btn-primary" onClick={() => { window.location.href = `${LEARN_URL.replace(/[/]+$/, '')}/${locale}` }}>
-            افتح «تعلّمي»
+            {isAr ? 'افتح «تعلّمي»' : 'Open "My Learning"'}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onRestart}>
-            أعد التقييم
+            {isAr ? 'أعد التقييم' : 'Retake the assessment'}
           </button>
         </div>
       </div>
@@ -990,7 +991,30 @@ const PHASE_HINTS: Record<string, string> = {
 const QUESTION_HINTS: Record<string, string> = {
   p5q2: 'تخيّل يوم عمل مثالي ليك',
 }
-const hintFor = (q: { id: string; phase: string }) => QUESTION_HINTS[q.id] ?? PHASE_HINTS[q.phase] ?? RASHEED_IDLE
+const OPT_LETTERS_EN = ['A', 'B', 'C', 'D', 'E']
+const RASHEED_REACTIONS_EN: string[][] = [
+  ['Great! Every stage has its value.', 'Nice, that shows where you are starting from.', 'Good, the picture is getting clearer.'],
+  ['Your interests are your compass.', 'Great, passion matters a lot.', 'I understand your inclinations better!'],
+  ['Your skills set you apart.', 'Your learning style makes a big difference.', 'Great, this helps me guide you precisely.'],
+  ['Your personality shapes your career path.', 'I understand you better!', 'This matters a lot.'],
+  ['Your motivations define your ideal environment.', 'Great, this reflects your priorities.', 'Heading to a path that suits you.'],
+  ['Your goals are clear, and that is great.', 'Available time is an important factor.', 'Close to the result!'],
+]
+const RASHEED_IDLE_EN = 'Pick the answer closest to you; there is no wrong answer.'
+const PHASE_HINTS_EN: Record<string, string> = {
+  profiling:  'Answer honestly about your current situation; there is no right or wrong answer',
+  interests:  'Think about the activities you naturally enjoy',
+  skills:     'Your current level does not matter; think about what you lean towards',
+  behavioral: 'Imagine yourself in the situation and choose what you would really do',
+  motivation: 'Think about what keeps you going even when it is hard',
+  readiness:  'Choose realistically; it helps us build a plan that fits your time',
+}
+const QUESTION_HINTS_EN: Record<string, string> = {
+  p5q2: 'Imagine your ideal workday',
+}
+const hintFor = (q: { id: string; phase: string }, isAr = true) => isAr
+  ? (QUESTION_HINTS[q.id] ?? PHASE_HINTS[q.phase] ?? RASHEED_IDLE)
+  : (QUESTION_HINTS_EN[q.id] ?? PHASE_HINTS_EN[q.phase] ?? RASHEED_IDLE_EN)
 
 function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: boolean }) {
   const [reaction,        setReaction]        = useState('')
@@ -1005,6 +1029,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const [analysisError,   setAnalysisError]   = useState(false)
   const router = useRouter()
   const locale = useLocale()
+  const isAr = locale === 'ar'
 
   const { data: platformTracks = [] } = useTracks('ar')
   const currentQuestion  = ALL_QUESTIONS[currentIndex]
@@ -1056,7 +1081,8 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
 
     if (sameAsBefore) return
 
-    const pool = RASHEED_REACTIONS[currentPhaseIdx] ?? RASHEED_REACTIONS[0]
+    const reactionSet = isAr ? RASHEED_REACTIONS : RASHEED_REACTIONS_EN
+    const pool = reactionSet[currentPhaseIdx] ?? reactionSet[0]
     setReaction(pool[Math.floor(Math.random() * pool.length)])
     setIsReacting(true)
     setTimeout(() => setIsReacting(false), 1000)
@@ -1188,13 +1214,13 @@ ${trackList}
 
   if (analysisError && !isAnalyzing) {
     return (
-      <div dir="rtl" className="dw-assess">
+      <div dir={isAr ? 'rtl' : 'ltr'} className="dw-assess">
         <div className="dw-as-center">
           <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
-          <h2>تعذّر إكمال التحليل</h2>
-          <p>إجاباتك محفوظة. اضغط لإعادة المحاولة.</p>
+          <h2>{isAr ? 'تعذّر إكمال التحليل' : 'We could not complete the analysis'}</h2>
+          <p>{isAr ? 'إجاباتك محفوظة. اضغط لإعادة المحاولة.' : 'Your answers are saved. Press to try again.'}</p>
           <button type="button" className="btn btn-primary" onClick={() => { setAnalysisError(false); void handleNext() }}>
-            إعادة المحاولة
+            {isAr ? 'إعادة المحاولة' : 'Try again'}
           </button>
         </div>
       </div>
@@ -1202,14 +1228,16 @@ ${trackList}
   }
 
   if (isAnalyzing) {
-    const msgs = ['جارٍ تحليل إجاباتك...', 'نحدد نقاط قوّتك...', 'نرتّب المسارات المناسبة لك...', 'نكمل التقرير المهني...']
+    const msgs = isAr
+      ? ['جارٍ تحليل إجاباتك...', 'نحدد نقاط قوّتك...', 'نرتّب المسارات المناسبة لك...', 'نكمل التقرير المهني...']
+      : ['Analyzing your answers...', 'Identifying your strengths...', 'Ranking the best paths for you...', 'Completing your career report...']
     return (
-      <div dir="rtl" role="status" aria-live="polite" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--ink)', padding: 24 }}>
+      <div dir={isAr ? 'rtl' : 'ltr'} role="status" aria-live="polite" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--ink)', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
           <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
           <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)', margin: '16px auto 0' }} aria-hidden="true" />
           <h2 style={{ margin: '14px 0 6px', fontSize: 20, fontWeight: 800 }}>{msgs[analysisStep]}</h2>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>رشيد يدرس الأنماط ويجهز تقريرك المخصص</p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>{isAr ? 'رشيد يدرس الأنماط ويجهز تقريرك المخصص' : 'Rashid is studying the patterns and preparing your personalized report'}</p>
           <div style={{ width: 240, height: 6, margin: '18px auto 0', borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}>
             <div className="dw-ov-fill" />
           </div>
@@ -1220,16 +1248,16 @@ ${trackList}
   }
 
   const progressPercent = Math.round(((currentIndex + (selectedOption ? 1 : 0)) / ALL_QUESTIONS.length) * 100)
-  const phaseLabel = PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel
-  const bubbleText = insight && !isLoadingInsight ? insight : (reaction || hintFor(currentQuestion))
+  const phaseLabel = (isAr ? PHASES[currentPhaseIdx]?.label : PHASES[currentPhaseIdx]?.labelEn) ?? currentQuestion.phaseLabel
+  const bubbleText = insight && !isLoadingInsight ? insight : (reaction || hintFor(currentQuestion, isAr))
 
   return (
-    <div dir="rtl" className={`dw-assess${embedded ? ' embedded' : ''}`}>
+    <div dir={isAr ? 'rtl' : 'ltr'} className={`dw-assess${embedded ? ' embedded' : ''}`}>
       <div className="wrap assess" style={{ maxWidth: '1240px' }}>
         {!embedded && (
           <button onClick={onEnd} className="dw-as-exit">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-            خروج
+            {isAr ? 'خروج' : 'Exit'}
           </button>
         )}
 
@@ -1238,7 +1266,7 @@ ${trackList}
           {PHASES.map((ph, i) => (
             <li key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''}>
               <span className="sb-ic">{i < currentPhaseIdx ? CHECK_SVG : SECTION_SVGS[i]}</span>
-              <span className="sb-l">{ph.label}</span>
+              <span className="sb-l">{isAr ? ph.label : ph.labelEn}</span>
             </li>
           ))}
         </ol>
@@ -1247,9 +1275,9 @@ ${trackList}
           {/* Rasheed panel */}
           <aside className={`r-panel${isReacting ? ' reacting' : ''}`} aria-live="polite">
             <div className="r-say">
-              <b>رشيد</b><span className="muted small"> · مرشدك المهني</span>
+              <b>{isAr ? 'رشيد' : 'Rashid'}</b><span className="muted small"> · {isAr ? 'مرشدك المهني' : 'your career guide'}</span>
               {isLoadingInsight ? (
-                <div className="dots3" aria-label="رشيد يكتب">
+                <div className="dots3" aria-label={isAr ? 'رشيد يكتب' : 'Rashid is typing'}>
                   <i /><i /><i />
                 </div>
               ) : (
@@ -1281,7 +1309,7 @@ ${trackList}
               <div className="r-ask">
                 <RasheedAvatar size={34} />
                 <span>
-                  <b>يسأل رشيد</b> · <span className="muted">{phaseLabel}</span>
+                  <b>{isAr ? 'يسأل رشيد' : 'Rashid asks'}</b> · <span className="muted">{phaseLabel}</span>
                 </span>
               </div>
               <h2>{currentQuestion.question}</h2>
@@ -1298,7 +1326,7 @@ ${trackList}
                       onClick={() => handleSelect(opt)}
                       className={`opt${isSelected ? ' on' : ''}`}
                     >
-                      <span className="o-ic">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
+                      <span className="o-ic">{(isAr ? OPT_LETTERS : OPT_LETTERS_EN)[i] ?? String.fromCharCode(65 + i)}</span>
                       <span>{opt}</span>
                       <span className="o-check" aria-hidden="true">{CHECK_SVG}</span>
                     </button>
@@ -1310,7 +1338,7 @@ ${trackList}
                 {currentIndex > 0 ? (
                   <button type="button" onClick={handlePrev} className="btn btn-secondary">
                     <svg className="icon go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    السابق
+                    {isAr ? 'السابق' : 'Previous'}
                   </button>
                 ) : <span aria-hidden="true" />}
                 <button
@@ -1320,7 +1348,7 @@ ${trackList}
                   className="btn btn-primary"
                   data-tour="assess-next"
                 >
-                  {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
+                  {currentIndex === ALL_QUESTIONS.length - 1 ? (isAr ? 'عرض نتيجتي' : 'See my result') : (isAr ? 'التالي' : 'Next')}
                   <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </button>
               </div>
