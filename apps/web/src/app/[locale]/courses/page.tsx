@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation'
+
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   const isAr = params.locale === 'ar'
   return {
@@ -16,6 +18,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 }
 
 export default function Page() {
+  notFound()
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Courses</h1>
