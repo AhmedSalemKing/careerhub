@@ -128,7 +128,6 @@ export default function EnrollPaymentPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[
             t('securePaymentLabel'),
-            t('moneyBack'),
             t('instantAccessLabel'),
           ].map((f, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
