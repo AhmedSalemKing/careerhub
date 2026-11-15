@@ -10,8 +10,9 @@ import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
   Briefcase, Package, ChevronRight, Clock, Star, DollarSign,
   Flame, Zap, Sparkles, ArrowLeft, BookOpen, Globe, Megaphone, Rocket, Brain,
-  X, CheckCircle2
+  X, CheckCircle2, HelpCircle
 } from 'lucide-react'
+import { CareersTour } from '@/components/CareersTour'
 import { CAREER_PATHS } from '@/lib/career-paths'
 import { useTracks, trackSalarySpan, type Track } from '@/lib/tracks'
 import { VisionBadges } from '@/app/components/VisionBadge'
@@ -81,6 +82,7 @@ export default function CareersPage() {
   
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [tourOpen, setTourOpen] = useState(false)
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set())
   const [detailPath, setDetailPath] = useState<any>(null)
   const [detailTab, setDetailTab] = useState<'tasks'|'skills'|'qualifications'|'progression'>('tasks')
@@ -221,7 +223,7 @@ export default function CareersPage() {
     <div className="careers-page" style={{ minHeight:'100vh', direction:isAr?'rtl':'ltr' }}>
       
       {/* Hero Section */}
-      <div style={{
+      <div data-tour="careers-hero" style={{
         background: isDark
           ? 'linear-gradient(180deg, rgba(81,32,200,0.12) 0%, transparent 100%)'
           : 'linear-gradient(180deg, rgba(81,32,200,0.05) 0%, transparent 100%)',
@@ -274,8 +276,8 @@ export default function CareersPage() {
 
         
         {/* Filters: search + category chips */}
-        <div className="filters">
-          <label className="search">
+        <div className="filters" data-tour="careers-filters">
+          <label className="search" data-tour="careers-search">
             <Search size={16} aria-hidden="true" />
             <input
               type="text"
@@ -316,6 +318,7 @@ export default function CareersPage() {
               <article
                 key={path.id}
                 className="tcard rv"
+                {...(idx === 0 ? { 'data-tour': 'careers-card' } : {})}
                 role="link"
                 tabIndex={0}
                 onClick={() => router.push(`/${locale}/careers/${path.id}`)}
@@ -392,7 +395,7 @@ export default function CareersPage() {
         </div>
 
         {/* Bottom CTA */}
-        <div style={{
+        <div data-tour="careers-ai-cta" style={{
           marginTop:60, padding:'48px 32px', borderRadius:24,
           background: isDark
             ? 'linear-gradient(135deg, rgba(81,32,200,0.15), rgba(43,191,163,0.08))'
@@ -701,6 +704,17 @@ export default function CareersPage() {
         onConfirm={confirmAddPath}
         onCancel={() => setConfirmPath(null)}
       />
+
+      <CareersTour locale={locale} isOpen={tourOpen} onClose={() => setTourOpen(false)} />
+      <button
+        type="button"
+        onClick={() => setTourOpen(true)}
+        className="tour-trigger-btn"
+        aria-label={isAr ? 'جولة تعريفية' : 'Take a Tour'}
+      >
+        <HelpCircle size={15} />
+        <span>{isAr ? 'جولة تعريفية' : 'Tour'}</span>
+      </button>
     </div>
   )
 }
