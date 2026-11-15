@@ -86,7 +86,7 @@ export function HowSection() {
   const t = useTranslations('homeV3')
   const steps = [1, 2, 3, 4] as const
   return (
-    <section id="how" className="sec">
+    <section id="how" className="sec" data-tour="how-it-works">
       <div className="wrap">
         <SecHead eyebrow={t('how.eyebrow')} title={t('how.title')} center />
         <div className="steps">
@@ -119,7 +119,7 @@ export function TracksSection() {
   const locale = useLocale()
   const { data: apiTracks = [] } = useTracks(locale)
   return (
-    <section id="tracks" className="sec sec-alt">
+    <section id="tracks" className="sec sec-alt" data-tour="tracks">
       <div className="wrap">
         <SecHead eyebrow={t('careers.eyebrow')} title={t('careers.title')} lede={t('careers.lede')} />
         {apiTracks.length > 0 ? (
@@ -240,7 +240,7 @@ export function MentorsSection() {
   const t = useTranslations('homeV3')
   const locale = useLocale()
   return (
-    <section className="sec">
+    <section className="sec" data-tour="mentors">
       <div className="wrap split">
         <div>
           <SecHead eyebrow={t('mentors.eyebrow')} title={t('mentors.title')} lede={t('mentors.lede')} />
@@ -292,7 +292,7 @@ export function CtaBandSection() {
   useEffect(() => setMounted(true), [])
   const href = mounted && token ? `/${locale}/dashboard/assessment` : `/${locale}/register`
   return (
-    <section className="sec" style={{ paddingTop: 0 }}>
+    <section className="sec" style={{ paddingTop: 0 }} data-tour="cta-final">
       <div className="wrap">
         <div className="cta-band rv">
           <h2>{t('cta.title')}</h2>

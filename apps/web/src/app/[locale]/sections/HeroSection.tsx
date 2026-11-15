@@ -27,7 +27,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
     : `/${locale}/register`
 
   return (
-    <section className="dw-hero">
+    <section className="dw-hero" data-tour="hero">
       <div className="dw-hero-bg" aria-hidden="true">
         <span className="dots" />
         <span className="dw-blob dw-blob-1" />
@@ -45,7 +45,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
 
           <p className="dw-hero-sub">{heroSubtitle}</p>
 
-          <div className="dw-hero-actions">
+          <div className="dw-hero-actions" data-tour="assessment">
             <Link href={ctaHref} className="btn btn-primary">
               {ctaPrimary}
               <ArrowRight className="go flip" size={18} aria-hidden="true" />

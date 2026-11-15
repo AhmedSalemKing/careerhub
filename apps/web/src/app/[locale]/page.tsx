@@ -12,6 +12,7 @@ import {
   CtaBandSection,
 } from './sections/HomeV3Sections'
 import { HashScrollHandler } from '../components/HashScrollHandler'
+import { HomeTourLauncher } from '@/components/HomeTour'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 
@@ -116,6 +117,7 @@ export default async function HomePage() {
         <RegionsSection />
         <CtaBandSection />
       </main>
+      <HomeTourLauncher />
     </>
   )
 }
