@@ -982,13 +982,13 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
   const scheduledAt = session?.scheduledAt ? new Date(session.scheduledAt) : null
   const endedAtRaw = session?.endedAt ? new Date(session.endedAt) : null
   const liveDate = scheduledAt
-    ? scheduledAt.toLocaleDateString('ar-EG-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? scheduledAt.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' })
     : '—'
   const liveTime = scheduledAt
-    ? scheduledAt.toLocaleTimeString('ar-EG-u-ca-gregory', { hour: '2-digit', minute: '2-digit', hour12: true })
+    ? scheduledAt.toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', { hour: '2-digit', minute: '2-digit', hour12: true })
     : '—'
   const endedAt = endedAtRaw
-    ? endedAtRaw.toLocaleString('ar-EG-u-ca-gregory', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true })
+    ? endedAtRaw.toLocaleString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true })
     : null
 
   const duration = Number(session?.durationMinutes ?? 0)

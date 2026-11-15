@@ -315,7 +315,7 @@ export default function AssessmentResultPage() {
                     <ol className="rs-courses">
                       {t.courses.map((c, n) => (
                         <li key={`${n}-${c.name}`}>
-                          <span className="rs-n">{(n + 1).toLocaleString('ar-EG')}</span>
+                          <span className="rs-n">{(n + 1).toLocaleString(nf)}</span>
                           <b>{c.name}</b>
                           {c.weeks > 0 && <small>{c.weeks.toLocaleString(nf)} {isAr ? 'أسبوع' : (c.weeks === 1 ? 'week' : 'weeks')}</small>}
                         </li>

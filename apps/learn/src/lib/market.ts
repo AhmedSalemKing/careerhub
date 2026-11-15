@@ -1,3 +1,4 @@
+import { uiIsAr, localizeDisplay } from './uiLocale'
 /**
  * DeveWay Currency System
  *
@@ -85,16 +86,16 @@ export function formatCoursePrice(course: {
   price?: number | null
 }): string {
   // 1. Use API-provided formatted price if available (preferred)
-  if (course.priceDisplay) return course.priceDisplay
+  if (course.priceDisplay) return localizeDisplay(course.priceDisplay)
 
   // 2. Zero price = free
-  if (!course.price || course.price === 0) return 'مجاني'
+  if (!course.price || course.price === 0) return uiIsAr() ? 'مجاني' : 'Free'
 
   // 3. Fallback: raw price in SAR (should rarely happen if API is correct)
-  return `${Number(course.price).toLocaleString('ar-SA', {
+  return `${Number(course.price).toLocaleString(uiIsAr() ? 'ar-SA' : 'en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })} ر.س`
+  })} ${uiIsAr() ? 'ر.س' : 'SAR'}`
 }
 
 /**
@@ -109,7 +110,7 @@ export function formatMoney(
   amount: number | string | null | undefined,
   displayValue?: string | null
 ): string {
-  if (displayValue) return displayValue
+  if (displayValue) return localizeDisplay(displayValue)
   const num = Number(amount) || 0
   return `${num.toLocaleString('ar-SA', {
     minimumFractionDigits: 2,

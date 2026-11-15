@@ -1,3 +1,5 @@
+import { uiIsAr, uiTag } from './uiLocale'
+
 /**
  * Safe date formatter - never returns "Invalid Date".
  * Uses Africa/Cairo timezone for all displays.
@@ -24,7 +26,7 @@ export function formatDate(raw: unknown, options?: Intl.DateTimeFormatOptions): 
   const d = toDate(raw)
   if (!d) return '—'
 
-  return d.toLocaleDateString('ar-EG', {
+  return d.toLocaleDateString(uiTag(), {
     timeZone: 'Africa/Cairo',
     year: 'numeric',
     month: 'short',
@@ -37,7 +39,7 @@ export function formatDateTime(raw: unknown): string {
   const d = toDate(raw)
   if (!d) return '—'
 
-  return d.toLocaleString('ar-EG', {
+  return d.toLocaleString(uiTag(), {
     timeZone: 'Africa/Cairo',
     year: 'numeric',
     month: 'short',
@@ -58,6 +60,14 @@ export function formatRelative(raw: unknown): string {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
+  if (!uiIsAr()) {
+    if (minutes < 1) return 'Just now'
+    if (minutes < 60) return `${minutes} min ago`
+    if (hours < 24) return `${hours} h ago`
+    if (days === 1) return 'Yesterday'
+    if (days < 30) return `${days} d ago`
+    return formatDate(raw)
+  }
   if (minutes < 1) return 'الآن'
   if (minutes < 60) return `منذ ${minutes} دقيقة`
   if (hours < 24) return `منذ ${hours} ساعة`
@@ -70,7 +80,7 @@ export function formatTime(raw: unknown): string {
   const d = toDate(raw)
   if (!d) return '—'
 
-  return d.toLocaleTimeString('ar-EG', {
+  return d.toLocaleTimeString(uiTag(), {
     timeZone: 'Africa/Cairo',
     hour: '2-digit',
     minute: '2-digit',

@@ -18,9 +18,12 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
   useEffect(() => setMounted(true), [])
 
   const cfg = siteConfig || {}
-  const heroTitle = cfg['hero.title'] || t('title')
-  const heroSubtitle = cfg['hero.subtitle'] || t('subtitle')
-  const ctaPrimary = cfg['hero.ctaText'] || t('cta_primary')
+  // The admin CMS stores the hero copy in one (Arabic) language, so it overrides the translations on /ar only.
+  // For other locales an optional `<key>.en` entry is used, otherwise the translated defaults.
+  const isAr = locale === 'ar'
+  const heroTitle = (isAr ? cfg['hero.title'] : cfg['hero.title.en']) || t('title')
+  const heroSubtitle = (isAr ? cfg['hero.subtitle'] : cfg['hero.subtitle.en']) || t('subtitle')
+  const ctaPrimary = (isAr ? cfg['hero.ctaText'] : cfg['hero.ctaText.en']) || t('cta_primary')
 
   const ctaHref = mounted && user
     ? `/${locale}/dashboard/assessment`

@@ -15,6 +15,7 @@ import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
 import { useAuthStore } from '../../../stores/authStore'
 import { formatCoursePrice } from '../../../lib/market'
+import { localizeDisplay } from '../../../lib/uiLocale'
 import { instructorDisplayName } from '../../../lib/instructor'
 import { LearnCoursesTourLauncher } from '@/components/LearnCoursesTour'
 import { SmartImage } from '@/components/SmartImage'
@@ -302,7 +303,7 @@ export default function CoursesPage() {
 
         {/* Category pills */}
         <div data-tour="courses-category-filter" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
-          {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
+          {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: ({ programming: 'Programming & Technology', design: 'Design', marketing: 'Digital Marketing', business: 'Business Management' } as Record<string, string>)[c.id] ?? c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
               className={`dw2-pill${selectedMainCat === cat.id ? ' active dw2-pill--active' : ''}`}>
@@ -854,7 +855,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         {/* Price + CTA */}
         <div className="dw2-cc-foot">
           <div className="dw2-cc-price">
-            {course.priceDisplay ?? (price > 0
+            {(course.priceDisplay ? localizeDisplay(course.priceDisplay) : null) ?? (price > 0
               ? `${price} ${tl('sar')}`
               : course.offlinePaymentType === 'on_site'
                 ? tl('payOnSite')

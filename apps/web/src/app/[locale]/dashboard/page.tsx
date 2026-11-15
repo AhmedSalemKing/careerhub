@@ -382,7 +382,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
     const d = new Date(iso)
     return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
   }
-  const fmtDayTab = (iso: string) => new Date(iso).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'short' })
+  const fmtDayTab = (iso: string) => new Date(iso).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long', day: 'numeric', month: 'short' })
   const days: { key: string; label: string; slots: any[] }[] = []
   for (const s of slots as any[]) {
     const k = dayKeyOf(s.time)
@@ -391,7 +391,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
     g.slots.push(s)
   }
   const activeDay = days.find((x) => x.key === dayKey) ?? days[0]
-  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })
   const canConfirm = !!mentor && !!slot && !booking
 
   return (

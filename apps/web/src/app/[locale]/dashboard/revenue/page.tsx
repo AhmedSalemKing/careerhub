@@ -45,7 +45,7 @@ function ConsultantRevenue() {
     `${x.user?.profile?.firstName ?? ''} ${x.user?.profile?.lastName ?? ''}`.trim() || (isAr ? 'عميل' : 'Client')
   const fmtDate = (v: any) => {
     const d = v ? new Date(v) : null
-    return d && !isNaN(d.getTime()) ? d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'
+    return d && !isNaN(d.getTime()) ? d.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'
   }
   const kpis = [
     { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatMoney(total), color: 'var(--brand)', Icon: DollarSign },

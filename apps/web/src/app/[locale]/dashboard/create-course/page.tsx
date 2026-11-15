@@ -229,11 +229,11 @@ function SearchableSelect({
   )
 }
 
-const formatArabicDate = (dateStr: string) => {
+const formatArabicDate = (dateStr: string, isAr = true) => {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+  return d.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 export default function CreateCoursePage() {
@@ -977,7 +977,7 @@ export default function CreateCoursePage() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--ink-2)', marginBottom: 4 }}>{isAr ? 'تاريخ البث' : 'Live Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.liveDate)} {form.liveTime}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.liveDate, isAr)} {form.liveTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -1042,7 +1042,7 @@ export default function CreateCoursePage() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--ink-2)', marginBottom: 4 }}>{isAr ? 'التاريخ' : 'Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.offlineDate)} {form.offlineTime}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--ink)' }}>{formatArabicDate(form.offlineDate, isAr)} {form.offlineTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>

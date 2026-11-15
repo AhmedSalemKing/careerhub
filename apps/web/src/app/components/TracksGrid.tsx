@@ -22,6 +22,8 @@ export function TracksGrid({ tracks }: { tracks: Track[] }) {
             return Array.isArray(c) ? c.length : (t.courseCount ?? 0)
           } catch { return t.courseCount ?? 0 }
         })()
+        // TODO: the tracks API returns the Arabic job title for lang=en when no English title is stored (e.g. network-hacking);
+        // add the English job title in the admin tracks editor, no code change is needed here.
         const roles = (t.jobs ?? []).slice(0, 3).map((j) => j.title).filter(Boolean)
         const href = `/${locale}/careers/${t.slug}`
         return (

@@ -1,4 +1,5 @@
 'use client'
+import { localizeDisplay } from '../../../../lib/uiLocale'
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -28,7 +29,7 @@ export default function EnrollPaymentPage() {
   const fallbackDisplay = market === 'EGP'
     ? (amount * SAR_TO_EGP).toLocaleString(isAr ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (isAr ? ' ج.م' : ' EGP')
     : amount.toLocaleString(isAr ? 'ar-SA' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (isAr ? ' ر.س' : ' SAR')
-  const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : fallbackDisplay
+  const amountDisplay = rawDisplay ? localizeDisplay(decodeURIComponent(rawDisplay)) : fallbackDisplay
   const title = searchParams.get('title') || ''
   const courseType = searchParams.get('type') || 'recorded'
   // a track package bundles several courses; courses and packages share this page

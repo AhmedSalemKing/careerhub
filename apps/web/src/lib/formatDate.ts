@@ -1,3 +1,4 @@
+import { uiIsAr, uiTag } from './uiLocale'
 import { browserTimeZone } from './time'
 
 export function safeDate(value: unknown): Date | null {
@@ -55,6 +56,14 @@ export function timeAgoAr(value: unknown): string {
   const mins  = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days  = Math.floor(diff / 86400000)
+  if (!uiIsAr()) {
+    if (secs  < 30)  return 'Just now'
+    if (mins  < 60)  return `${mins} min ago`
+    if (hours < 24)  return `${hours} h ago`
+    if (days  === 1) return 'Yesterday'
+    if (days  < 7)   return `${days} d ago`
+    return formatDateAr(d)
+  }
   if (secs  < 30)  return 'الآن'
   if (mins  < 60)  return `منذ ${mins} دقيقة`
   if (hours < 24)  return `منذ ${hours} ساعة`
@@ -66,7 +75,7 @@ export function timeAgoAr(value: unknown): string {
 export function formatDateAr(value: unknown): string {
   const d = safeDate(value)
   if (!d) return ''
-  return d.toLocaleDateString('ar-EG', {
+  return d.toLocaleDateString(uiTag(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -77,7 +86,7 @@ export function formatDateAr(value: unknown): string {
 export function formatDateTimeAr(value: unknown): string {
   const d = safeDate(value)
   if (!d) return ''
-  return d.toLocaleString('ar-EG', {
+  return d.toLocaleString(uiTag(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
