@@ -539,7 +539,7 @@ export default function RegisterPage() {
             className="font-extrabold text-xl tracking-tight"
             style={{
               fontFamily: "'28DaysLater', sans-serif",
-              color: '#5120c8',
+              color: 'var(--foreground)',
               textShadow: '0 0 20px rgba(81,32,200,0.3)',
             }}
           >

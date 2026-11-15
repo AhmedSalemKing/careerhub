@@ -46,7 +46,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <a href={main} className="inline-flex items-center gap-2.5 group">
-              <Image src="/logo-icon.png" alt="DeveWay" width={32} height={32} loading="lazy" />
+              <Image src="/logo-icon.png" alt="" width={32} height={32} loading="lazy" />
               <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 20, color: 'var(--foreground)', letterSpacing: '-0.02em' }}>
                 DeveWay
               </span>

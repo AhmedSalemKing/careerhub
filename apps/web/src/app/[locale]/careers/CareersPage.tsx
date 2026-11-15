@@ -319,10 +319,7 @@ export default function CareersPage() {
                 key={path.id}
                 className="tcard rv"
                 {...(idx === 0 ? { 'data-tour': 'careers-card' } : {})}
-                role="link"
-                tabIndex={0}
                 onClick={() => router.push(`/${locale}/careers/${path.id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) router.push(`/${locale}/careers/${path.id}`) }}
                 style={{ cursor: "pointer", ...({ ["--d" as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties) }}
               >
                 <div className="t-media">
@@ -348,7 +345,7 @@ export default function CareersPage() {
                 </div>
 
                 <div className="t-body">
-                  <h3>{isAr ? path.titleAr : path.title}</h3>
+                  <h3><Link href={`/${locale}/careers/${path.id}`} onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{isAr ? path.titleAr : path.title}</Link></h3>
                   <p className="t-desc">{isAr ? path.descriptionAr : path.descriptionEn}</p>
 
                   {roles.length > 0 && (

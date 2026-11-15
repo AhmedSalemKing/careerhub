@@ -152,7 +152,7 @@ export function CoachingSection() {
               <div className="dw-feat" key={title}>
                 <span className="dw-feat-ic"><Icon size={22} aria-hidden="true" /></span>
                 <div>
-                  <h4>{title}</h4>
+                  <h4 aria-level={3}>{title}</h4>
                   <p>{desc}</p>
                 </div>
               </div>

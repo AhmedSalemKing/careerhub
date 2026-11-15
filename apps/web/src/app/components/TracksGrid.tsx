@@ -2,6 +2,7 @@
 
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Rocket, Star } from 'lucide-react'
 import type { Track } from '../../lib/tracks'
 import { VisionBadges } from './VisionBadge'
@@ -27,10 +28,7 @@ export function TracksGrid({ tracks }: { tracks: Track[] }) {
           <article
             key={t.id}
             className="tcard rv"
-            role="link"
-            tabIndex={0}
             onClick={() => router.push(href)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) router.push(href) }}
             style={{ cursor: 'pointer', ...({ ['--d' as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties) }}
           >
             <div className="t-media">
@@ -47,7 +45,7 @@ export function TracksGrid({ tracks }: { tracks: Track[] }) {
               </span>
             </div>
             <div className="t-body">
-              <h3>{t.name}</h3>
+              <h3><Link href={href} onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{t.name}</Link></h3>
               {t.description && <p className="t-desc">{t.description}</p>}
               {roles.length > 0 && <div className="roles">{roles.map((r, i) => <span key={`${r}-${i}`}>{r}</span>)}</div>}
               {t.vision2030?.length > 0 && <VisionBadges vision={t.vision2030} locale={locale} compact />}

@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
       type="button"
       className="icon-btn lang-btn"
       onClick={switchLocale}
-      aria-label="Language"
+      aria-label={`Language: ${label}`}
       data-testid="language-switcher"
     >
       <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

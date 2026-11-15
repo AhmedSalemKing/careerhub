@@ -65,7 +65,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4>{c.learn}</h4>
+            <h4 aria-level={3}>{c.learn}</h4>
             <ul>
               <li><Link className="footer-link" href={`${base}/careers`}>{c.tracks}</Link></li>
               <li><Link className="footer-link" href={`${base}/register`}>{c.assessment}</Link></li>
@@ -76,7 +76,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4>{c.partners}</h4>
+            <h4 aria-level={3}>{c.partners}</h4>
             <ul>
               <li><Link className="footer-link" href={`${base}/coaching`}>{c.mentors}</Link></li>
               <li><Link className="footer-link" href={`${base}/coaching#mentor-portal`}>{c.mentorPortal}</Link></li>
@@ -84,7 +84,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4>{c.company}</h4>
+            <h4 aria-level={3}>{c.company}</h4>
             <ul>
               <li><Link className="footer-link" href={`${base}#how`}>{c.how}</Link></li>
               <li><Link className="footer-link" href={`${base}/contact`}>{c.contact}</Link></li>

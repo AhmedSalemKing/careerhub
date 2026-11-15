@@ -85,6 +85,8 @@ export function CareersTour({ locale = 'ar', isOpen, onClose, autoStart = true }
       smoothScroll: true,
       allowClose: true,
       allowKeyboardControl: true,
+      // Driver.js adds aria-haspopup/aria-expanded to the highlighted element, which is invalid on <section>
+      onHighlighted: (el) => { el?.removeAttribute('aria-haspopup'); el?.removeAttribute('aria-expanded') },
       showButtons: ['next', 'previous', 'close'],
       overlayOpacity: 0.65,
       stagePadding: 10,

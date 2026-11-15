@@ -317,7 +317,7 @@ export function Navbar() {
       <header className={`header dw-header${scrolled ? ' scrolled' : ''}`}>
         <div className="wrap">
           <Link href={`/${locale}`} className="logo" aria-label="DeveWay">
-            <img className="on-light" src="/logo-wordmark-light.webp" alt="DeveWay" />
+            <img className="on-light" src="/logo-wordmark-light.webp" alt="" />
             <img className="on-dark" src="/logo-wordmark-dark.webp" alt="" />
           </Link>
 

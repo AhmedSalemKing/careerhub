@@ -418,10 +418,7 @@ export default function HomePage() {
                 <article
                   key={p.id}
                   className="tcard"
-                  role="link"
-                  tabIndex={0}
                   onClick={() => { window.location.href = `${MAIN_SITE_URL}/${locale}/careers/${p.slug}` }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) { window.location.href = `${MAIN_SITE_URL}/${locale}/careers/${p.slug}` } }}
                 >
                   <div className="t-media">
                     {p.coverImage && (
@@ -437,7 +434,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <div className="t-body">
-                    <h3>{p.title}</h3>
+                    <h3><a href={`${MAIN_SITE_URL}/${locale}/careers/${p.slug}`} onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{p.title}</a></h3>
                     {p.description && <p className="t-desc">{p.description}</p>}
                     {p.roles.length > 0 && (
                       <div className="roles">
