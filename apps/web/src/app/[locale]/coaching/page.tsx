@@ -12,6 +12,7 @@ import { MentorDetailsModal } from '@/components/coaching/MentorDetailsModal'
 import { useMarket } from '../../contexts/MarketContext'
 import { formatCurrency } from '../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../lib/marketConfig'
+import { CoachingTourLauncher } from '@/components/CoachingTour'
 
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
 
@@ -355,9 +356,10 @@ export default function CoachingPage() {
   return (
     <main className="dw-home cch" dir="rtl" lang="ar">
       <style>{CSS}</style>
+      <CoachingTourLauncher />
 
       {/* B) INTRO */}
-      <section className="cch-band cch-intro-band">
+      <section className="cch-band cch-intro-band" data-tour="coaching-hero">
         <div className="cch-bg" aria-hidden="true"><span className="cch-dots" /><span className="cch-b1" /><span className="cch-b2" /></div>
         <div className="cch-in cch-intro-grid">
           <div className="cch-copy">
@@ -366,7 +368,7 @@ export default function CoachingPage() {
             <p className="cch-lede">شارك خبرتك مع المتعلّمين في اللحظات التي يصنع فيها الإرشاد الفرق الأكبر.</p>
             <p className="cch-pill"><Sparkles size={16} aria-hidden="true" />مرونة كاملة، أجر عن كل جلسة، بالعربية أو الإنجليزية.</p>
 
-            <div className="cch-actions">
+            <div className="cch-actions" data-tour="coaching-hero-btns">
               <a className="cch-cta primary" href="#mentor-apply" onClick={(e) => { e.preventDefault(); scrollTo('mentor-apply') }}>
                 قدّم كمرشد<ArrowLeft size={18} aria-hidden="true" />
               </a>
@@ -404,7 +406,7 @@ export default function CoachingPage() {
       <section className="cch-band alt">
         <div className="cch-in">
           <div className="cch-head"><span className="cch-eyebrow">كيف نعمل</span><h2>كيف يعمل الإرشاد مع DeveWay</h2></div>
-          <ol className="cch-steps">
+          <ol className="cch-steps" data-tour="coaching-how-it-works">
             {STEPS.map(({ Icon, t, d }, i) => (
               <li key={t} className="cch-step">
                 <span className="cch-step-ic"><Icon size={22} aria-hidden="true" /><span className="cch-step-n">{i + 1}</span></span>
@@ -433,9 +435,9 @@ export default function CoachingPage() {
           </div>
           <div>
             <div className="cch-head tight"><span className="cch-eyebrow">للمرشدين</span><h2>طرق الإرشاد</h2></div>
-            <div className="cch-feats">
-              {METHODS.map(({ Icon, t, d }) => (
-                <div key={t} className="cch-feat">
+            <div className="cch-feats" data-tour="coaching-types">
+              {METHODS.map(({ Icon, t, d }, mi) => (
+                <div key={t} className="cch-feat" {...(mi === 0 ? { 'data-tour': 'coaching-clinics' } : {})}>
                   <span className="cch-feat-ic"><Icon size={20} aria-hidden="true" /></span>
                   <div><h4>{t}</h4><p>{d}</p></div>
                 </div>
@@ -470,12 +472,12 @@ export default function CoachingPage() {
             </div>
           </div>
 
-          <div className="cch-lock rv" aria-disabled="true">
+          <div className="cch-lock rv" aria-disabled="true" data-tour="coaching-apply-form">
             <div className="cch-lock-head">
               <h2>طلب الانضمام كمرشد</h2>
               <span className="cch-lock-badge" aria-hidden="true"><Lock size={16} /></span>
             </div>
-            <ul className="cch-lock-grid">
+            <ul className="cch-lock-grid" data-tour="coaching-apply-fields">
               {LOCKED_FIELDS.map(({ Icon, label }) => (
                 <li key={label} className="cch-lock-chip">
                   <Icon size={15} aria-hidden="true" />
@@ -495,7 +497,7 @@ export default function CoachingPage() {
       <section className="cch-band" id="mentor-portal">
         <div className="cch-in">
           <div className="cch-head center"><span className="cch-eyebrow">للمرشدين</span><h2>المرشدون الحاليون</h2></div>
-          <div className="cch-center">
+          <div className="cch-center" data-tour="coaching-current-mentors">
             <button type="button" className="cch-cta ghost" onClick={toggleCoaches} aria-expanded={showCoaches}>
               {showCoaches ? 'إخفاء المرشدين' : 'عرض المرشدين الحاليين'}
             </button>

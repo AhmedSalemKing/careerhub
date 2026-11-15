@@ -30,10 +30,8 @@ import {
 	Radio,
 	FileText,
 	Clock,
-	Award,
 	ChevronLeft,
 	ChevronRight,
-	Settings,
 	Download,
 	Share2,
 	MessageSquare,
@@ -1297,43 +1295,6 @@ function MetaItem({
 							</div>
 						</div>
 
-						{/* Actions */}
-						<div className="flex items-center gap-2 shrink-0">
-							<button
-								className="p-2.5 rounded-xl transition-all duration-200"
-								style={{
-									color: textSecondary,
-									background: "transparent",
-									border: `1px solid transparent`,
-								}}
-								onMouseEnter={(e) => {
-									e.currentTarget.style.background = `${purple}10`;
-									e.currentTarget.style.borderColor = `${purple}20`;
-								}}
-								onMouseLeave={(e) => {
-									e.currentTarget.style.background = "transparent";
-									e.currentTarget.style.borderColor = "transparent";
-								}}>
-								<FileText className="h-5 w-5" />
-							</button>
-							<button
-								className="p-2.5 rounded-xl transition-all duration-200"
-								style={{
-									color: textSecondary,
-									background: "transparent",
-									border: `1px solid transparent`,
-								}}
-								onMouseEnter={(e) => {
-									e.currentTarget.style.background = `${purple}10`;
-									e.currentTarget.style.borderColor = `${purple}20`;
-								}}
-								onMouseLeave={(e) => {
-									e.currentTarget.style.background = "transparent";
-									e.currentTarget.style.borderColor = "transparent";
-								}}>
-								<Settings className="h-5 w-5" />
-							</button>
-						</div>
 					</div>
 				</div>
 			</header>
@@ -1351,7 +1312,7 @@ function MetaItem({
 						const strokeDashoffset =
 							circumference - (progressPercent / 100) * circumference;
 						return (
-							<div
+							<div data-tour="player-grades-link"
 								style={{
 									padding: 24,
 									borderRadius: 20,
@@ -1509,26 +1470,6 @@ function MetaItem({
 									</span>
 								</div>
 
-								{/* Grades link (preserved) */}
-								<a data-tour="player-grades"
-									href={`/${locale}/dashboard/grades`}
-									style={{
-										marginTop: 16,
-										padding: "8px 12px",
-										background: "var(--surface-2)",
-										borderRadius: 10,
-										display: "flex",
-										alignItems: "center",
-										gap: 8,
-										color: "var(--foreground)",
-										fontSize: "0.82rem",
-										fontWeight: 500,
-										fontFamily: "var(--font-medium)",
-										textDecoration: "none",
-									}}>
-									<Award size={14} style={{ color: "var(--primary)" }} />
-									{isAr ? "الدرجات" : "Grades"}
-								</a>
 							</div>
 						);
 					})()}

@@ -26,9 +26,18 @@ const STEPS: TourStepDef[] = [
   { target: 'player-sidebar-content', side: 'right',
     ar: { title: 'قائمة الدروس', description: 'كل دروس الكورس هنا — الدروس المكتملة عليها علامة صح. اضغط على أي درس للانتقال إليه مباشرة.' },
     en: { title: 'Lesson List', description: 'All course lessons are here — completed ones have a checkmark. Tap any lesson to jump to it directly.' } },
-  { target: 'player-grades', side: 'top',
-    ar: { title: 'رابط الدرجات', description: 'اضغط "الدرجات" لرؤية تفاصيل أدائك في الكورس.' },
-    en: { title: 'Grades Link', description: 'Tap "Grades" to see your detailed performance in the course.' } },
+  { target: 'player-quiz-btn', side: 'top',
+    ar: { title: 'اختبار الدرس', description: 'بعض الدروس عليها زرار "اختبار" — اضغطه لفتح اختبار الدرس واختبر فهمك لما شاهدته.' },
+    en: { title: 'Lesson Quiz', description: 'Some lessons have a "Quiz" button — tap it to open the lesson quiz and test your understanding.' } },
+  { target: 'player-quiz-info', side: 'top',
+    ar: { title: 'أنواع أسئلة الاختبار', description: 'الاختبارات فيها 3 أنواع أسئلة: اختيار من متعدد (بيتصحح تلقائي)، مقالي (بيراجعه المحاضر)، ورفع ملف (PDF أو Word — بيراجعه المحاضر).' },
+    en: { title: 'Quiz Question Types', description: 'Quizzes have 3 question types: Multiple choice (auto-graded), Essay (instructor reviews), and File upload (PDF or Word — instructor reviews).' } },
+  { target: 'player-quiz-attempts', side: 'top',
+    ar: { title: 'محاولات الاختبار', description: 'كل اختبار ليه عدد محدد من المحاولات — راجع العدد قبل ما تبدأ. أفضل درجة هي اللي بتتسجل في سجل درجاتك.' },
+    en: { title: 'Quiz Attempts', description: 'Each quiz has a limited number of attempts — check the count before starting. Your best score is what gets recorded in your grades.' } },
+  { target: 'player-grades-link', side: 'top',
+    ar: { title: 'سجل الدرجات', description: 'درجاتك في كل اختبارات هذا الكورس موجودة في صفحة الدرجات — اضغط "الدرجات" في لوحة التحكم للوصول إليها.' },
+    en: { title: 'Grades Record', description: 'Your scores for all quizzes in this course are in the grades page — tap "Grades" in the dashboard to access it.' } },
 ]
 
 export function CoursePlayerTour({ locale, isOpen, onClose }: { locale?: string; isOpen?: boolean; onClose?: () => void }) {

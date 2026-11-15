@@ -8,6 +8,7 @@ import { ArrowRight, Clock, Send, CheckCircle2, AlertCircle, FileText, Upload } 
 import { get, post } from '@/lib/api'
 import { getUploadErrorMessage } from '@/lib/upload-error'
 import StatusBadge from '@/components/quizzes/StatusBadge'
+import { QuizTourLauncher } from '@/components/QuizTour'
 
 const inputCls = 'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
 
@@ -425,15 +426,16 @@ export default function TakeQuizPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
-      <div className="sticky top-0 z-10 border-b border-[color:var(--border)] bg-[color:var(--surface)]">
+      <QuizTourLauncher />
+      <div data-tour="quiz-header" className="sticky top-0 z-10 border-b border-[color:var(--border)] bg-[color:var(--surface)]">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <div>
+          <div data-tour="quiz-title">
             <h1 className="font-bold font-madinet text-foreground">{quizInfo?.titleAr || quizInfo?.title}</h1>
             <p className="text-xs text-[color:var(--muted)]">{questions.length} سؤال</p>
           </div>
           <div className="flex items-center gap-3">
             {autoSaving && <span className="text-xs text-[color:var(--muted)]">جارٍ الحفظ...</span>}
-            <div className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2">
+            <div data-tour="quiz-timer" className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2">
               <Clock className="h-4 w-4" style={{ color: getTimerColor(timeLeft) }} />
               <span className="text-sm font-bold" style={{ color: getTimerColor(timeLeft) }}>
                 {formatTime(timeLeft)}
@@ -461,7 +463,7 @@ export default function TakeQuizPage() {
 
             return (
               <div key={q.id} id={`q-${q.id}`} className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2" data-tour="quiz-question-number">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
                   <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
                     {TYPE_LABEL[q.type] ?? q.type}
@@ -486,7 +488,7 @@ export default function TakeQuizPage() {
                 )}
 
                 {isMcq && (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 space-y-2" data-tour="quiz-mcq">
                     {isMultiple && (
                       <p className="mb-2 text-sm text-yellow-600">
                         (يمكن اختيار أكثر من إجابة صحيحة)
@@ -539,7 +541,7 @@ export default function TakeQuizPage() {
                 )}
 
                 {q.type === 'SHORT_ANSWER' && (
-                  <textarea
+                  <textarea data-tour="quiz-essay"
                     className={`${inputCls} mt-3 min-h-[90px] resize-y`}
                     value={ans?.textAnswer ?? ''}
                     onChange={(e) => setText(q.id, e.target.value)}
@@ -548,7 +550,7 @@ export default function TakeQuizPage() {
                 )}
 
                 {q.type === 'FILE_UPLOAD' && (
-                  <div className="mt-3 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/60 p-4 text-sm">
+                  <div data-tour="quiz-file-upload" className="mt-3 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/60 p-4 text-sm">
                     {ans?.fileUrl ? (
                       <div className="flex items-center justify-between gap-3">
                         <span className="flex min-w-0 items-center gap-2 text-foreground">
@@ -603,6 +605,7 @@ export default function TakeQuizPage() {
             <button
               type="button"
               onClick={() => handleSubmit(false)}
+              data-tour="quiz-submit"
               disabled={submitting}
               className="flex items-center gap-2 rounded-[10px] bg-[#10b981] px-5 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-all duration-150"
             >

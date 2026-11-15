@@ -144,7 +144,7 @@ export default function QuizEntryCard({
 
   return (
     <div
-      className="mb-6 rounded-2xl p-5 border"
+      className="mb-6 rounded-2xl p-5 border" data-tour="player-quiz-info"
       style={{
         background: 'color-mix(in srgb, var(--card), transparent 5%)',
         borderColor: 'var(--border)',
@@ -158,7 +158,7 @@ export default function QuizEntryCard({
           </div>
           <div className="min-w-0">
             <h3 className="font-bold text-foreground truncate">{quiz.titleAr || quiz.title}</h3>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--muted)]">
+            <div data-tour="player-quiz-attempts" className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--muted)]">
               <span className="flex items-center gap-1">
                 <FileQuestion className="h-3.5 w-3.5" />
                 {quiz._count.questions} سؤال
@@ -190,6 +190,7 @@ export default function QuizEntryCard({
           <button
             type="button"
             onClick={disabled ? undefined : onClick}
+            data-tour="player-quiz-btn"
             disabled={disabled}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-opacity duration-150"
             style={{ ...btnStyle, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.7 : 1 }}

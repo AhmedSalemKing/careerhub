@@ -7,6 +7,7 @@ import { CheckCircle2, XCircle, Download, RotateCcw, Target, BarChart3, Trending
 import { get } from '@/lib/api'
 import { downloadFile, getDownloadFilename, getFilePreviewUrl, isPdfFile } from '@/lib/file-download'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
+import { QuizResultTourLauncher } from '@/components/QuizResultTour'
 
 const TYPE_LABEL: Record<string, string> = {
   MCQ: 'اختيار من متعدد',
@@ -157,17 +158,18 @@ export default function QuizResultPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
+      <QuizResultTourLauncher />
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center">
+        <div data-tour="result-header" className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center">
           <h1 className="text-xl font-bold font-madinet text-foreground">{attempt.quiz.titleAr || attempt.quiz.title}</h1>
-          <div className="mt-4 flex justify-center">
+          <div data-tour="result-score" className="mt-4 flex justify-center">
             <ScoreCircle percentage={attempt.scores.percentage} passed={attempt.status === 'GRADED' ? attempt.scores.passed : null} size={100} />
           </div>
           {attempt.status === 'SUBMITTED' && (
-            <p className="mt-4 text-sm text-[#5120c8]">بانتظار التصحيح اليدوي من المعلم</p>
+            <p data-tour="result-status" className="mt-4 text-sm text-[#5120c8]">بانتظار التصحيح اليدوي من المعلم</p>
           )}
           {attempt.status === 'GRADED' && (
-            <p className={`mt-4 text-sm font-semibold ${attempt.scores.passed ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+            <p data-tour="result-status" className={`mt-4 text-sm font-semibold ${attempt.scores.passed ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
               {attempt.scores.passed ? 'تم اجتياز الاختبار' : 'لم يتم اجتياز الاختبار'}
             </p>
           )}
@@ -183,7 +185,7 @@ export default function QuizResultPage() {
               }}
             >
               <p style={{ color: '#EF4444', fontWeight: 700, marginBottom: '6px' }}>لم تجتز الاختبار</p>
-              <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '14px' }}>
+              <p data-tour="result-attempts" style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '14px' }}>
                 {attempt.attemptsRemaining === null
                   ? `محاولاتك المتبقية: غير محدودة (${attempt.attemptCount} محاولة حتى الآن)`
                   : attempt.attemptsRemaining > 0
@@ -192,7 +194,7 @@ export default function QuizResultPage() {
               </p>
               {attempt.canRetake ? (
                 <a
-                  href={`/${locale}/learn/${courseId}/quiz/${quizId}`}
+                  href={`/${locale}/learn/${courseId}/quiz/${quizId}`} data-tour="result-retake"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -373,7 +375,7 @@ export default function QuizResultPage() {
           </div>
         )}
 
-        <div className="mt-6 space-y-5">
+        <div data-tour="result-answers" className="mt-6 space-y-5">
           {attempt.questions.map((q: any, index: number) => {
             const answer = q.answer
             const isMcq = q.type === 'MCQ'

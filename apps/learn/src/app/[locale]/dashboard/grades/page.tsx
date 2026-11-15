@@ -9,6 +9,7 @@ import Link from 'next/link'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import toast from 'react-hot-toast'
+import { GradesTourLauncher } from '@/components/GradesTour'
 
 interface AttemptRow {
   id: string
@@ -104,7 +105,8 @@ export default function GradesPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
-      <div className="border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <GradesTourLauncher />
+      <div data-tour="grades-header" className="border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <h1 className="flex items-center gap-3 text-3xl font-bold font-madinet">
             <GraduationCap className="h-8 w-8" style={{ color: '#5120c8' }} />
@@ -121,6 +123,7 @@ export default function GradesPage() {
           {statCards.map((s) => (
             <div
               key={s.key}
+              data-tour={({ total: 'grades-summary-total', passed: 'grades-summary-pass', failed: 'grades-summary-fail', pending: 'grades-summary-review', avg: 'grades-summary-avg' } as Record<string, string>)[s.key]}
               className="rounded-[14px] border p-4"
               style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
             >
@@ -133,7 +136,7 @@ export default function GradesPage() {
         </div>
 
         {courses.length > 1 && (
-          <div className="mt-6 flex items-center gap-2">
+          <div data-tour="grades-course-filter" className="mt-6 flex items-center gap-2">
             <Filter className="h-4 w-4 text-[color:var(--muted)]" />
             <select
               className="rounded-[10px] border px-3 py-2 text-sm"
@@ -207,6 +210,7 @@ function QuizGradeRow({ quiz, locale, isAr }: { quiz: GradedQuiz; locale: string
 
   return (
     <div
+      data-tour="grades-quiz-row"
       className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border p-4"
       style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
     >
@@ -222,7 +226,7 @@ function QuizGradeRow({ quiz, locale, isAr }: { quiz: GradedQuiz; locale: string
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate font-bold">{quiz.quizTitle}</h3>
-            {quiz.lastAttempt && <StatusBadge status={quiz.lastAttempt.status} />}
+            {quiz.lastAttempt && <span data-tour="grades-status-badge" style={{ display: 'inline-flex' }}><StatusBadge status={quiz.lastAttempt.status} /></span>}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
             {quiz.lessonTitle && <span>{quiz.lessonTitle}</span>}
@@ -237,9 +241,9 @@ function QuizGradeRow({ quiz, locale, isAr }: { quiz: GradedQuiz; locale: string
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div data-tour="grades-quiz-actions" className="flex items-center gap-3">
         {graded && quiz.bestAttempt && (
-          <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: quiz.bestAttempt.passed ? '#10b981' : '#ef4444' }}>
+          <span data-tour="grades-quiz-score" className="flex items-center gap-1 text-xs font-semibold" style={{ color: quiz.bestAttempt.passed ? '#10b981' : '#ef4444' }}>
             {quiz.bestAttempt.passed ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
             {isAr ? 'أفضل نتيجة' : 'Best'}: {Math.round(quiz.bestAttempt.percentage)}%
           </span>

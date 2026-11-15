@@ -6,14 +6,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   BookOpen, Package as PackageIcon, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
-  CheckCircle, Award, Bookmark, CreditCard, Settings,
+  CheckCircle, Award, GraduationCap, Bookmark, CreditCard, Settings,
   TrendingUp, DollarSign, BarChart2, Plus, Bell, CalendarClock, Clock, CheckCircle2,
 } from 'lucide-react'
 import { get, post } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { fetchTrack } from '../../../lib/tracks'
 import { getMediaUrl } from '../../../lib/media'
-import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
+import { learnCoursesLink, learnCourseLink, learnUrlWithToken } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
 import { CHARACTERS } from '../../components/characters'
 import { DashboardShell } from '../../components/DashboardShell'
@@ -1229,6 +1229,21 @@ function StudentOverview() {
               </Link>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="dw2-dash-row2">
+        <div className="dw-card dw2-card" data-tour="dashboard-grades">
+          <div className="dw-card-h">
+            <GraduationCap size={16} aria-hidden="true" />
+            <h3>درجاتي</h3>
+          </div>
+          <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+            نتائجك في كل الاختبارات
+          </p>
+          <a href={learnUrlWithToken(`/${locale}/dashboard/grades`)} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+            عرض درجاتي
+          </a>
         </div>
       </div>
 
