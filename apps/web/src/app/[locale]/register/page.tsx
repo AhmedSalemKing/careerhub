@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId, isValidElement, cloneElement } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -46,15 +46,26 @@ function Field({
   children: React.ReactNode
   mutedColor: string
 }) {
+  const fieldId = useId()
+  const isControl =
+    isValidElement(children) &&
+    (children.type === 'input' || children.type === 'textarea' || children.type === 'select')
+  const control = isControl
+    ? cloneElement(children as React.ReactElement<any>, {
+        id: (children as React.ReactElement<any>).props.id ?? fieldId,
+        'aria-label': (children as React.ReactElement<any>).props['aria-label'] ?? label,
+      })
+    : children
   return (
     <div>
       <label
+        htmlFor={isControl ? (children as React.ReactElement<any>).props.id ?? fieldId : undefined}
         className="block text-sm font-medium mb-1.5 transition-colors duration-300"
         style={{ color: mutedColor }}
       >
         {label}
       </label>
-      {children}
+      {control}
       {error && (
         <p className="text-xs mt-1.5" style={{ color: '#ef4444' }}>
           {error}

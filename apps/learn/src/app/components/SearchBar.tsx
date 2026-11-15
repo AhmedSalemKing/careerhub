@@ -179,7 +179,7 @@ export function SearchBar() {
             />
 
             {query && (
-              <button onClick={clear} style={{
+              <button onClick={clear} aria-label="مسح البحث" style={{
                 background: 'none', border: 'none',
                 cursor: 'pointer', padding: 2,
                 color: 'rgba(255,255,255,0.3)',

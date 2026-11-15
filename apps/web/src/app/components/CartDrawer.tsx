@@ -99,6 +99,7 @@ export function CartIcon() {
               </h2>
               <button
                 onClick={() => setOpen(false)}
+                aria-label="إغلاق"
                 className="rounded-xl p-2 hover:bg-[color:var(--surface-2)] transition"
               >
                 <X className="h-5 w-5" />
@@ -147,6 +148,7 @@ export function CartIcon() {
                       </div>
                       <button
                         onClick={() => removeItem.mutate(item.courseId)}
+                        aria-label="إزالة من السلة"
                         className="shrink-0 rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 transition"
                       >
                         <Trash2 className="h-4 w-4" />
