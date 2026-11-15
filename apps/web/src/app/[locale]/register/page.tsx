@@ -580,7 +580,7 @@ export default function RegisterPage() {
                 )}
               </div>
               <input
-                type="file" accept="image/*" id="avatar-upload-reg" style={{ display: 'none' }}
+                type="file" accept="image/*" id="avatar-upload-reg" aria-label="Upload profile picture" style={{ display: 'none' }}
                 onChange={e => {
                   const file = e.target.files?.[0]
                   if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) }
@@ -895,6 +895,7 @@ export default function RegisterPage() {
                       </span>
                       <input
                         id="cv-file-input"
+                        aria-label="Upload CV"
                         type="file"
                         accept=".pdf,.doc,.docx"
                         style={{ display: 'none' }}
