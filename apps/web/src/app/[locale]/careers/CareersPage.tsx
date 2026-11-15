@@ -149,7 +149,7 @@ export default function CareersPage() {
     } catch(e) {}
     
     showNotice(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
-    setTimeout(() => router.push(`/${locale}/dashboard/career-path`), 800)
+    setTimeout(() => router.push(`/${locale}/dashboard`), 800)
   }, [confirmPath, apiUrl, locale, isAr, router, showNotice])
   
   // Tracks managed in the admin panel come first; the built-in catalogue fills in the rest.

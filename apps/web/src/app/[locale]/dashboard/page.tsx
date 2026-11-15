@@ -556,7 +556,7 @@ function StudentOverview() {
     retry: 1, staleTime: 30000,
   })
 
-  // Career paths: same endpoints as /dashboard/career-path
+  // Career paths: same endpoints as the removed career-path page
   const { data: allPaths = [] } = useQuery({
     queryKey: ['dash-career-paths'],
     queryFn: async () => {
@@ -1006,7 +1006,7 @@ function StudentOverview() {
           })() : (
             <div className="dw-empty-state">
               <p>لم تختر مساراً مهنياً بعد</p>
-              <Link href={`/${locale}/dashboard/career-path`} className="dw-btn dw-btn-primary dw-btn-sm">
+              <Link href={`/${locale}/careers`} className="dw-btn dw-btn-primary dw-btn-sm">
                 اختر مسارك →
               </Link>
             </div>
@@ -1123,7 +1123,7 @@ function StudentOverview() {
           {rasheedResult?.topCareers?.length ? (
             <div className="dw-clist" style={{ marginTop: 0 }}>
               {rasheedResult.topCareers.slice(0, 3).map((c, k) => (
-                <Link key={k} href={`/${locale}/dashboard/career-path`} className="dw-crow">
+                <Link key={k} href={`/${locale}/careers`} className="dw-crow">
                   <span className="dw-dot">{k + 1}</span>
                   <span className="dw-crow-info">
                     <h4>{isAr ? c.name : (c.nameEn || c.name)}</h4>

@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
-import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useMarket } from '../contexts/MarketContext'
 import { get } from '../../lib/api'
@@ -523,16 +523,6 @@ export function Navbar() {
               <MarketSwitcher inMenu />
               <LanguageSwitcher />
               <ThemeToggle />
-              {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/ai-chat`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
-                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: 'var(--brand)', fontFamily: NAV_FONT }}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  AI
-                </Link>
-              )}
               <NotificationBell />
             </div>
 

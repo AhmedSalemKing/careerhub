@@ -207,7 +207,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         {/* Actions */}
         <div className="interview-actions" style={{ display: 'flex', gap: 10 }}>
           <button
-            onClick={() => router.push(`/${locale}/dashboard/career-path`)}
+            onClick={() => router.push(`/${locale}/dashboard`)}
             style={{ flex: 1, padding: '13px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}
           >
             ابدأ مسارك الآن
@@ -722,7 +722,7 @@ export function QuizResultCard({ result, answers, onRestart }: { result: QuizRes
         score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
       }))
     } catch {}
-    router.push(`/${locale}/dashboard/career-path`)
+    router.push(`/${locale}/dashboard`)
   }
 
   const VISION_LABEL = {
