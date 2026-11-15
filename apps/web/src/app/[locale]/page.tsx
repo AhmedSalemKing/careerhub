@@ -19,6 +19,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/ap
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const isAr = locale === 'ar'
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deveway-teal.vercel.app').replace(/\/+$/, '')
   return {
     title: isAr
       ? 'DeveWay | منصة التعليم والتطوير المهني العربية'
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       ? 'منصة تعليمية عربية متكاملة. كورسات احترافية، كوتشينج مهني، مسارات وظيفية، وشهادات معتمدة. ابدأ رحلتك التعليمية اليوم.'
       : 'An integrated Arabic educational platform. Professional courses, career coaching, job paths, and verified certificates. Start your learning journey today.',
     alternates: {
-      canonical: `https://www.deveways.com/${locale}`,
+      canonical: `${siteUrl}/${locale}`,
       languages: {
         'ar': 'https://www.deveways.com/ar',
         'en': 'https://www.deveways.com/en',
