@@ -72,13 +72,13 @@ export default function CertificatesPage() {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: '0 0 4px', color: 'var(--ink)' }}>
             {isAr ? 'شهاداتي' : 'My Certificates'}
           </h1>
-          <p style={{ color: 'var(--ink-3)', fontSize: '0.88rem', margin: 0 }}>
+          <p  data-tour="certs-count"style={{ color: 'var(--ink-3)', fontSize: '0.88rem', margin: 0 }}>
             {isAr
               ? `${certificates.length} شهادة مكتسبة`
               : `${certificates.length} certificates earned`}
           </p>
         </div>
-        <a href={`/${locale}/dashboard/my-courses`}
+        <a href={`/${locale}/dashboard/my-courses`} data-tour="certs-my-courses-link"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             padding: '9px 18px', borderRadius: '10px',
@@ -248,7 +248,7 @@ export default function CertificatesPage() {
                       <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
                     </svg>
                   </div>
-                  <p style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 500,
+                  <p  data-tour="certs-cert-type"style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 500,
                     letterSpacing: '0.1em', margin: 0 }}>
                     {isAr ? 'شهادة إتمام' : 'CERTIFICATE OF COMPLETION'}
                   </p>
@@ -286,7 +286,7 @@ export default function CertificatesPage() {
 
                 {/* Verification ID */}
                 {(cert.verificationCode || cert.serialNumber) && (
-                  <div style={{
+                  <div data-tour="certs-cert-id" style={{
                     background: 'var(--card-bg)',
                     border: '1px solid var(--line)',
                     borderRadius: '8px',
@@ -330,7 +330,7 @@ export default function CertificatesPage() {
                     </a>
                   )}
                   {cert.certificateUrl && (
-                    <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
+                    <a data-tour="certs-view-btn" href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
                       style={{
                         padding: '9px 14px', borderRadius: '9px',
                         background: 'var(--card-bg)',

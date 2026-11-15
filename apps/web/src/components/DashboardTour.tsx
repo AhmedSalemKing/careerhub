@@ -2,27 +2,45 @@
 
 import { PageTour, PageTourLauncher, type TourStepDef } from './tour/PageTour'
 
-const TOUR_KEY = 'deveway_dashboard_tour_v1'
+const TOUR_KEY = 'deveway_dashboard_tour_v2'
 
 const STEPS: TourStepDef[] = [
   { target: 'dashboard-welcome', side: 'bottom',
-    ar: { title: 'مرحباً في لوحة التحكم', description: 'هنا تتابع كل شيء — مساراتك وكورساتك وجلساتك وشهاداتك في مكان واحد.' },
-    en: { title: 'Your Dashboard', description: 'Track everything here — your paths, courses, sessions and certificates in one place.' } },
+    ar: { title: 'لوحة التحكم', description: 'مرحباً بك! هنا مركز متابعة رحلتك التعليمية — مساراتك وكورساتك وجلساتك وشهاداتك كلها في مكان واحد.' },
+    en: { title: 'Your Dashboard', description: 'Welcome! This is your learning journey hub — your paths, courses, sessions, and certificates all in one place.' } },
+  { target: 'dashboard-my-courses-link', side: 'bottom',
+    ar: { title: 'رابط كورساتي', description: 'اضغط "كورساتي" للوصول السريع لكل الكورسات اللي اشتركت فيها.' },
+    en: { title: 'My Courses Link', description: 'Tap "My Courses" for quick access to all your enrolled courses.' } },
   { target: 'dashboard-track', side: 'bottom',
-    ar: { title: 'مسارك المهني', description: 'يعرض المسار الحالي ونسبة إنجازك — اضغط "تابع" للمتابعة من حيث توقفت.' },
-    en: { title: 'Your Career Track', description: 'Shows your current track and progress — tap "Continue" to pick up where you left off.' } },
+    ar: { title: 'مسارك المهني', description: 'يعرض المسار الحالي، الكورسات المكتملة من الإجمالي، ونسبة الإنجاز. اضغط "تابع" للمتابعة أو "فتح المسار المهني" لتغييره.' },
+    en: { title: 'Your Career Track', description: 'Shows current track, completed vs total courses, and progress percentage. Tap "Continue" to resume or "Open Career Path" to change.' } },
+  { target: 'dashboard-track-title', side: 'bottom',
+    ar: { title: 'اسم المسار والوظائف', description: 'اسم المسار المهني والوظائف اللي بتأهلك ليها — مثلاً "اختراق الشبكات" يؤهلك لـ مهندس شبكات ومهندس أمن شبكات.' },
+    en: { title: 'Track Name & Careers', description: 'The career track name and jobs it qualifies you for — e.g. "Network Penetration" leads to Network Engineer and Security Engineer.' } },
   { target: 'dashboard-courses', side: 'top',
-    ar: { title: 'الكورسات المشتركة', description: 'كل الكورسات اللي اشتركت فيها — اضغط على أي كورس لتبدأ أو تكمل.' },
-    en: { title: 'Enrolled Courses', description: 'All courses you have joined — tap any course to start or continue.' } },
+    ar: { title: 'الكورسات المشتركة', description: 'كل الكورسات اللي اشتركت فيها. اضغط على أي كورس للدخول ومتابعة التعلم من حيث توقفت.' },
+    en: { title: 'Enrolled Courses', description: 'All courses you have joined. Tap any course to enter and continue learning from where you left off.' } },
+  { target: 'dashboard-courses-show-more', side: 'top',
+    ar: { title: 'عرض المزيد من الكورسات', description: 'لو عندك أكثر من 3 كورسات بيظهر زرار "عرض المزيد" — اضغطه لتشوف باقي الكورسات.' },
+    en: { title: 'Show More Courses', description: 'If you have more than 3 courses, a "Show More" button appears — tap it to see the rest.' } },
+  { target: 'dashboard-track-courses', side: 'top',
+    ar: { title: 'كورسات المسار', description: 'الكورسات المحددة في مسارك المهني مرتبة بالترتيب الصح — ابدأ بالأول وكمّل بالترتيب لأفضل نتيجة.' },
+    en: { title: 'Track Courses', description: 'The courses in your career track in the right order — start from the first and go in order for best results.' } },
   { target: 'dashboard-sessions', side: 'top',
-    ar: { title: 'جلسات المرشدين', description: 'جلساتك القادمة والمنتظرة — احجز جلسة جديدة مع أي مرشد.' },
-    en: { title: 'Mentor Sessions', description: 'Upcoming and pending sessions — book a new session with any mentor.' } },
+    ar: { title: 'جلسات المرشدين', description: 'ملخص جلساتك: القادمة، اللي بتنتظر موافقة، والمكتملة. اضغط "احجز جلسة جديدة" لحجز مع مرشد.' },
+    en: { title: 'Mentor Sessions', description: 'Session summary: upcoming, awaiting approval, and completed. Tap "Book New Session" to book with a mentor.' } },
   { target: 'dashboard-rashid', side: 'top',
-    ar: { title: 'ترشيحات رشيد', description: 'مرشدنا الذكي يحلل مهاراتك ويقترح المسار الأنسب — جربه مجاناً.' },
-    en: { title: 'Rashid Recommendations', description: 'Our AI advisor analyzes your skills and suggests the best path — try it free.' } },
+    ar: { title: 'ترشيحات رشيد', description: 'رشيد مرشدنا بالذكاء الاصطناعي — اضغط "ابدأ التقييم المجاني" عشان يحلل مهاراتك ويرشحلك أفضل مسار مهني.' },
+    en: { title: 'Rashid Recommendations', description: 'Rashid is our AI career advisor — tap "Start Free Assessment" so he can analyze your skills and recommend the best path.' } },
   { target: 'dashboard-milestones', side: 'top',
-    ar: { title: 'محطاتك', description: 'تتبع رحلتك من إنشاء الحساب حتى الحصول على شهادتك الأولى.' },
-    en: { title: 'Your Milestones', description: 'Track your journey from creating your account to earning your first certificate.' } },
+    ar: { title: 'محطاتك في الرحلة', description: '5 محطات تتابع تقدمك: إنشاء الحساب، اختيار المسار، إكمال أول كورس، حجز جلسة، والحصول على شهادتك.' },
+    en: { title: 'Your Journey Milestones', description: '5 milestones track your progress: account creation, path selection, first course, booking a session, and earning your certificate.' } },
+  { target: 'dashboard-payments', side: 'top',
+    ar: { title: 'سجل المدفوعات', description: 'آخر عملية دفع وإجمالي المدفوعات. اضغط "عرض سجل المدفوعات" لتفاصيل كل العمليات.' },
+    en: { title: 'Payment History', description: 'Latest payment and total paid. Tap "View Payment History" for details of all transactions.' } },
+  { target: 'dashboard-certificates', side: 'top',
+    ar: { title: 'شهاداتي', description: 'عدد الشهادات اللي حصلت عليها. اضغط "عرض شهاداتي" لتحميل أو عرض أي شهادة.' },
+    en: { title: 'My Certificates', description: 'Number of certificates you have earned. Tap "View My Certificates" to download or view any certificate.' } },
 ]
 
 export function DashboardTour({ locale, isOpen, onClose }: { locale?: string; isOpen?: boolean; onClose?: () => void }) {

@@ -71,6 +71,7 @@ import {
 	formatLiveDateTimeShort,
 } from "../../../../lib/live";
 import Hls from "hls.js";
+import { CoursePlayerTourLauncher } from "@/components/CoursePlayerTour";
 
 // Small inline meta row item used by the course info card and lesson details.
 function MetaItem({
@@ -1194,6 +1195,7 @@ function MetaItem({
 
 	return (
 		<>
+		<CoursePlayerTourLauncher />
 		<div
 			className="flex min-h-screen flex-col"
 			dir="rtl"
@@ -1217,7 +1219,7 @@ function MetaItem({
 				<div className="px-4 lg:px-8 py-4">
 					<div className="flex items-center gap-6 max-w-screen-2xl mx-auto">
 						{/* Back button */}
-						<a
+						<a data-tour="player-back"
 							href={`/${locale}/courses/${courseId}`}
 							className="hidden sm:flex items-center gap-2 text-sm font-medium shrink-0 transition-all duration-200 hover:opacity-70 group px-3 py-2 rounded-xl hover:bg-black/5"
 							style={{ color: textSecondary }}>
@@ -1285,7 +1287,7 @@ function MetaItem({
 							</div>
 
 							{/* Progress Bar */}
-							<div
+							<div data-tour="player-progress-bar"
 								className="relative h-2 rounded-full overflow-hidden"
 								style={{ background: borderColor }}>
 								<div
@@ -1340,7 +1342,7 @@ function MetaItem({
 			<div className="learn-layout">
 				{/* RIGHT SIDEBAR: progress card + course content tree */}
 				<aside
-					className="learn-col-right"
+					className="learn-col-right" data-tour="player-sidebar-content"
 					style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 					{/* Progress card */}
 					{(() => {
@@ -1508,7 +1510,7 @@ function MetaItem({
 								</div>
 
 								{/* Grades link (preserved) */}
-								<a
+								<a data-tour="player-grades"
 									href={`/${locale}/dashboard/grades`}
 									style={{
 										marginTop: 16,
@@ -1889,7 +1891,7 @@ function MetaItem({
 
 								{/* TAB BUTTONS — underline style, only when 2+ content types */}
 								{tabCount > 1 && (
-									<div style={{
+									<div data-tour="player-tabs" style={{
 										display: 'flex', gap: 4, flexWrap: 'wrap',
 										borderBottom: '1px solid var(--border)',
 										padding: '0 16px',
@@ -1925,7 +1927,7 @@ function MetaItem({
 
 								{/* VIDEO TAB */}
 								{(activeTab === 'video' || (!activeLesson?.fileUrl && !activeLesson?.imageUrl)) && !!videoUrl && (
-									<div className="relative" style={{ margin: '16px' }}>
+									<div className="relative" data-tour="player-video" style={{ margin: '16px' }}>
 										<div style={{
 											position: 'relative',
 											overflow: 'hidden',
@@ -2810,7 +2812,7 @@ function MetaItem({
 											</button>
 										)}
 
-										<div style={{ display: "flex", gap: "8px" }}>
+										<div style={{ display: "flex", gap: "8px" }} data-tour="player-nav-buttons">
 											{prevLesson && (
 												<button
 													onClick={() => goToLesson(prevLesson)}
@@ -2879,7 +2881,7 @@ function MetaItem({
 								)}
 
 								{/* Interaction Buttons */}
-								<div
+								<div data-tour="player-lesson-actions"
 									className="mt-8 pt-8 flex items-center gap-3 flex-wrap"
 									style={{ borderTop: `1px solid ${borderColor}` }}>
 									<button

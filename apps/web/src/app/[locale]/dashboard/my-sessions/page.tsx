@@ -159,13 +159,13 @@ export default function MySessionsPage() {
                 <h1 style={{ color: 'var(--ink)', fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
                   {isAr ? 'جلساتي الإرشادية' : 'My Mentoring Sessions'}
                 </h1>
-                <p style={{ color: 'var(--ink-2)', fontSize: 11, margin: 0 }}>
+                <p data-tour="sessions-total-count" style={{ color: 'var(--ink-2)', fontSize: 11, margin: 0 }}>
                   {isAr ? `${mySessions.length} جلسة إجمالاً` : `${mySessions.length} total sessions`}
                 </p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
-              <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+              <button onClick={() => refetch()} data-tour="sessions-refresh-btn" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
               <button data-tour="sessions-new-btn" title={isAr ? 'اختر مرشداً لبدء حجز جلسة' : 'Choose a mentor to start booking a session'} onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
@@ -208,7 +208,7 @@ export default function MySessionsPage() {
             </div>)}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '70px 24px' }}>
+          <div style={{ textAlign: 'center', padding: '70px 24px' }} data-tour="sessions-empty">
             <span style={{ color: 'var(--ink-2)', opacity: 0.4, display: 'block', marginBottom: 14 }}><Ic.calendar size={44} /></span>
             <h3 style={{ color: 'var(--ink)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
             <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
@@ -302,7 +302,7 @@ export default function MySessionsPage() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                        <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}`, color: conf.color, fontSize: 11, fontWeight: 300 }}>
+                        <div {...(sessionIdx === 0 ? { 'data-tour': 'sessions-status-badge' } : {})} style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}`, color: conf.color, fontSize: 11, fontWeight: 300 }}>
                           {isAr ? conf.ar : conf.en}
                         </div>
                         {session.status !== 'COMPLETED' && session.status !== 'CANCELLED' && (
@@ -347,7 +347,7 @@ export default function MySessionsPage() {
                       )}
 
                       {session.status === 'AWAITING_PAYMENT' && (session.price || 0) > 0 && (
-                        <button onClick={() => paySession(session.id, session.price)}
+                        <button onClick={() => paySession(session.id, session.price)} data-tour="sessions-payment-btn"
                           disabled={payingId === session.id}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 500, opacity: payingId === session.id ? 0.7 : 1 }}>
                           <Ic.creditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${formatMoney(session.price, (session as any).priceDisplay)}` : `Pay ${formatMoney(session.price, (session as any).priceDisplay)}`)}
@@ -372,7 +372,7 @@ export default function MySessionsPage() {
                       )}
 
                       {['PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','RESCHEDULE_REQUESTED'].includes(session.status) && (
-                        <button onClick={() => {
+                        <button data-tour="sessions-cancel-btn" onClick={() => {
                           setConfirmModal({
                             isOpen: true,
                             title: isAr ? 'إلغاء الجلسة' : 'Cancel Session',

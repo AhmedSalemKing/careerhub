@@ -17,6 +17,7 @@ import {
   Eye, EyeOff, Check, AlertCircle, Moon, Sun,
   Shield, CheckCircle, XCircle, Loader2, CreditCard,
 } from 'lucide-react'
+import { SettingsTourLauncher } from '@/components/SettingsTour'
 
 function VerificationSection({ user }: { user: any }) {
   const isAr = true // locale check handled by parent
@@ -314,7 +315,8 @@ export default function SettingsPage() {
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ marginBottom: 28 }}>
+      <SettingsTourLauncher />
+      <div data-tour="settings-header" style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', margin: 0 }}>
           {isAr ? 'الإعدادات' : 'Settings'}
         </h1>
@@ -324,7 +326,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--surface)', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
+      <div data-tour="settings-tabs" style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--surface)', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
         {tabs.map(tab => {
           const Icon = tab.icon
           const active = activeTab === tab.key
@@ -349,7 +351,7 @@ export default function SettingsPage() {
       {activeTab === 'profile' && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: 24 }}>
           {/* Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
+          <div data-tour="settings-avatar" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
             <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: 'rgba(81,32,200,0.1)', border: '3px solid rgba(81,32,200,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', flexShrink: 0 }}
               onClick={() => document.getElementById('settings-avatar')?.click()}
               onMouseEnter={e => { const ov = e.currentTarget.querySelector('.av-overlay') as HTMLDivElement; if (ov) ov.style.opacity = '1' }}
@@ -370,7 +372,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Gender */}
-          <div style={{ marginBottom: 20 }}>
+          <div data-tour="settings-gender" style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{isAr ? 'الجنس' : 'Gender'}</label>
             <div role="radiogroup" aria-label={isAr ? 'الجنس' : 'Gender'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {([['MALE', isAr ? 'ذكر' : 'Male'], ['FEMALE', isAr ? 'أنثى' : 'Female']] as const).map(([val, text]) => {
@@ -387,7 +389,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Fields */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div data-tour="settings-name" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             {[{ key: 'firstName', label: isAr ? 'الاسم الأول' : 'First Name' }, { key: 'lastName', label: isAr ? 'اسم العائلة' : 'Last Name' }].map(field => (
               <div key={field.key}>
                 <label style={labelStyle}>{field.label}</label>
@@ -395,17 +397,17 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <div style={{ marginBottom: 14 }}>
+          <div data-tour="settings-phone" style={{ marginBottom: 14 }}>
             <label style={labelStyle}>{isAr ? 'رقم الموبايل' : 'Phone Number'}</label>
             <input value={profileForm.phone} onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+966..." />
           </div>
-          <div style={{ marginBottom: 20 }}>
+          <div data-tour="settings-bio" style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{isAr ? 'نبذة عنك' : 'Bio'}</label>
             <textarea value={profileForm.bio} onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder={isAr ? 'اكتب نبذة عنك...' : 'Write about yourself...'} />
           </div>
           
           {/* Additional fields */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div data-tour="settings-location" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
               <label style={labelStyle}>{isAr ? 'الدولة' : 'Country'}</label>
               <input value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} style={inputStyle} placeholder={isAr ? 'مثال: السعودية' : 'e.g. Saudi Arabia'} />
@@ -415,7 +417,7 @@ export default function SettingsPage() {
               <input value={profileForm.city} onChange={e => setProfileForm(f => ({ ...f, city: e.target.value }))} style={inputStyle} placeholder={isAr ? 'مثال: الرياض' : 'e.g. Riyadh'} />
             </div>
           </div>
-          <div style={{ marginBottom: 14 }}>
+          <div data-tour="settings-linkedin" style={{ marginBottom: 14 }}>
             <label style={labelStyle}>{isAr ? 'رابط LinkedIn' : 'LinkedIn URL'}</label>
             <input value={profileForm.linkedinUrl} onChange={e => setProfileForm(f => ({ ...f, linkedinUrl: e.target.value }))} style={inputStyle} placeholder="https://linkedin.com/in/..." />
           </div>
@@ -452,7 +454,7 @@ export default function SettingsPage() {
             </div>
           )}
           
-          <button onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: profileMutation.isPending ? 0.7 : 1 }}>
+          <button onClick={() => profileMutation.mutate()} data-tour="settings-save" disabled={profileMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: profileMutation.isPending ? 0.7 : 1 }}>
             <Save size={16} />
             {profileMutation.isPending ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ التغييرات' : 'Save Changes')}
           </button>

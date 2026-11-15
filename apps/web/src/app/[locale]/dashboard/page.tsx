@@ -841,7 +841,7 @@ function StudentOverview() {
           <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
           <h1>{userName}</h1>
         </div>
-        <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-light dw-btn-sm">
+        <Link href={`/${locale}/dashboard/my-courses`} data-tour="dashboard-my-courses-link" className="dw-btn dw-btn-light dw-btn-sm">
           <BookOpen size={15} aria-hidden="true" />
           {isAr ? 'كورساتي' : 'My courses'}
         </Link>
@@ -897,7 +897,7 @@ function StudentOverview() {
                     <small>اكتملت</small>
                   </span>
                   <div>
-                    <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
+                    <h3 data-tour="dashboard-track-title" style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
                     <p className="dw-muted">{(selectedPath.roles ?? []).slice(0, 3).join(' · ')}</p>
                     <div style={{ marginTop: '14px' }}>
                       <button type="button" onClick={() => setCareerPathOpen(true)} className="dw-btn dw-btn-primary dw-btn-sm">
@@ -908,7 +908,7 @@ function StudentOverview() {
                   </div>
                 </div>
                 {/* Section 1: every course the student is enrolled in for this path */}
-                <p className="dw-section-label" data-tour="dashboard-courses">الكورسات المشترك فيها</p>
+                <p className="dw-section-label">الكورسات المشترك فيها</p>
                 {(() => {
                   // Same source as /dashboard/my-courses (/courses/enrolled); not filtered by path
                   const enrolledCourses = enrollments
@@ -924,7 +924,7 @@ function StudentOverview() {
                   const visibleEnrolled = showAllEnrolled ? enrolledCourses : enrolledCourses.slice(0, 3)
                   return (
                     <>
-                    <div className="dw-clist" style={{ marginTop: 0 }}>
+                    <div className="dw-clist" data-tour="dashboard-courses" style={{ marginTop: 0 }}>
                       {visibleEnrolled.map(({ e, c: course }: any, i: number) => {
                         const c = { id: course.id, name: titleOf(course) }
                         const prog = progressForEnrollment(e)
@@ -947,7 +947,7 @@ function StudentOverview() {
                       })}
                     </div>
                     {enrolledCourses.length > 3 && (
-                      <button
+                      <button data-tour="dashboard-courses-show-more"
                         type="button"
                         className="dw-btn dw-btn-ghost dw-btn-sm"
                         style={{ marginTop: '10px' }}
@@ -961,7 +961,7 @@ function StudentOverview() {
                 })()}
 
                 {/* Section 2: all courses of this path, enrolled or not */}
-                <p className="dw-section-label" style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <p className="dw-section-label" data-tour="dashboard-track-courses" style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   كورسات المسار
                   {packageBought && <span className="dw-status done" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><PackageIcon size={12} aria-hidden="true" />باكدج مجمّع</span>}
                 </p>
@@ -1174,7 +1174,7 @@ function StudentOverview() {
       </div>
 
       <div className="dw2-dash-row2">
-        <div className="dw-card dw2-card">
+        <div className="dw-card dw2-card" data-tour="dashboard-payments">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2z"/><path d="M8 8h8M8 12h8"/></svg>
             <h3>المدفوعات</h3>
@@ -1205,7 +1205,7 @@ function StudentOverview() {
           )}
         </div>
 
-        <div className="dw-card dw2-card">
+        <div className="dw-card dw2-card" data-tour="dashboard-certificates">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
             <h3>شهاداتي</h3>

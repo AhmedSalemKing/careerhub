@@ -57,6 +57,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { instructorDisplayName } from "../../../../lib/instructor";
 import LiveCourseDetail from "../../../../components/live/LiveCourseDetail";
 import LiveRecordingPlayer from "../../../../components/live/LiveRecordingPlayer";
+import { CourseDetailTourLauncher } from '@/components/CourseDetailTour'
 
 export default function CourseDetailPage({
 	params,
@@ -476,6 +477,7 @@ export default function CourseDetailPage({
 
 	return (
 		<>
+		<CourseDetailTourLauncher />
 		<div className="min-h-screen" style={{ background: bg }}>
 			{/* ── Hero Section ── */}
 			<div
@@ -485,7 +487,7 @@ export default function CourseDetailPage({
 				}}>
 				<div className="max-w-6xl mx-auto px-6 py-10">
 					<div className="grid gap-8 lg:grid-cols-5">
-						<div className="lg:col-span-3 flex flex-col justify-center">
+						<div className="lg:col-span-3 flex flex-col justify-center" data-tour="course-detail-hero">
 							<div className="flex flex-wrap items-center gap-2 mb-3">
 								{course.category && (
 									<span
@@ -564,7 +566,7 @@ export default function CourseDetailPage({
 								</div>
 								<div>
 									<a
-										href={`/${locale}/profile/${course.instructor?.id || ''}`}
+										href={`/${locale}/profile/${course.instructor?.id || ''}`} data-tour="course-detail-instructor"
 										style={{ textDecoration:'none', color:'inherit' }}>
 										<p
 											className="font-semibold text-sm"
@@ -861,7 +863,7 @@ export default function CourseDetailPage({
 
 						{/* Curriculum - only for recorded */}
 						{isRecorded && sections.length > 0 && (
-							<section>
+							<section data-tour="course-detail-content">
 								<h2
 									className="text-xl font-bold font-madinet mb-5 flex items-center gap-2"
 									style={{ color: textPrimary }}>
@@ -1345,7 +1347,7 @@ export default function CourseDetailPage({
 
 
 									{/* Progress Tracker & Certificate Button */}
-									<div
+									<div data-tour="course-detail-progress"
 										style={{
 											marginTop: "0.5rem",
 											padding: "1.25rem",
@@ -1649,7 +1651,7 @@ export default function CourseDetailPage({
 								</button>
 							) : (
 								<button
-									onClick={handleEnroll}
+									onClick={handleEnroll} data-tour="course-detail-enroll"
 									disabled={enrolling}
 									className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all disabled:opacity-70 disabled:cursor-not-allowed"
 									style={{
@@ -1709,7 +1711,7 @@ export default function CourseDetailPage({
 							</div>
 
 							<div
-								className="space-y-3 pt-4"
+								className="space-y-3 pt-4" data-tour="course-detail-features"
 								style={{ borderTop: `1px solid ${borderColor}` }}>
 								{isRecorded && (
 									<>

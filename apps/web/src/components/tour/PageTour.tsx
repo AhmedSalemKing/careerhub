@@ -9,7 +9,9 @@ import { HelpCircle } from 'lucide-react'
 export interface TourStepDef {
   /** Value of the data-tour attribute on the target element. */
   target: string
-  side: 'top' | 'bottom'
+  /** Optional CSS selector used instead of the data-tour attribute (for shared elements such as the footer). */
+  selector?: string
+  side: 'top' | 'bottom' | 'left' | 'right'
   ar: { title: string; description: string }
   en: { title: string; description: string }
 }
@@ -33,7 +35,7 @@ export function PageTour({ tourKey, steps, locale = 'ar', isOpen, onClose, autoS
   const startTour = useCallback(() => {
     const driverSteps = steps
       .map((step) => ({
-        element: `[data-tour="${step.target}"]`,
+        element: step.selector ?? `[data-tour="${step.target}"]`,
         popover: {
           title: isAr ? step.ar.title : step.en.title,
           description: isAr ? step.ar.description : step.en.description,
@@ -41,7 +43,12 @@ export function PageTour({ tourKey, steps, locale = 'ar', isOpen, onClose, autoS
           align: 'center' as const,
         },
       }))
-      .filter((step) => document.querySelector(step.element))
+      .filter((step) => {
+        const el = document.querySelector(step.element)
+        if (!el) return false
+        const rect = el.getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0
+      })
 
     if (!driverSteps.length) return
 

@@ -234,7 +234,7 @@ export default function CoursesPage() {
       `}</style>
 
       {/* Hero */}
-      <div className="dw2-cp-head dw2-courses-header" data-tour="courses-header">
+      <div className="dw2-cp-head dw2-courses-header" data-tour="courses-hero">
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 8 }}>
           <h1 className="dw2-courses-h1">
             {tl('discoverCourses')}
@@ -278,7 +278,7 @@ export default function CoursesPage() {
       <div style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px', overflowX: 'hidden', boxSizing: 'border-box' }}>
 
         {/* Tab description */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '14px 18px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div data-tour="courses-count" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '14px 18px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)' }}>
           <activeTabConfig.icon size={18} color='var(--brand)' />
           <div>
             <span style={{ color: 'var(--ink)', fontSize: 13, fontWeight: 500 }}>
@@ -299,7 +299,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Category pills */}
-        <div data-tour="courses-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div data-tour="courses-category-filter" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
           {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
@@ -315,6 +315,7 @@ export default function CoursesPage() {
             {/* Sort + Level + Price row */}
             <div className="dw2-cp-bar dw2-filter-row">
               {/* Sort */}
+              <div data-tour="courses-sort" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               {[
                 { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
                 { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
@@ -324,10 +325,12 @@ export default function CoursesPage() {
                   {s.label}
                 </button>
               ))}
+              </div>
 
               <div className="dw2-cp-sep" />
 
               {/* Level */}
+              <div data-tour="courses-level-filter" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: isAr ? 'الكل' : 'All' },
                 { id: 'BEGINNER', label: isAr ? 'مبتدئ' : 'Beginner' },
@@ -339,10 +342,12 @@ export default function CoursesPage() {
                   {opt.label}
                 </button>
               ))}
+              </div>
 
               <div className="dw2-cp-sep" />
 
               {/* Price */}
+              <div data-tour="courses-price-filter" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: isAr ? 'الكل' : 'All' },
                 { id: 'free', label: isAr ? 'مجاني' : 'Free' },
@@ -353,6 +358,7 @@ export default function CoursesPage() {
                   {opt.label}
                 </button>
               ))}
+              </div>
             </div>
           </div>
         )}
@@ -419,7 +425,7 @@ export default function CoursesPage() {
 
         {/* Load More */}
         {!isLoading && hasMore && (
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
+          <div style={{ textAlign: 'center', marginTop: 32 }} data-tour="courses-load-more">
             <button className="dw2-btn-outline dw2-load-more"
               onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
               {isAr
@@ -451,7 +457,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           {tl('recordedBadge')}
         </div>
         {isEnrolled && (
-          <div style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 10, display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
+          <div {...(idx === 0 ? { 'data-tour': 'courses-enrolled-badge' } : {})} style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 10, display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
             <CheckCircle2 size={10} />
             {tl('enrolledBadge')}
           </div>

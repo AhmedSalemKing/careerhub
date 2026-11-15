@@ -119,19 +119,19 @@ export default function InvoicesPage() {
       {/* Summary cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3" data-tour="invoices-summary">
-          <SummaryCard
+          <SummaryCard tourId="invoices-total"
             label={isAr ? 'إجمالي المدفوعات' : 'Total Spent'}
             value={formatMoney(summary.totalSpent, (summary as any).totalSpentDisplay)}
             color="#5120C8"
             bg="rgba(81,32,200,0.08)"
           />
-          <SummaryCard
+          <SummaryCard tourId="invoices-courses-count"
             label={isAr ? 'الكورسات' : 'Courses'}
             value={String(summary.courseCount)}
             color="#5120C8"
             bg="rgba(81,32,200,0.08)"
           />
-          <SummaryCard
+          <SummaryCard tourId="invoices-sessions-count"
             label={isAr ? 'الجلسات' : 'Sessions'}
             value={String(summary.sessionCount)}
             color="#0EA5E9"
@@ -278,7 +278,7 @@ export default function InvoicesPage() {
                       {formatDate(inv.date)}
                     </p>
                     {inv.type === 'SESSION' && inv.metadata?.consultantName && (
-                      <p className="text-xs text-[color:var(--ink-2)] mt-0.5">
+                      <p  data-tour="invoices-session-mentor"className="text-xs text-[color:var(--ink-2)] mt-0.5">
                         {isAr ? 'المرشد:' : 'Mentor:'} {inv.metadata.consultantName}
                       </p>
                     )}
@@ -289,7 +289,7 @@ export default function InvoicesPage() {
                     <p className="font-medium text-base" style={{ color: cfg.color }}>
                       {formatMoney(inv.amount, (inv as any).amountDisplay)}
                     </p>
-                    <p className="text-[10px] font-mono text-[color:var(--ink-2)] mt-0.5">
+                    <p  data-tour="invoices-reference"className="text-[10px] font-mono text-[color:var(--ink-2)] mt-0.5">
                       {inv.reference.slice(-8).toUpperCase()}
                     </p>
                   </div>
@@ -299,7 +299,7 @@ export default function InvoicesPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4"
+              <div className="flex items-center justify-between p-4" data-tour="invoices-pagination"
                 style={{ borderTop: '1px solid var(--line)' }}>
                 <button
                   disabled={page <= 1}
@@ -351,10 +351,10 @@ export default function InvoicesPage() {
 }
 
 function SummaryCard({
-  label, value, color, bg
-}: { label: string; value: string; color: string; bg: string }) {
+  label, value, color, bg, tourId
+}: { label: string; value: string; color: string; bg: string; tourId?: string }) {
   return (
-    <div style={{
+    <div data-tour={tourId} style={{
       background: bg,
       border: '1px solid var(--line)',
       borderRadius: '14px',

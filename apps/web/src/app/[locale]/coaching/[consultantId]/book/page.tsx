@@ -309,7 +309,7 @@ export default function BookConsultingPage() {
         </button>
 
         <div className="rounded-2xl p-4 sm:p-6 lg:p-8" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <header className="mb-5">
+        <header className="mb-5" data-tour="booking-header">
           <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
             {isAr ? 'حجز جلسة إرشادية' : 'Mentoring session booking'}
           </p>
@@ -355,7 +355,7 @@ export default function BookConsultingPage() {
                       <span className="block text-sm font-black" style={{ color: active ? 'var(--primary)' : 'var(--foreground)' }}>
                         {option} {isAr ? 'دقيقة' : 'min'}
                       </span>
-                      <span className="mt-1 block text-xs font-bold" style={{ color: active ? 'var(--accent)' : 'var(--muted)' }}>
+                      <span data-tour="booking-duration-price" className="mt-1 block text-xs font-bold" style={{ color: active ? 'var(--accent)' : 'var(--muted)' }}>
                         {optionPrice > 0 ? money(optionPrice) : isAr ? 'مجاني' : 'Free'}
                       </span>
                     </button>
@@ -376,7 +376,7 @@ export default function BookConsultingPage() {
                 minDate={todayKey}
                 locale={isAr ? 'ar' : 'en'}
               />
-              <p className="mt-3 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--muted)' }}>
+              <p data-tour="booking-calendar-legend" className="mt-3 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--muted)' }}>
                 <CalendarDays size={13} />
                 {isAr ? 'الأيام المظللة بالخطوط محجوزة بالكامل' : 'Hatched days are fully booked'}
               </p>
@@ -427,7 +427,7 @@ export default function BookConsultingPage() {
                       )
                     })}
                   </div>
-                  <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
+                  <p className="mt-3 text-[11px]" data-tour="booking-available-slots" style={{ color: 'var(--muted)' }}>
                     {isAr ? `${freeSlots} من ${slots.length} وقت متاح` : `${freeSlots} of ${slots.length} times available`}
                   </p>
                 </>
@@ -471,7 +471,7 @@ export default function BookConsultingPage() {
           {/* Summary (below the steps on mobile, sticky side panel on desktop) */}
           <aside className="min-w-0 lg:sticky lg:top-0 lg:self-start">
             <div className={card} style={{ ...cardStyle, borderColor: 'var(--primary-border)' }}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3" data-tour="booking-mentor-name">
                 <UserAvatar user={{ avatar: consultant?.profile?.avatar, gender: consultant?.profile?.gender, name: displayName }} size={48} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -484,7 +484,7 @@ export default function BookConsultingPage() {
                 </div>
               </div>
 
-              <dl className="mt-4 space-y-2.5 border-t pt-4 text-xs" style={{ borderColor: 'var(--border)' }}>
+              <dl data-tour="booking-summary" className="mt-4 space-y-2.5 border-t pt-4 text-xs" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex justify-between gap-2">
                   <dt style={{ color: 'var(--muted)' }}>{isAr ? 'المدة' : 'Duration'}</dt>
                   <dd className="font-bold">{duration} {isAr ? 'دقيقة' : 'min'}</dd>
@@ -508,6 +508,7 @@ export default function BookConsultingPage() {
               <button
                 type="button"
                 onClick={handleBook}
+                data-tour="booking-confirm-btn"
                 disabled={!canSubmit}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-all duration-150"
                 style={{

@@ -202,7 +202,7 @@ export default function MyCoursesPage() {
 							</p>
 						</div>
 						<div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-							<div style={{
+							<div data-tour="my-courses-count" style={{
 								background: 'var(--surface)',
 								border: '1px solid var(--line)',
 								borderRadius: 999,
@@ -416,7 +416,7 @@ export default function MyCoursesPage() {
 					)}
 
 					{!isLoading && filteredCourses.length === 0 && (
-						<div style={{
+						<div data-tour="my-courses-empty" style={{
 							textAlign: 'center',
 							padding: '3rem 1rem',
 							background: 'var(--surface)',
@@ -697,7 +697,7 @@ export default function MyCoursesPage() {
 														</button>
 													</>
 												) : (
-													<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
+													<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)} data-tour="my-courses-continue-btn"
 														target="_blank"
 														rel="noopener noreferrer"
 														style={{

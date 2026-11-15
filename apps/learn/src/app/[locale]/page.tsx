@@ -343,7 +343,7 @@ export default function HomePage() {
               <>
                 <h1>{t('title')}</h1>
                 <p className="lede">{t('valueProp')}</p>
-                <div className="hero-ctas">
+                <div className="hero-ctas" data-tour="learn-rashid">
                   <a className="btn btn-primary" href={assessmentHref}>
                     {t('ctaAssessment')}
                     <Icon name="arrow" className="go" flip={isAr} />
@@ -467,7 +467,7 @@ export default function HomePage() {
       </section>
       {/* COURSES */}
       {courses.length > 0 && (
-        <section className="dw2-home-courses" data-tour="learn-courses">
+        <section className="dw2-home-courses" data-tour="learn-courses-section">
           <div className="dw2-wrap">
             <div className="dw2-sec-head">
               <div>
@@ -492,12 +492,12 @@ export default function HomePage() {
               ))}
             </div>
             <div className="dw2-courses-grid">
-              {displayedCourses.map((course: any) => {
+              {displayedCourses.map((course: any, index: number) => {
                 const title = (isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr) || course.title || ''
                 const instructor = instructorDisplayName(course.instructor, '')
                 const students = course._count?.enrollments ?? course.studentsCount ?? 0
                 return (
-                  <div key={course.id} className="dw2-course-card">
+                  <div key={course.id} className="dw2-course-card" {...(index === 0 ? { 'data-tour': 'learn-course-card' } : {})}>
                     <div className="dw2-course-thumb">
                       {course.thumbnail ? <img src={course.thumbnail} alt={title} /> : <div className="dw2-thumb-placeholder">{title.charAt(0)}</div>}
                     </div>
