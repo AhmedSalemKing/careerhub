@@ -16,6 +16,7 @@ import {
   formatLiveDateTimeShort,
 } from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
+import { CourseManageTourLauncher } from '@/components/CourseManageTour'
 import { learnUrlWithToken } from '../../../../../../lib/learn-link'
 import { useAuthStore } from '../../../../../../stores/authStore'
 
@@ -1608,14 +1609,16 @@ export default function ManageCoursePage() {
       ) : (
       <>
         <div className="p-6" dir="rtl">
+        <CourseManageTourLauncher />
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6" data-tour="manage-header">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold font-madinet text-[var(--ink)]">{course.titleEn}</h1>
               {course.titleAr && <p className="text-sm text-[color:var(--ink-2)] mt-0.5">{course.titleAr}</p>}
             </div>
             <span
+              data-tour="manage-status-badge"
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
                 course.status === 'PUBLISHED'
                   ? 'bg-green-500/20 text-green-400'
@@ -1633,10 +1636,11 @@ export default function ManageCoursePage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--line)] p-1 mb-6 overflow-x-auto">
+        <div data-tour="manage-tabs" className="flex gap-1 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--line)] p-1 mb-6 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
+              data-tour={`manage-tab-${tab.key}`}
               type="button"
               onClick={() => {
                 if (tab.key === 'quizzes') {
@@ -1667,7 +1671,7 @@ export default function ManageCoursePage() {
               </div>
             )}
             {sections.map((sec, i) => (
-              <div key={sec.id} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-4">
+              <div key={sec.id} {...(i === 0 ? { 'data-tour': 'manage-section-item' } : {})} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                     {i + 1}
@@ -1750,6 +1754,7 @@ export default function ManageCoursePage() {
               <button
                 type="button"
                 onClick={handleAddSection}
+                data-tour="manage-add-section"
                 disabled={addingSec || !addSectionTitle.trim()}
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all"
               >
@@ -2245,7 +2250,7 @@ function CourseSettingsTab({
         </div>
 
         {!course?.isCompleted && (
-          <div style={{ marginBottom:'1rem' }}>
+          <div data-tour="manage-expected-lessons" style={{ marginBottom:'1rem' }}>
             <label style={{ fontSize:'0.82rem', color:'var(--ink-3)',
               display:'block', marginBottom:'6px' }}>
               العدد المتوقع للدروس النهائي
@@ -2316,7 +2321,7 @@ function CourseSettingsTab({
             إعادة فتح الكورس للتعديل
           </button>
         ) : (
-          <button onClick={handleMarkCompleted} disabled={certLoading}
+          <button onClick={handleMarkCompleted} disabled={certLoading} data-tour="manage-certificate-settings"
             style={{
               width:'100%', padding:'10px', borderRadius:'10px',
               background:'linear-gradient(135deg, #5120c8, #7c3aed)',

@@ -18,6 +18,7 @@ import {
   Shield, CheckCircle, XCircle, Loader2, CreditCard,
 } from 'lucide-react'
 import { SettingsTourLauncher } from '@/components/SettingsTour'
+import { InstructorSettingsTourLauncher } from '@/components/InstructorSettingsTour'
 
 function VerificationSection({ user }: { user: any }) {
   const isAr = true // locale check handled by parent
@@ -127,7 +128,7 @@ function VerificationSection({ user }: { user: any }) {
 
       <div style={{ marginBottom: 20 }}>
         <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>وجه البطاقة (الأمامية)</label>
-        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+        <label data-tour="settings-id-front" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
           {frontImage ? <img src={frontImage} alt="ID Front" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'front' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'front')} />
         </label>
@@ -135,13 +136,13 @@ function VerificationSection({ user }: { user: any }) {
 
       <div style={{ marginBottom: 28 }}>
         <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>ظهر البطاقة (الخلفية)</label>
-        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+        <label data-tour="settings-id-back" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
           {backImage ? <img src={backImage} alt="ID Back" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'back' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'back')} />
         </label>
       </div>
 
-      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--line)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
+      <button data-tour="settings-submit-verification" onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--line)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
         {submitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
         {submitting ? 'جاري الإرسال...' : 'تقديم طلب التوثيق'}
       </button>
@@ -315,7 +316,7 @@ export default function SettingsPage() {
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
-      <SettingsTourLauncher />
+      {me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT' ? <InstructorSettingsTourLauncher /> : <SettingsTourLauncher />}
       <div data-tour="settings-header" style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', margin: 0 }}>
           {isAr ? 'الإعدادات' : 'Settings'}
@@ -331,7 +332,7 @@ export default function SettingsPage() {
           const Icon = tab.icon
           const active = activeTab === tab.key
           return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--ink-2)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
+            <button key={tab.key} data-tour={`settings-tab-${tab.key}`} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--ink-2)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
               <Icon size={14} />
               {tab.label}
             </button>

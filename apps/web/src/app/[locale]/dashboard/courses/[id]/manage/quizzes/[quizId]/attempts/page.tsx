@@ -7,6 +7,7 @@ import { get } from '@/lib/api'
 import { formatDateTimeAr } from '@/lib/formatDate'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import SegmentedControl from '@/components/quizzes/SegmentedControl'
+import { QuizAttemptsTourLauncher } from '@/components/QuizAttemptsTour'
 
 export default function QuizAttemptsPage() {
   const params = useParams()
@@ -64,7 +65,8 @@ export default function QuizAttemptsPage() {
         </div>
       </div>
 
-      <div className="mb-4 max-w-sm">
+      <QuizAttemptsTourLauncher />
+      <div data-tour="attempts-filter" className="mb-4 max-w-sm">
         <SegmentedControl
           options={[
             { value: 'ALL', label: 'الكل' },
@@ -89,7 +91,7 @@ export default function QuizAttemptsPage() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)]">
+          <div data-tour="attempts-table" className="overflow-x-auto rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)]">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--line)] text-right">
@@ -102,7 +104,8 @@ export default function QuizAttemptsPage() {
                 </tr>
               </thead>
               <tbody>
-                {attempts.map((a: any) => {
+                {attempts.map((a: any, idx: number) => {
+                  const firstOfStatus = attempts.findIndex((x: any) => x.status === a.status) === idx
                   const name = `${a.user?.profile?.firstName ?? ''} ${a.user?.profile?.lastName ?? ''}`.trim() || a.user?.email || '—'
                   const date = formatDateTimeAr(a.startedAt) || '—'
                   return (
@@ -114,9 +117,11 @@ export default function QuizAttemptsPage() {
                       </td>
                       <td className="px-4 py-3 text-[color:var(--ink-2)]">{date}</td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={a.status} />
+                        <span {...(firstOfStatus && a.status === 'GRADED' ? { 'data-tour': 'attempts-status-graded' } : firstOfStatus && a.status === 'SUBMITTED' ? { 'data-tour': 'attempts-status-pending' } : {})}>
+                          <StatusBadge status={a.status} />
+                        </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-[var(--ink)]">
+                      <td {...(idx === 0 ? { 'data-tour': 'attempts-score' } : {})} className="px-4 py-3 font-semibold text-[var(--ink)]">
                         {Math.round((a.totalScore ?? 0) * 100) / 100} / {Math.round((a.maxScore ?? 0) * 100) / 100}
                       </td>
                       <td className="px-4 py-3">
@@ -126,6 +131,7 @@ export default function QuizAttemptsPage() {
                         <button
                           type="button"
                           onClick={() => review(a.id)}
+                          {...(idx === 0 ? { 'data-tour': 'attempts-review-btn' } : {})}
                           className="flex items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                         >
                           مراجعة

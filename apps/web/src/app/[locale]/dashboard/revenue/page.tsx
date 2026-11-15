@@ -1,4 +1,5 @@
 'use client'
+import { RevenueTourLauncher } from '@/components/RevenueTour'
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import api from '@/lib/api'
@@ -28,10 +29,13 @@ export default function RevenuePage() {
   }
 
   const { totalRevenue = 0, totalStudents = 0, coursesCount = 0, publishedCourses = 0, courseBreakdown = [] } = data || {}
+  const topEarner = (courseBreakdown as any[]).reduce((best: any, c: any) => (!best || Number(c.revenue) > Number(best.revenue) ? c : best), null)
+  const topEarnerId = topEarner && Number(topEarner.revenue) > 0 ? topEarner.id : null
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 24px 120px', direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <RevenueTourLauncher />
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ color: 'var(--ink)', fontSize: 24, fontWeight: 800, margin: 0 }}>
             {isAr ? 'الإيرادات' : 'Revenue'}
@@ -41,8 +45,8 @@ export default function RevenuePage() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '22px 20px', border: '1px solid var(--line)' }}>
+        <div data-tour="revenue-stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
+          <div data-tour="revenue-total" style={{ background: 'var(--surface)', borderRadius: 16, padding: '22px 20px', border: '1px solid var(--line)' }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(81,32,200,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               <DollarSign size={20} color="var(--brand)" />
             </div>
@@ -92,7 +96,7 @@ export default function RevenuePage() {
         </div>
 
         <div style={{ background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div data-tour="revenue-breakdown-title" style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ color: 'var(--ink)', fontSize: 16, fontWeight: 700, margin: 0 }}>
               {isAr ? 'تفصيل الإيرادات حسب الكورس' : 'Revenue by Course'}
             </h2>
@@ -111,7 +115,7 @@ export default function RevenuePage() {
               </p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div data-tour="revenue-table" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--line)' }}>
@@ -131,7 +135,7 @@ export default function RevenuePage() {
                 </thead>
                 <tbody>
                   {courseBreakdown.map((course: any) => (
-                    <tr key={course.id} style={{ borderBottom: '1px solid var(--line)', transition: 'background 0.2s' }}
+                    <tr key={course.id} {...(course.id === topEarnerId ? { 'data-tour': 'revenue-top-earner' } : {})} style={{ borderBottom: '1px solid var(--line)', transition: 'background 0.2s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
@@ -162,7 +166,7 @@ export default function RevenuePage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ background: 'rgba(81,32,200,0.08)' }}>
+                  <tr data-tour="revenue-total-row" style={{ background: 'rgba(81,32,200,0.08)' }}>
                     <td style={{ padding: '16px 20px', color: 'var(--ink)', fontWeight: 700, fontSize: 14 }}>
                       {isAr ? 'الإجمالي' : 'Total'}
                     </td>

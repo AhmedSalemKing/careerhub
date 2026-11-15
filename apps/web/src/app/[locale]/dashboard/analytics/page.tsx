@@ -4,6 +4,9 @@ import { get } from '@/lib/api'
 import { useTheme } from 'next-themes'
 import { BarChart2, Users, BookOpen, Star, TrendingUp, Award } from 'lucide-react'
 import { formatCoursePrice, formatMoney } from '@/lib/market'
+import { AnalyticsTourLauncher } from '@/components/AnalyticsTour'
+
+const STAT_TOUR_KEYS = ['analytics-users', 'analytics-courses', 'analytics-rating', 'analytics-revenue', 'analytics-certificates', 'analytics-completion']
 
 export default function AnalyticsPage() {
   const { theme } = useTheme()
@@ -22,6 +25,7 @@ export default function AnalyticsPage() {
   })
 
   const courses = stats?.courses ?? []
+  const firstZeroId = (courses as any[]).find((c: any) => !(c.enrollments || 0))?.id
 
   const statCards = [
     { label:'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
@@ -35,6 +39,7 @@ export default function AnalyticsPage() {
   return (
     <div style={{ minHeight:'100vh', background: 'var(--background)', padding:'32px 24px 120px', direction:'rtl' }}>
       <div style={{ maxWidth: 760, margin:'0 auto' }}>
+        <AnalyticsTourLauncher />
         <div style={{ marginBottom:28 }}>
           <h1 style={{ color: 'var(--foreground)', fontSize:24, fontWeight:800, margin:0 }}>إحصائياتي</h1>
           <p style={{ color:'var(--ink-3)', fontSize:14, marginTop:4 }}>تحليل أداء كورساتك وطلابك</p>
@@ -56,7 +61,7 @@ export default function AnalyticsPage() {
             )}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:28 }}>
               {statCards.map((s,i) => (
-                <div key={i} style={{ background: 'var(--surface)', borderRadius:16, padding:'20px 18px', border:`1px solid ${'var(--border)'}` }}>
+                <div key={i} data-tour={STAT_TOUR_KEYS[i]} style={{ background: 'var(--surface)', borderRadius:16, padding:'20px 18px', border:`1px solid ${'var(--border)'}` }}>
                   <div style={{ width:40, height:40, borderRadius:10, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>{s.icon}</div>
                   <div style={{ color: 'var(--foreground)', fontSize:20, fontWeight:800 }}>{s.value}</div>
                   <div style={{ color:'var(--ink-3)', fontSize:12, marginTop:4 }}>{s.label}</div>
@@ -64,7 +69,7 @@ export default function AnalyticsPage() {
               ))}
             </div>
 
-            <div style={{ background: 'var(--surface)', borderRadius:20, padding:24, border:`1px solid ${'var(--border)'}` }}>
+            <div data-tour="analytics-course-list" style={{ background: 'var(--surface)', borderRadius:20, padding:24, border:`1px solid ${'var(--border)'}` }}>
               <h3 style={{ color: 'var(--foreground)', fontSize:16, fontWeight:700, marginBottom:20 }}>أداء الكورسات</h3>
               {!courses.length ? (
                 <div style={{ textAlign:'center', padding:32, color:'var(--ink-3)' }}>
@@ -72,7 +77,7 @@ export default function AnalyticsPage() {
                   <p>لا توجد كورسات بعد</p>
                 </div>
               ) : courses.map((c: any) => (
-                <div key={c.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${'var(--bg-2)'}` }}>
+                <div key={c.id} {...(c.id === firstZeroId ? { 'data-tour': 'analytics-low-performing' } : {})} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${'var(--bg-2)'}` }}>
                   <div style={{ width:44, height:44, borderRadius:10, background:'rgba(81,32,200,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <BookOpen size={20} color="#5120c8"/>
                   </div>

@@ -19,6 +19,7 @@ import {
   Play, Mic, Camera, ArrowRight, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { CreateCourseTourLauncher } from '@/components/CreateCourseTour'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -444,6 +445,7 @@ export default function CreateCoursePage() {
   return (
     <AuthGate>
       <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+        <CreateCourseTourLauncher />
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-madinet text-[var(--ink)]">
             {isAr ? 'إنشاء كورس جديد' : 'Create New Course'}
@@ -454,7 +456,7 @@ export default function CreateCoursePage() {
         </div>
 
         {/* Progress */}
-        <div className="flex items-center gap-2 mb-8">
+        <div data-tour="create-step-indicator" className="flex items-center gap-2 mb-8">
           {[1, 2, 3, 4].map(n => (
             <div key={n} className="flex items-center gap-2 flex-1">
               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
@@ -489,6 +491,7 @@ export default function CreateCoursePage() {
                   return (
                     <div
                       key={t.key}
+                      data-tour={`create-type-${t.key === 'offline' ? 'venue' : t.key}`}
                       onClick={() => setForm(f => ({ ...f, type: t.key as any, sections: [{ title: '' }] }))}
                       className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer border-2 transition-all ${
                         selected
@@ -529,7 +532,7 @@ export default function CreateCoursePage() {
                 </h2>
               </div>
 
-              <div>
+              <div data-tour="create-title">
                 <label className={labelCls}>{isAr ? 'عنوان الكورس' : 'Course Title'} *</label>
                 <input value={form.title} onChange={e => set('title', e.target.value)}
                   placeholder={isAr ? 'أدخل عنواناً واضحاً وجذاباً...' : 'Enter a clear, compelling title...'}
@@ -551,7 +554,7 @@ export default function CreateCoursePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+                <div className="col-span-2" data-tour="create-price">
                   <label className={labelCls}>{isAr ? 'السعر' : 'Price'}</label>
                   <div className="relative">
                     <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
@@ -586,7 +589,7 @@ export default function CreateCoursePage() {
                 </div>
               </div>
 
-              <div>
+              <div data-tour="create-category">
                 <label className={labelCls}>
                   {isAr ? 'الفئة' : 'Category'}
                   <span style={{ color: 'var(--error, #ef4444)', marginInlineStart: 4 }}>*</span>
@@ -624,7 +627,7 @@ export default function CreateCoursePage() {
               </div>
 
               {/* Thumbnail */}
-              <div>
+              <div data-tour="create-cover">
                 <label className={labelCls}>{isAr ? 'صورة الغلاف' : 'Thumbnail'}</label>
                 <div onClick={() => thumbRef.current?.click()}
                   className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[color:var(--line)] bg-[color:var(--surface-2)] p-6 cursor-pointer hover:border-primary/50 transition-colors min-h-[120px]">
@@ -1126,7 +1129,7 @@ export default function CreateCoursePage() {
               {isAr ? 'التالي' : 'Next'} <ChevronLeft className="h-4 w-4" />
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={saving}
+            <button onClick={handleSubmit} disabled={saving} data-tour="create-submit"
               className="flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all">
               {saving && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
               {saving ? (isAr ? 'جاري الإنشاء...' : 'Creating...') : (isAr ? 'إنشاء الكورس' : 'Create Course')}

@@ -24,6 +24,7 @@ import ToggleSwitch from '@/components/quizzes/ToggleSwitch'
 import SegmentedControl from '@/components/quizzes/SegmentedControl'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import ConfirmModal from '@/components/ConfirmModal'
+import { QuizBuilderTourLauncher } from '@/components/QuizBuilderTour'
 
 const inputCls =
   'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
@@ -367,6 +368,7 @@ export default function QuizBuilderPage() {
 
   return (
     <div className="p-6" dir="rtl">
+      <QuizBuilderTourLauncher />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -378,7 +380,7 @@ export default function QuizBuilderPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-xl font-bold font-madinet text-[var(--ink)]">{settings.title || quiz.title || 'الاختبار'}</h1>
-            <StatusBadge status={quiz.status} />
+            <span data-tour="quiz-status-badge"><StatusBadge status={quiz.status} /></span>
           </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--ink-2)]">
             <span>{questions.length} سؤال</span>
@@ -423,6 +425,7 @@ export default function QuizBuilderPage() {
               <button
                 type="button"
                 onClick={openNew}
+                data-tour="quiz-add-question"
                 className="flex items-center gap-2 rounded-[10px] bg-primary px-3 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all duration-150"
               >
                 <Plus className="h-4 w-4" />
@@ -590,7 +593,7 @@ export default function QuizBuilderPage() {
                   />
                 </div>
 
-                <div>
+                <div data-tour="quiz-question-points">
                   <label className={labelCls}>الدرجة</label>
                   <input
                     className={inputCls}
@@ -690,7 +693,7 @@ export default function QuizBuilderPage() {
             </div>
           )}
 
-          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+          <div data-tour="quiz-settings-panel" className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
             <h2 className="mb-4 font-bold text-[var(--ink)]">إعدادات الاختبار</h2>
             <div className="space-y-4">
               <div>
@@ -710,20 +713,20 @@ export default function QuizBuilderPage() {
                 />
               </div>
               <div className="grid gap-4 grid-cols-2">
-                <div>
+                <div data-tour="quiz-duration">
                   <label className={labelCls}>المدة (دقيقة)</label>
                   <input className={inputCls} type="number" min={1} value={settings.durationMinutes} onChange={(e) => setS('durationMinutes', e.target.value)} />
                 </div>
-                <div>
+                <div data-tour="quiz-passing-score">
                   <label className={labelCls}>درجة النجاح (%)</label>
                   <input className={inputCls} type="number" min={0} max={100} value={settings.passingScore} onChange={(e) => setS('passingScore', e.target.value)} />
                 </div>
-                <div>
+                <div data-tour="quiz-attempts">
                   <label className={labelCls}>عدد المحاولات</label>
                   <input className={inputCls} type="number" min={1} value={settings.maxAttempts} onChange={(e) => setS('maxAttempts', e.target.value)} />
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div data-tour="quiz-shuffle" className="grid gap-4 sm:grid-cols-2">
                 <ToggleSwitch checked={settings.shuffleQuestions} onChange={(v) => setS('shuffleQuestions', v)} label="خلط الأسئلة" />
                 <ToggleSwitch checked={settings.shuffleChoices} onChange={(v) => setS('shuffleChoices', v)} label="خلط الخيارات" />
                 <ToggleSwitch checked={settings.allowRetake} onChange={(v) => setS('allowRetake', v)} label="السماح بالإعادة" />

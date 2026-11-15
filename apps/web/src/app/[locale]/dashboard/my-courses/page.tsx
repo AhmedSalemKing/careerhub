@@ -12,6 +12,7 @@ import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
 import { formatCoursePrice, formatSarAmount } from "../../../../lib/market";
 import { MyCoursesTourLauncher } from '@/components/MyCoursesTour'
+import { MyCoursesInstructorTourLauncher } from '@/components/MyCoursesInstructorTour'
 
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
@@ -171,7 +172,7 @@ export default function MyCoursesPage() {
 				`}</style>
 				<div style={{ padding: 'clamp(16px,3vw,32px)', maxWidth: '1400px', margin: '0 auto' }}>
 					{/* 1. Page header row */}
-					<MyCoursesTourLauncher />
+					{isInstructor ? <MyCoursesInstructorTourLauncher /> : <MyCoursesTourLauncher />}
 					<div data-tour="my-courses-header" style={{
 						display: 'flex',
 						justifyContent: 'space-between',
@@ -215,7 +216,7 @@ export default function MyCoursesPage() {
 								{courses.length} {isAr ? "كورس" : "Course"}
 							</div>
 							{isInstructor && (
-								<Link href={`/${locale}/dashboard/create-course`} style={{
+								<Link href={`/${locale}/dashboard/create-course`} data-tour="my-courses-create" style={{
 									display: 'inline-flex',
 									alignItems: 'center',
 									gap: 8,
@@ -248,7 +249,7 @@ export default function MyCoursesPage() {
 							gridTemplateColumns: 'repeat(3, 1fr)',
 							gap: 12,
 							marginBottom: 20,
-						}} className="stats-grid">
+						}} className="stats-grid" data-tour="my-courses-stats">
 							{[
 								{
 									label: isAr ? 'إجمالي الطلاب' : 'Total Students',
@@ -375,7 +376,7 @@ export default function MyCoursesPage() {
 								</button>
 							))}
 						</div>
-						<select style={{
+						<select data-tour="my-courses-sort" style={{
 							background: 'var(--surface)',
 							border: '1px solid var(--line)',
 							borderRadius: 12,
@@ -472,6 +473,8 @@ export default function MyCoursesPage() {
 							{filteredCourses.map((course: any, courseIdx: number) => {
 								const title = getTitle(course, locale);
 								const statusConfig = getStatusConfig(course.status, course);
+								const statusTourKey = statusConfig.key === 'live' ? 'my-courses-live-badge' : `my-courses-status-${String(statusConfig.key).toLowerCase()}`;
+								const isFirstOfStatus = isInstructor && filteredCourses.findIndex((c: any) => getStatusConfig(c.status, c).key === statusConfig.key) === courseIdx;
 								const enrollments = course._count?.enrollments || course.enrollmentsCount || course.enrollments || 0;
 								const coursePrice = course.price;
 
@@ -509,7 +512,7 @@ export default function MyCoursesPage() {
 												</div>
 											)}
 											{/* Status badge */}
-											<div style={{
+											<div {...(isFirstOfStatus ? { 'data-tour': statusTourKey } : {})} style={{
 												position: 'absolute',
 												top: 12,
 												right: 12,
@@ -590,7 +593,7 @@ export default function MyCoursesPage() {
 											}}>
 												{isInstructor ? (
 													<>
-														<Link href={`/${locale}/dashboard/courses/${course.id}/manage`} style={{
+														<Link href={`/${locale}/dashboard/courses/${course.id}/manage`} {...(courseIdx === 0 ? { 'data-tour': 'my-courses-manage-btn' } : {})} style={{
 															background: 'var(--primary)',
 															color: '#fff',
 															border: 'none',

@@ -26,6 +26,7 @@ import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice, formatMoney, formatSarAmount } from '../../../lib/market'
 import { DashboardTourLauncher } from '@/components/DashboardTour'
+import { InstructorDashboardTourLauncher } from '@/components/InstructorDashboardTour'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -130,7 +131,8 @@ function InstructorOverview() {
         @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
       `}</style>
 
-      <div style={{
+      <InstructorDashboardTourLauncher />
+      <div data-tour="dashboard-welcome" style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}>
@@ -145,7 +147,7 @@ function InstructorOverview() {
             {isAr ? 'إليك ملخص نشاطك اليوم' : "Here's your activity overview"}
           </p>
         </div>
-        <a href={`/${locale}/dashboard/create-course`} className="rd-action rd-primary" style={{
+        <a href={`/${locale}/dashboard/create-course`} data-tour="dashboard-create-course" className="rd-action rd-primary" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '10px 20px', borderRadius: 10,
           background: 'var(--primary)', color: 'var(--primary-foreground)',
@@ -156,7 +158,7 @@ function InstructorOverview() {
         </a>
       </div>
 
-      <div className="rd-stats">
+      <div className="rd-stats" data-tour="dashboard-stats">
         {statCards.map(({ Icon, color, label, value, href }) => (
           <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
             <div className="rd-stat" style={{
@@ -185,7 +187,7 @@ function InstructorOverview() {
 
       <div className="rd-main">
         {/* Recent courses */}
-        <section style={{
+        <section data-tour="dashboard-recent-courses" style={{
           background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 24, minWidth: 0,
         }}>
@@ -256,7 +258,7 @@ function InstructorOverview() {
           )}
         </section>
 
-        <aside style={{
+        <aside data-tour="dashboard-quick-actions" style={{
           background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 20, minWidth: 0,
         }}>
