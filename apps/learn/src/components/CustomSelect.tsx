@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface SelectOption {
   value: string
@@ -10,8 +11,9 @@ export interface SelectOption {
 }
 
 /**
- * Themed replacement for the native <select>. The list is positioned with `fixed` from the trigger's
- * rectangle, so it is never clipped by a scrolling parent such as a modal body.
+ * Themed replacement for the native <select>. The list is rendered in a portal on document.body and positioned
+ * with `fixed` from the trigger's rectangle. That keeps it clear of any ancestor `overflow` clipping and of
+ * `transform`ed ancestors (animated modals), which would otherwise turn `fixed` into a clipped, offset box.
  *
  * `placeholder` is shown while `value` matches no option. An option with value '' is a real, selectable
  * option (use it for "All" filters); leave it out for required fields and rely on `placeholder`.
@@ -123,14 +125,26 @@ export function CustomSelect({
           style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: 1, opacity: 0, pointerEvents: 'none' }}
         />
       )}
-      {open && rect && (
+      {open && rect && createPortal(
         <div
           id={id}
           ref={listRef}
           role="listbox"
           className="cs-list"
           onMouseDown={(e) => e.stopPropagation()}
-          style={{ left: rect.left, width: rect.width, ...(rect.up ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.top + 4 }) }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            zIndex: 2147483000,
+            left: rect.left,
+            width: rect.width,
+            maxHeight: '240px',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+            ...(rect.up ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.top + 4 }),
+          }}
         >
           {options.map((o, i) => (
             <div key={(o.value || '__empty') + ':' + i}>
@@ -147,7 +161,8 @@ export function CustomSelect({
               </div>
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
