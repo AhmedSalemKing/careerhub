@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useId, useRef, useMemo, isValidElement, cloneElement } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -58,20 +59,39 @@ function SpecialityCombobox({
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; up: boolean } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const listId = useId()
 
+  // The list is portaled to document.body (position: fixed) so no card/page wrapper can clip it.
+  const place = () => {
+    const r = ref.current?.getBoundingClientRect()
+    if (!r) return
+    const room = window.innerHeight - r.bottom
+    const up = room < 200 && r.top > room
+    setRect({ top: up ? r.top : r.bottom, left: r.left, width: r.width, up })
+  }
+
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    if (!open) return
+    place()
+    const onOutside = (e: Event) => {
+      const t = e.target as Node
+      if (!ref.current?.contains(t) && !listRef.current?.contains(t)) setOpen(false)
     }
-    document.addEventListener('mousedown', handler)
-    document.addEventListener('touchstart', handler as any, { passive: true })
+    const onMove = (e: Event) => { if (!listRef.current?.contains(e.target as Node)) place() }
+    document.addEventListener('mousedown', onOutside)
+    document.addEventListener('touchstart', onOutside, { passive: true })
+    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onMove)
     return () => {
-      document.removeEventListener('mousedown', handler)
-      document.removeEventListener('touchstart', handler as any)
+      document.removeEventListener('mousedown', onOutside)
+      document.removeEventListener('touchstart', onOutside)
+      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onMove)
     }
-  }, [])
+  }, [open])
 
   const q = value.trim().toLowerCase()
   const filtered = (q ? options.filter((o) => o.toLowerCase().includes(q)) : options).slice(0, 50)
@@ -105,15 +125,17 @@ function SpecialityCombobox({
           else if (e.key === 'Escape') setOpen(false)
         }}
       />
-      {open && (
+      {open && rect && createPortal(
         <ul
           id={listId}
+          ref={listRef}
           role="listbox"
-          // Keep focus on the input while the scrollbar / list is dragged, and stop scroll chaining to the page
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
-            position: 'absolute', zIndex: 30, insetInline: 0, top: '100%', marginTop: 4, maxHeight: 220, overflowY: 'scroll',
-            overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
+            position: 'fixed', zIndex: 2147483000, left: rect.left, width: rect.width,
+            ...(rect.up ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.top + 4 }),
+            maxHeight: '220px', overflowY: 'scroll',
+            overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', margin: 0,
             background: dropdownBg, border: `1px solid ${dropdownBorder}`, borderRadius: 12, padding: 4, listStyle: 'none',
             boxShadow: '0 12px 28px rgba(0,0,0,0.25)',
           }}
@@ -137,7 +159,8 @@ function SpecialityCombobox({
               </li>
             ))
           )}
-        </ul>
+        </ul>,
+        document.body,
       )}
     </div>
   )
