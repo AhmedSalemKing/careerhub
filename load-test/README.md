@@ -1,50 +1,49 @@
-# DeveWay Load Test — Enterprise Grade
+# DeveWay Load Test
+
+Targets production by default: web `https://deveway-teal.vercel.app`, learn `https://devewayhub.vercel.app`, API `https://api.deveways.com`.
 
 ## Install k6
 Windows: `winget install k6`
 
-## Run Full Test (about 7 minutes)
+## Run
 ```
-cd D:\careerhub
 k6 run load-test/k6-script.js
 ```
 
-## Load shape
-Three scenarios run at the same time against production:
+With environment variables:
+```
+k6 run -e ENV=staging -e BASE_URL=https://staging.example.com -e API_URL=https://api-staging.example.com load-test/k6-script.js
+```
 
-| Scenario | VUs | When |
-|----------|-----|------|
-| normal_load | ramps 0 → 20 → 90, holds 90, ramps down | 0m – 7m |
-| spike_test | 0 → 50, holds, back to 0 | starts at 4m |
-| api_constant | constant 10 | 0m – 6m |
+To exercise authenticated journeys, provide real test accounts:
+```
+k6 run -e LEARNER_EMAIL=learner@test.com -e LEARNER_PASSWORD=... -e MENTOR_EMAIL=mentor@test.com -e MENTOR_PASSWORD=... load-test/k6-script.js
+```
+Without credentials the login steps are skipped and authenticated routes are called without a token (401/403 is treated as expected).
 
-Between 4m and about 6m the scenarios overlap, so peak concurrency is up to
-**150 VUs** (90 + 50 + 10), not 90. The summary prints the actual peak.
+Warning: the API blocks an IP after 10 failed logins in 15 minutes. Never point the credentials at accounts that do not exist. The script sends only one deliberate bad login (in `setup()`).
 
-## What It Tests
-| Journey | % of Users | Description |
-|---------|-----------|-------------|
-| New Visitor | 25% | Homepage → Careers → Coaching → Courses |
-| Returning Student | 20% | Courses → Categories → Learn App |
-| Mobile User | 15% | All pages on mobile device |
-| API Power User | 15% | Direct API calls, stress test |
-| Platform Explorer | 15% | Full platform walkthrough |
-| Bounce User | 10% | Quick exit simulation |
+## Scenarios (about 5 minutes)
+| Scenario | Share | What it does |
+|----------|-------|--------------|
+| anonymous_browsing | 30% | `/ar`, `/ar/careers`, `/ar/coaching`, `/en`, `/en/careers`; 30 VUs |
+| auth_flow | 10% | `POST /api/auth/login`, `GET /api/auth/me`, unread notifications; 10 VUs |
+| authenticated_learner | 25% | login, `/ar/dashboard`, `/ar/dashboard/my-courses`, `/api/career/paths/my`, `/api/notifications`; 25 VUs |
+| api_load | 20% | `/api/career/paths`, path detail, `/api/courses`, `/api/coaching/coaches`, `/api/consulting/consultants`, `/api/health`; 20 VUs |
+| mentor_flow | 5% | mentor login, `/api/consulting/sessions/my`, dashboard; 5 VUs |
+| spike | 10% | anonymous browsing, 0 to 100 VUs in 10s, hold 30s, down in 10s, starts at 4m |
 
-## Pass Criteria (thresholds)
-- Error rate < 10% (`http_req_failed` and `custom_errors`)
-- p(50) < 2s, p(95) < 5s, p(99) < 8s overall
-- API p(95) < 3s, page p(95) < 5s
+Requests are tagged `type: page | api | auth`, so thresholds and results separate them.
 
-The overall PASSED/FAILED in the summary reflects every threshold above.
+## Thresholds
+- `http_req_failed` < 5%
+- `http_req_duration` p95 < 3000ms, p99 < 5000ms
+- pages p95 < 3000ms, API p95 < 2000ms
+- `page_errors` < 5%, `api_errors` < 10%
 
-## Before Running
-1. Check https://api.deveways.com/api/health responds
-2. Open Render logs (optional — to watch server)
-3. Open Vercel logs (optional — to watch frontend)
-
-This test hits live production (web, learn app and API). Run it at a quiet time
-and expect it to appear in analytics and to count against free-tier quotas.
-
-## Results
-Saved to: `load-test/results.json` (git-ignored)
+## Reading results
+The summary prints PASSED/FAILED, then page, API and auth lines. Full data is written to `load-test/results.json`.
+- High page error rate: a Vercel limit or a failing route. Check Vercel logs.
+- High API error rate or slow p95: the Render backend (cold start on a free plan, database).
+- Low auth success rate with credentials set: wrong credentials or the login limiter (429).
+- Spike p95 much worse than steady-state: autoscaling or cold starts.
