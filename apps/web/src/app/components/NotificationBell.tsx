@@ -144,7 +144,7 @@ export function NotificationBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute left-0 z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden"
+            className={`absolute ${isAr ? 'left-0' : 'right-0'} z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden`}
             dir={isAr ? 'rtl' : 'ltr'}
           >
             {/* Header */}
@@ -180,17 +180,17 @@ export function NotificationBell() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {getIcon(n.type)}
                           <p className="text-sm font-semibold text-foreground">
-                            {n.titleAr || n.titleEn}
+                            {isAr ? (n.titleAr || n.titleEn) : (n.titleEn || n.titleAr)}
                           </p>
                         </div>
-                        <p className="text-xs text-[color:var(--muted)] mt-0.5 leading-relaxed mr-6">
-                          {n.contentAr || n.contentEn}
+                        <p className="text-xs text-[color:var(--muted)] mt-0.5 leading-relaxed ms-6">
+                          {isAr ? (n.contentAr || n.contentEn) : (n.contentEn || n.contentAr)}
                         </p>
-                        <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60 mr-6">
+                        <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60 ms-6">
                           {timeAgoAr(n.createdAt)}
                         </p>
                       </div>

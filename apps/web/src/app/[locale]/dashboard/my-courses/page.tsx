@@ -169,7 +169,16 @@ export default function MyCoursesPage() {
 					@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 					@keyframes livePulse { 0% { transform: scale(1); opacity: 0.7; } 70% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(2.2); opacity: 0; } }
 					@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr !important; } }
-					@media (max-width: 640px) { .course-grid { grid-template-columns: 1fr !important; } }
+					@media (max-width: 640px) {
+.course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+.course-card { min-width: 0; }
+.course-card .course-thumb { height: 110px !important; }
+.course-card .course-body { padding: 10px !important; }
+.course-card .course-title { font-size: 0.85rem !important; margin-bottom: 6px !important; overflow-wrap: anywhere; }
+.course-card .course-meta { flex-wrap: wrap; gap: 4px 10px !important; font-size: 0.72rem !important; margin-bottom: 8px !important; }
+.course-card .course-actions { flex-wrap: wrap; gap: 6px !important; }
+.course-card .course-actions a, .course-card .course-actions button { padding: 7px 12px !important; font-size: 0.78rem !important; }
+}
 					.course-card:hover { border-color: var(--primary-border) !important; }
 				`}</style>
 				<div style={{ padding: 'clamp(16px,3vw,32px)', maxWidth: '1400px', margin: '0 auto' }}>
@@ -489,8 +498,8 @@ export default function MyCoursesPage() {
 										transition: 'border-color 0.2s',
 									}} className="course-card">
 										{/* Thumbnail area */}
-										<div style={{
-											height: 180,
+<div className="course-thumb" style={{
+height: 180,
 											position: 'relative',
 											overflow: 'hidden',
 											background: course.thumbnail ? 'transparent' : 'var(--surface-2)',
@@ -543,10 +552,10 @@ export default function MyCoursesPage() {
 										</div>
 
 										{/* Card body */}
-										<div style={{ padding: 16 }}>
-											<div style={{
-												fontWeight: 500,
-												fontSize: '0.97rem',
+										<div className="course-body" style={{ padding: 16 }}>
+<div className="course-title" style={{
+fontWeight: 500,
+fontSize: '0.97rem',
 												color: 'var(--ink)',
 												marginBottom: 8,
 												display: '-webkit-box',
@@ -560,10 +569,10 @@ export default function MyCoursesPage() {
 											</div>
 
 											{/* Meta row */}
-											<div style={{
-												display: 'flex',
-												gap: 16,
-												fontSize: '0.8rem',
+											<div className="course-meta" style={{
+display: 'flex',
+gap: 16,
+fontSize: '0.8rem',
 												color: 'var(--ink-2)',
 												fontWeight: 300,
 												marginBottom: 12,
@@ -588,12 +597,12 @@ export default function MyCoursesPage() {
 											</div>
 
 											{/* Action row */}
-											<div style={{
-												display: 'flex',
-												gap: 8,
-												alignItems: 'center',
-											}}>
-												{isInstructor ? (
+											<div className="course-actions" style={{
+display: 'flex',
+gap: 8,
+alignItems: 'center',
+}}>
+{isInstructor ? (
 													<>
 														<Link href={`/${locale}/dashboard/courses/${course.id}/manage`} {...(courseIdx === 0 ? { 'data-tour': 'my-courses-manage-btn' } : {})} style={{
 															background: 'var(--primary)',
@@ -744,10 +753,15 @@ export default function MyCoursesPage() {
 					50% { opacity: 0.5; }
 				}
 				@media (max-width: 640px) {
-					.course-grid {
-						grid-template-columns: 1fr !important;
-					}
-				}
+.course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+.course-card { min-width: 0; }
+.course-card .course-thumb { height: 110px !important; }
+.course-card .course-body { padding: 10px !important; }
+.course-card .course-title { font-size: 0.85rem !important; margin-bottom: 6px !important; overflow-wrap: anywhere; }
+.course-card .course-meta { flex-wrap: wrap; gap: 4px 10px !important; font-size: 0.72rem !important; margin-bottom: 8px !important; }
+.course-card .course-actions { flex-wrap: wrap; gap: 6px !important; }
+.course-card .course-actions a, .course-card .course-actions button { padding: 7px 12px !important; font-size: 0.78rem !important; }
+}
 				@media (max-width: 480px) {
 					.stats-grid {
 						grid-template-columns: 1fr !important;
