@@ -91,8 +91,9 @@ export default function CareersPage() {
 
   // Enrollment: GET /career/paths/my lists the paths/tracks the signed-in user joined (ids are database ids).
   // The catalogue list maps the slug-based card ids to those database ids.
-  const authToken = useAuthStore((s) => s.token)
-  const { data: myPathIds = [] } = useQuery<string[]>({
+    const authToken = useAuthStore((s) => s.token)
+  const authLoading = useAuthStore((s) => s.isLoading)
+  const { data: myPathIds = [], isLoading: myLoading } = useQuery<string[]>({
     queryKey: ['careers-my-path-ids'],
     enabled: !!authToken,
     staleTime: 30_000,
@@ -104,7 +105,7 @@ export default function CareersPage() {
       return Array.isArray(paths) ? (paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean) as string[]) : []
     },
   })
-  const { data: dbPaths = [] } = useQuery<any[]>({
+    const { data: dbPaths = [], isLoading: dbLoading } = useQuery<any[]>({
     queryKey: ['careers-db-paths'],
     enabled: !!authToken && myPathIds.length > 0,
     staleTime: 5 * 60_000,
@@ -116,6 +117,8 @@ export default function CareersPage() {
       return Array.isArray(arr) ? arr : []
     },
   })
+    // True until we know whether the visitor is enrolled, so a wrong button never flashes. Signed-out visitors skip it.
+  const enrollLoading = authLoading || (!!authToken && (myLoading || (myPathIds.length > 0 && dbLoading)))
   const isEnrolled = (p: PathItem): boolean => {
     if (!authToken || myPathIds.length === 0) return false
     const db = dbPaths.find((x: any) => x.slug === p.id || x.id === p.id)
@@ -421,9 +424,12 @@ export default function CareersPage() {
                       {isAr ? 'تفاصيل' : 'Details'}
                     </button>
                     {/* Always shown. Managed tracks start from their details page (package + enrollment). */}
+                                        {enrollLoading ? (
+                      <div className="t-btn t-btn-skeleton" role="status" aria-busy="true" aria-label={isAr ? 'جارٍ التحميل' : 'Loading'} />
+                    ) : (
                     <button
                       type="button"
-                                            className={`t-btn primary${enrolled ? ' enrolled' : ''}`}
+                      className={`t-btn primary${enrolled ? ' enrolled' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (tk) router.push(`/${locale}/careers/${tk.slug || tk.id || path.id}`)
@@ -431,8 +437,9 @@ export default function CareersPage() {
                         else requestStartPath(path)
                       }}
                     >
-                      {enrolled ? (isAr ? 'متابعة المسار' : 'Continue Track') : (isAr ? 'ابدأ المسار' : 'Start Path')}
+                                            {enrolled ? (isAr ? 'متابعة المسار' : 'Continue Track') : (isAr ? 'ابدأ المسار' : 'Start Path')}
                     </button>
+                    )}
                   </div>
                 </div>
               </article>

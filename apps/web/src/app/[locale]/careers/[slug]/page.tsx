@@ -155,8 +155,9 @@ export default function CareerPathDetailPage() {
   })
 
     // Enrollment: same endpoint and cache key as the careers grid (GET /career/paths/my returns the joined path/track ids).
-  const authToken = useAuthStore((s) => s.token)
-  const { data: myPathIds = [] } = useQuery<string[]>({
+    const authToken = useAuthStore((s) => s.token)
+  const authLoading = useAuthStore((s) => s.isLoading)
+  const { data: myPathIds = [], isLoading: myLoading } = useQuery<string[]>({
     queryKey: ['careers-my-path-ids'],
     enabled: !!authToken,
     staleTime: 30_000,
@@ -217,6 +218,8 @@ export default function CareerPathDetailPage() {
 
     const isLoading = pathLoading || trackLoading
   const nf = isAr ? 'ar-EG' : 'en-US'
+    // True until we know whether the visitor is enrolled, so "Start the path" never flashes for enrolled users. Signed-out visitors skip it.
+  const enrollLoading = authLoading || (!!authToken && myLoading)
   const isEnrolled =
     !!authToken &&
     [path?.id, path?.slug, track?.id, track?.slug, listEntry?.id, listEntry?.slug, slug].some((v) => !!v && myPathIds.includes(v as string))
@@ -375,7 +378,9 @@ export default function CareerPathDetailPage() {
     )
   }
 
-    const enrollBtn = (block?: boolean) => isEnrolled ? (
+      const enrollBtn = (block?: boolean) => enrollLoading ? (
+    <span className={`dw2-btn skeleton${block ? ' block' : ''}`} role="status" aria-busy="true" aria-label={isAr ? 'جارٍ التحميل' : 'Loading'} />
+  ) : isEnrolled ? (
     <a href={continueUrl} className={`dw2-btn primary enrolled${block ? ' block' : ''}`} style={{ textDecoration: 'none' }}>
       {isAr ? 'متابعة المسار' : 'Continue Track'}
     </a>
