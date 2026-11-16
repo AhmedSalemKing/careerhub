@@ -4031,6 +4031,7 @@ svg.go { transition: transform .2s; }
 .dw2-btn { display: inline-flex; align-items: center; justify-content: center; height: 38px; padding: 0 22px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid var(--purple); transition: opacity .15s; font-family: inherit; box-sizing: border-box; line-height: 1; }
 .dw2-btn.primary { background: var(--purple); color: #fff; }
 .dw2-btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.dw2-btn.primary.enrolled { background: #16a34a; color: #fff; }
 .dw2-btn.block { width: 100%; }
 .dw2-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .dw2-btn:hover:not(:disabled) { opacity: 0.88; }

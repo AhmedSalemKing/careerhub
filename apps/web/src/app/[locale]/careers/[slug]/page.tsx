@@ -9,6 +9,7 @@ import { get, post } from '../../../../lib/api'
 import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
 import { useMarket } from '../../../contexts/MarketContext'
+import { useAuthStore } from '../../../../stores/authStore'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
@@ -153,6 +154,21 @@ export default function CareerPathDetailPage() {
     staleTime: 5 * 60 * 1000,
   })
 
+    // Enrollment: same endpoint and cache key as the careers grid (GET /career/paths/my returns the joined path/track ids).
+  const authToken = useAuthStore((s) => s.token)
+  const { data: myPathIds = [] } = useQuery<string[]>({
+    queryKey: ['careers-my-path-ids'],
+    enabled: !!authToken,
+    staleTime: 30_000,
+    retry: 1,
+    queryFn: async () => {
+      const res = await get('/career/paths/my')
+      const d = res?.data as any
+      const paths = d?.data?.paths ?? d?.data ?? []
+      return Array.isArray(paths) ? (paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean) as string[]) : []
+    },
+  })
+
   // The package stores platform course ids. When the track's curated course list does not cover them
   // (or is empty), load the package courses by id so the plan is never empty while the package says N courses.
   const pkgCourseIds: string[] = track?.package?.courseIds ?? []
@@ -199,8 +215,15 @@ export default function CareerPathDetailPage() {
     staleTime: 60000,
   })
 
-  const isLoading = pathLoading || trackLoading
+    const isLoading = pathLoading || trackLoading
   const nf = isAr ? 'ar-EG' : 'en-US'
+  const isEnrolled =
+    !!authToken &&
+    [path?.id, path?.slug, track?.id, track?.slug, listEntry?.id, listEntry?.slug, slug].some((v) => !!v && myPathIds.includes(v as string))
+  // "Continue" opens the first course of this track in the learn app, or the learner's courses when none is linked yet
+  const firstCourseId: string | undefined =
+    track?.courses?.slice().sort((a, b) => (a.order || 0) - (b.order || 0)).find((c) => c.courseId)?.courseId ?? pkgCourses[0]?.id
+  const continueUrl = learnUrlWithToken(firstCourseId ? `/${locale}/courses/${firstCourseId}` : `/${locale}/my-courses`)
   const isMock = !isLoading && !isError && !path && !track
 
   const view: View | null = (() => {
@@ -352,7 +375,11 @@ export default function CareerPathDetailPage() {
     )
   }
 
-  const enrollBtn = (block?: boolean) => (
+    const enrollBtn = (block?: boolean) => isEnrolled ? (
+    <a href={continueUrl} className={`dw2-btn primary enrolled${block ? ' block' : ''}`} style={{ textDecoration: 'none' }}>
+      {isAr ? 'متابعة المسار' : 'Continue Track'}
+    </a>
+  ) : (
     <button
       type="button"
       className={`dw2-btn primary${block ? ' block' : ''}`}
@@ -406,6 +433,7 @@ export default function CareerPathDetailPage() {
             <h1>{view.title}</h1>
             {view.description && <p className="dw2-lede">{view.description}</p>}
             <div className="dw2-stats" data-tour="career-header">
+              {isEnrolled && <span className="dw2-stat-pill dw2-pill-green">{isAr ? 'مشترك بالفعل' : 'Enrolled'}</span>}
               {isMock && <span className="dw2-stat-pill dw2-pill-yellow">{isAr ? 'بيانات تجريبية' : 'Sample data'}</span>}
               <span className="dw2-stat-pill">{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات` : `${view.coursesCount} courses`}</span>
               {view.durationText && <span className="dw2-stat-pill">{view.durationText}</span>}

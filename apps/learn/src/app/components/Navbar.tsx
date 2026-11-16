@@ -169,8 +169,6 @@ function UserDropdown({ locale }: { locale: string }) {
           {/* My Courses link */}
           <Link
             href={`${WEB_URL}/${locale}/dashboard/my-courses`}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={() => setOpen(false)}
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',

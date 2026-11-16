@@ -24,8 +24,8 @@ export function Footer() {
     {
       title: isAr ? 'التدريب' : 'Training',
       links: [
-        { href: `${LEARN_SITE_URL}/${locale}/courses`, label: isAr ? 'جميع الكورسات' : 'All courses', external: true },
-        { href: `${main}/dashboard/my-courses`, label: isAr ? 'كورساتي' : 'My courses', external: true },
+        { href: `${LEARN_SITE_URL}/${locale}/courses`, label: isAr ? 'جميع الكورسات' : 'All courses' },
+        { href: `${main}/dashboard/my-courses`, label: isAr ? 'كورساتي' : 'My courses' },
       ],
     },
     {
