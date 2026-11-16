@@ -1,11 +1,15 @@
 'use client'
-import { useState, useEffect, useId, isValidElement, cloneElement } from 'react'
+import { useState, useEffect, useId, useRef, useMemo, isValidElement, cloneElement } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { getUploadErrorMessage } from '../../../lib/upload-error'
 import { useAuthStore } from '../../../stores/authStore'
+import { useTracks } from '../../../lib/tracks'
+import { CAREER_PATHS } from '../../../lib/career-paths'
+import { useMarket } from '../../contexts/MarketContext'
+import { MARKET_CONFIG } from '../../../lib/marketConfig'
 import { toast } from 'sonner'
 import { Camera, CheckCircle2, Upload, Loader2, X, GraduationCap, User, Briefcase, PartyPopper, Clock } from 'lucide-react'
 
@@ -30,7 +34,105 @@ type Step2Data = {
   bio: string
   linkedinUrl: string
   hourlyRate: string
-  meetingMethod: string
+}
+
+// ─── Speciality combobox: searchable list with a free-text fallback ──────────
+
+function SpecialityCombobox({
+  value, onChange, options, className, style, placeholder, label, emptyHint,
+  dropdownBg, dropdownBorder, textColor, mutedColor,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  className: string
+  style: React.CSSProperties
+  placeholder: string
+  label: string
+  emptyHint: string
+  dropdownBg: string
+  dropdownBorder: string
+  textColor: string
+  mutedColor: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(-1)
+  const ref = useRef<HTMLDivElement>(null)
+  const listId = useId()
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const q = value.trim().toLowerCase()
+  const filtered = (q ? options.filter((o) => o.toLowerCase().includes(q)) : options).slice(0, 50)
+
+  const pick = (v: string) => {
+    onChange(v)
+    setOpen(false)
+    setActive(-1)
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <input
+        type="text"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-label={label}
+        autoComplete="off"
+        value={value}
+        placeholder={placeholder}
+        className={className}
+        style={style}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); setActive(-1) }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive((i) => Math.min(i + 1, filtered.length - 1)) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)) }
+          else if (e.key === 'Enter' && open && active >= 0 && filtered[active]) { e.preventDefault(); pick(filtered[active]) }
+          else if (e.key === 'Escape') setOpen(false)
+        }}
+      />
+      {open && (
+        <ul
+          id={listId}
+          role="listbox"
+          style={{
+            position: 'absolute', zIndex: 30, insetInline: 0, top: '100%', marginTop: 4, maxHeight: 220, overflowY: 'auto',
+            background: dropdownBg, border: `1px solid ${dropdownBorder}`, borderRadius: 12, padding: 4, listStyle: 'none',
+            boxShadow: '0 12px 28px rgba(0,0,0,0.25)',
+          }}
+        >
+          {filtered.length === 0 ? (
+            <li style={{ padding: '8px 12px', fontSize: 13, color: mutedColor }}>{emptyHint}</li>
+          ) : (
+            filtered.map((o, i) => (
+              <li
+                key={o}
+                role="option"
+                aria-selected={i === active}
+                onMouseDown={(e) => { e.preventDefault(); pick(o) }}
+                onMouseEnter={() => setActive(i)}
+                style={{
+                  padding: '8px 12px', fontSize: 14, borderRadius: 8, cursor: 'pointer', color: textColor,
+                  background: i === active ? 'rgba(81,32,200,0.14)' : 'transparent',
+                }}
+              >
+                {o}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 // ─── Field component ─────────────────────────────────────────────────────────
@@ -209,6 +311,23 @@ export default function RegisterPage() {
     country: '',
   })
 
+  const { market } = useMarket()
+  // Same list as the careers page: admin-managed tracks first, then the built-in catalogue (localized names)
+  const { data: learningTracks = [] } = useTracks(locale)
+  const specialityOptions = useMemo(() => {
+    const names = [
+      ...learningTracks.map((t) => t.name),
+      ...CAREER_PATHS.flatMap((c) => c.paths.map((p) => (ar ? p.titleAr : p.title))),
+    ].filter(Boolean)
+    return Array.from(new Set(names))
+  }, [learningTracks, ar])
+  // Hourly rate is typed in the visitor's market currency, like course prices, and stored in the SAR base currency
+  const hourlyRateInSar = (raw: string): number => {
+    const v = parseFloat(raw)
+    if (!isFinite(v)) return 0
+    return market === 'EG' ? Math.round((v / MARKET_CONFIG.EG.salaryMultiplier) * 100) / 100 : v
+  }
+
   const [step2, setStep2] = useState<Step2Data>({
     accountType: 'STUDENT',
     cvUrl: '',
@@ -217,7 +336,6 @@ export default function RegisterPage() {
     bio: '',
     linkedinUrl: '',
     hourlyRate: '',
-    meetingMethod: '',
   })
 
   const [errors1, setErrors1] = useState<Partial<Step1Data>>({})
@@ -311,8 +429,7 @@ export default function RegisterPage() {
     const errs: Partial<Record<keyof Step2Data, string>> = {}
     const isPro = step2.accountType !== 'STUDENT'
     if (isPro && !step2.cvUrl.trim()) errs.cvUrl = ar ? 'السيرة الذاتية مطلوبة' : 'CV is required'
-    if (step2.accountType === 'CONSULTANT' && !step2.meetingMethod)
-      errs.meetingMethod = ar ? 'مطلوب' : 'Required'
+    
     setErrors2(errs)
     return Object.keys(errs).length === 0
   }
@@ -346,8 +463,7 @@ export default function RegisterPage() {
           if (step2.bio) proPayload.bio = step2.bio
           if (step2.linkedinUrl) proPayload.linkedinUrl = step2.linkedinUrl
           if (step2.accountType === 'CONSULTANT') {
-            if (step2.hourlyRate) proPayload.hourlyRate = parseFloat(step2.hourlyRate)
-            if (step2.meetingMethod) proPayload.meetingMethod = step2.meetingMethod
+            if (step2.hourlyRate) proPayload.hourlyRate = hourlyRateInSar(step2.hourlyRate)
           }
           if (Object.keys(proPayload).length > 0) {
             await api.patch('/auth/update-pro-fields', proPayload, {
@@ -399,8 +515,7 @@ export default function RegisterPage() {
       if (step2.bio) payload.bio = step2.bio
       if (step2.linkedinUrl) payload.linkedinUrl = step2.linkedinUrl
       if (step2.accountType === 'CONSULTANT') {
-        if (step2.hourlyRate) payload.hourlyRate = parseFloat(step2.hourlyRate)
-        if (step2.meetingMethod) payload.meetingMethod = step2.meetingMethod
+        if (step2.hourlyRate) payload.hourlyRate = hourlyRateInSar(step2.hourlyRate)
       }
     }
 
@@ -926,13 +1041,19 @@ export default function RegisterPage() {
                     />
                   </Field>
                   <Field label={ar ? 'مجال التخصص' : 'Speciality / Field'} mutedColor={colors.mutedColor}>
-                    <input
-                      type="text"
+                                        <SpecialityCombobox
                       value={step2.speciality}
-                      onChange={(e) => setStep2({ ...step2, speciality: e.target.value })}
+                      onChange={(v) => setStep2({ ...step2, speciality: v })}
+                      options={specialityOptions}
                       className={`${INPUT_BASE} ${INPUT_FOCUS}`}
                       style={INPUT_STYLE}
                       placeholder={ar ? 'مثال: تطوير ويب' : 'e.g. Web Dev'}
+                      label={ar ? 'مجال التخصص' : 'Speciality / Field'}
+                      emptyHint={ar ? 'لا توجد نتائج، سيُستخدم ما كتبته' : 'No match, your text will be used'}
+                      dropdownBg={colors.cardBg}
+                      dropdownBorder={colors.cardBorder}
+                      textColor={colors.textColor}
+                      mutedColor={colors.mutedColor}
                     />
                   </Field>
                 </div>
@@ -962,45 +1083,23 @@ export default function RegisterPage() {
                 </Field>
 
                 {step2.accountType === 'CONSULTANT' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label={ar ? 'السعر بالساعة (ريال)' : 'Hourly Rate (SAR)'} mutedColor={colors.mutedColor}>
-                      <input
-                        type="number"
-                        min={0}
-                        value={step2.hourlyRate}
-                        onChange={(e) => setStep2({ ...step2, hourlyRate: e.target.value })}
-                        className={`${INPUT_BASE} ${INPUT_FOCUS}`}
-                        style={INPUT_STYLE}
-                        placeholder="0"
-                        dir="ltr"
-                      />
-                    </Field>
-                    <Field label={ar ? 'طريقة الاجتماع' : 'Meeting Method'} error={errors2.meetingMethod} mutedColor={colors.mutedColor}>
-                      <select
-                        value={step2.meetingMethod}
-                        onChange={(e) => setStep2({ ...step2, meetingMethod: e.target.value })}
-                        className={`${INPUT_BASE} ${INPUT_FOCUS}`}
-                        style={{
-                          ...INPUT_STYLE,
-                          appearance: 'none',
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 5.646a.5.5 0 0 1 .708 0L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E")`,
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: ar ? '12px center' : 'calc(100% - 12px) center',
-                          paddingRight: ar ? 16 : 36,
-                          paddingLeft: ar ? 36 : 16,
-                        }}
-                      >
-                        <option value="" style={{ background: colors.cardBg, color: colors.textColor }}>
-                          {ar ? 'اختر' : 'Select'}
-                        </option>
-                        <option value="ZOOM" style={{ background: colors.cardBg, color: colors.textColor }}>Zoom</option>
-                        <option value="GOOGLE_MEET" style={{ background: colors.cardBg, color: colors.textColor }}>Google Meet</option>
-                        <option value="BOTH" style={{ background: colors.cardBg, color: colors.textColor }}>
-                          {ar ? 'كلاهما' : 'Both'}
-                        </option>
-                      </select>
-                    </Field>
-                  </div>
+                  <Field
+                    label={ar
+                      ? `السعر بالساعة (${market === 'EG' ? 'ج.م' : 'ر.س'})`
+                      : `Hourly Rate (${market === 'EG' ? 'EGP' : 'SAR'})`}
+                    mutedColor={colors.mutedColor}
+                  >
+                    <input
+                      type="number"
+                      min={0}
+                      value={step2.hourlyRate}
+                      onChange={(e) => setStep2({ ...step2, hourlyRate: e.target.value })}
+                      className={`${INPUT_BASE} ${INPUT_FOCUS}`}
+                      style={INPUT_STYLE}
+                      placeholder="0"
+                      dir="ltr"
+                    />
+                  </Field>
                 )}
               </div>
             )}

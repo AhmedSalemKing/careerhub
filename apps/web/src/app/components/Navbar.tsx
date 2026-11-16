@@ -343,7 +343,6 @@ export function Navbar() {
 
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
-  const isLearnRelative = LEARN_URL.startsWith('/')
 
   const initials = mounted && user?.profile
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
@@ -389,7 +388,7 @@ export function Navbar() {
                 <a
                   key={l.key}
                   href={l.href}
-                  target={isLearnRelative ? '_self' : '_blank'}
+                  target="_self"
                   rel="noopener noreferrer"
                 >
                   {l.label}
@@ -493,7 +492,7 @@ export function Navbar() {
                   <a
                     key={l.key}
                     href={l.href}
-                    target={isLearnRelative ? '_self' : '_blank'}
+                    target="_self"
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
