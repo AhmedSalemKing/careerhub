@@ -9,6 +9,7 @@ import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import { formatDate, formatTimeOnly } from '@/lib/time'
 import { MySessionsTourLauncher } from '@/components/MySessionsTour'
+import { UserAvatar } from '@/components/UserAvatar'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -277,9 +278,7 @@ export default function MySessionsPage() {
                   <div style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {consultant?.profile?.avatar
-                          ? <img src={consultant.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: 16, fontWeight: 500, flexShrink: 0 }}>{consultantName?.[0] || '?'}</div>}
+                        <UserAvatar user={{ photo: consultant?.profile?.avatar, gender: consultant?.profile?.gender, name: consultantName }} size={46} />
                         <div>
                           <div style={{ color: 'var(--ink-2)', fontSize: 11, fontWeight: 300, marginBottom: 1 }}>
                             {isAr ? 'المرشد' : 'Mentor'}

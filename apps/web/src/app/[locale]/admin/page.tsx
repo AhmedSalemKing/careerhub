@@ -20,6 +20,7 @@ import {
 	ArrowLeft,
 	UserPlus,
 } from "lucide-react";
+import { UserAvatar } from '@/components/UserAvatar'
 
 type RecentUser = {
 	id: string;
@@ -27,7 +28,7 @@ type RecentUser = {
 	accountType: string;
 	status: string;
 	createdAt: string;
-	profile?: { firstName: string; lastName: string; avatar?: string };
+	profile?: { firstName: string; lastName: string; avatar?: string; gender?: string };
 };
 
 type StatsData = {
@@ -429,7 +430,7 @@ export default function AdminOverviewPage() {
 												: "var(--primary-subtle)",
 											color: "#5120c8",
 										}}>
-										{u.profile?.firstName?.[0] ?? u.email[0].toUpperCase()}
+										<UserAvatar user={{ avatar: u.profile?.avatar, gender: u.profile?.gender, name: u.profile?.firstName }} size={40} />
 									</div>
 									<div className="flex-1 min-w-0">
 										<p

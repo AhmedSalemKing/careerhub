@@ -5,12 +5,13 @@ import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { api } from '../../../../lib/api'
 import { ScheduleTourLauncher } from '@/components/ScheduleTour'
+import { UserAvatar } from '@/components/UserAvatar'
 
 /* ─── Types ───────────────────────────────────────────────────────── */
 interface UserRef {
   id: string
   email?: string
-  profile?: { firstName?: string; lastName?: string; avatar?: string }
+  profile?: { firstName?: string; lastName?: string; avatar?: string; gender?: string }
 }
 interface Session {
   id: string
@@ -370,9 +371,7 @@ export default function ScheduleClient() {
           {/* Person */}
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18, padding:'12px 14px', background:'color-mix(in srgb, var(--ink) 4%, transparent)', borderRadius:12, border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)' }}>
             <div style={{ width:44, height:44, borderRadius:12, background:`rgba(${st.badge},0.3)`, border:`1px solid ${st.border}`, color:st.badgeText, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:500, flexShrink:0 }}>
-              {other?.profile?.avatar
-                ? <img src={other.profile.avatar} alt="" style={{ width:44, height:44, borderRadius:12, objectFit:'cover' }} />
-                : initials}
+              <UserAvatar user={{ photo: other?.profile?.avatar, gender: other?.profile?.gender, name: userName(other) }} size={44} />
             </div>
             <div>
               <div style={{ fontWeight:500, fontSize:14, color:'var(--ink)', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>

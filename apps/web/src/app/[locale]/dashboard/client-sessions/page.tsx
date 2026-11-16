@@ -51,6 +51,7 @@ const Ic = {
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
 import { ClientSessionsTourLauncher } from '@/components/ClientSessionsTour'
+import { UserAvatar } from '@/components/UserAvatar'
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@')
@@ -521,21 +522,7 @@ export default function ClientSessionsPage() {
                   <div className="p-4">
                     <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        {session.user?.profile?.avatar ? (
-                          <img
-                            src={session.user.profile.avatar}
-                            alt={name}
-                            className="h-11 w-11 rounded-xl object-cover"
-                            style={{ border: '1px solid var(--line)' }}
-                          />
-                        ) : (
-                          <div
-                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-black"
-                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-                          >
-                            {name.charAt(0) || '?'}
-                          </div>
-                        )}
+                        <UserAvatar user={{ photo: session.user?.profile?.avatar, gender: session.user?.profile?.gender, name }} size={44} />
                         <div className="min-w-0">
                           <p className="truncate text-sm font-black">{name || (isAr ? 'عميل' : 'Client')}</p>
                           {session.user?.email && (

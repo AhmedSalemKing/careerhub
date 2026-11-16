@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
 import { formatDate } from '@/lib/format-date'
+import { UserAvatar } from '@/components/UserAvatar'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -275,7 +276,7 @@ export default function ApprovalsPage() {
                 >
                   <div className="flex items-start gap-4 mb-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white font-medium text-lg">
-                      {u.profile?.firstName?.[0] || u.email[0].toUpperCase()}
+                      <UserAvatar user={{ avatar: u.profile?.avatar, gender: u.profile?.gender, name: u.profile?.firstName }} size={48} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-foreground">
@@ -485,7 +486,7 @@ export default function ApprovalsPage() {
                   <div key={u.id} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white font-medium text-lg">
-                        {u.profile?.firstName?.[0] || u.email[0].toUpperCase()}
+                        <UserAvatar user={{ avatar: u.profile?.avatar, gender: u.profile?.gender, name: u.profile?.firstName }} size={48} />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-foreground">{u.profile?.firstName} {u.profile?.lastName}</h3>
@@ -764,7 +765,7 @@ export default function ApprovalsPage() {
                 >
                   <div className="flex items-start gap-4 mb-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-medium text-lg">
-                      {v.profile?.firstName?.[0] || v.email[0].toUpperCase()}
+                      <UserAvatar user={{ avatar: v.profile?.avatar, gender: v.profile?.gender, name: v.profile?.firstName }} size={48} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-foreground">

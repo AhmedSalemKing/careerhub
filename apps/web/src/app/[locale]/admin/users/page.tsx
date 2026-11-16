@@ -9,6 +9,7 @@ import { getMediaUrl } from '../../../../lib/media'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
 import ConfirmModal from '@/components/ConfirmModal'
 import { formatDate } from '@/lib/format-date'
+import { UserAvatar } from '@/components/UserAvatar'
 
 type AdminUser = {
   id: string
@@ -19,7 +20,7 @@ type AdminUser = {
   status: string
   isVerified?: boolean
   createdAt: string
-  profile?: { firstName: string; lastName: string; avatar?: string } | null
+  profile?: { firstName: string; lastName: string; avatar?: string; gender?: string } | null
 }
 
 const MODAL_INPUT = {
@@ -297,14 +298,8 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div style={{ position: 'relative', display: 'inline-block' }}>
-                          {u.profile?.avatar ? (
-                            <img src={getMediaUrl(u.profile.avatar) ?? ''} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
-                          ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-medium text-white" style={{ background: '#5120c8' }}>
-                              {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}
-                            </div>
-                          )}
-                          {u.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                          <UserAvatar user={{ avatar: getMediaUrl(u.profile?.avatar), gender: u.profile?.gender, name: u.profile?.firstName }} size={32} />
+                           {u.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
                         </div>
                         <div>
                           <p className="text-foreground font-medium flex items-center gap-1.5">

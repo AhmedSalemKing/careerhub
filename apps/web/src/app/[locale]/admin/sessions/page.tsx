@@ -10,6 +10,7 @@ import {
   Calendar, Video, Globe, Phone, PlusCircle, ExternalLink,
   CheckCircle, XCircle, Clock, Users, Eye,
 } from 'lucide-react'
+import { UserAvatar } from '@/components/UserAvatar'
 
 const uiAr = () => typeof document === 'undefined' || document.documentElement.lang !== 'en'
 
@@ -264,29 +265,13 @@ export default function AdminSessionsPage() {
                     >
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
-                            style={{
-                              background: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)',
-                            color: 'var(--foreground)',
-                            }}
-                          >
-                            {studentName[0]}
-                          </div>
+                          <UserAvatar user={{ gender: s.student?.profile?.gender, name: studentName }} size={32} />
                           <span className="font-medium text-xs" style={{ color: 'var(--foreground)' }}>{studentName}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
-                            style={{
-                              background: isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
-                              color: '#8b5cf6',
-                            }}
-                          >
-                            {consultantName[0]}
-                          </div>
+                          <UserAvatar user={{ gender: s.consultant?.profile?.gender, name: consultantName }} size={32} />
                           <span className="text-xs" style={{ color: 'var(--muted)' }}>{consultantName}</span>
                         </div>
                       </td>

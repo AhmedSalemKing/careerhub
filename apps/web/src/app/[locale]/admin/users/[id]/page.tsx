@@ -11,6 +11,7 @@ import {
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
   Key, LogOut, UserPlus, Search, PlusCircle,
 } from 'lucide-react'
+import { UserAvatar } from '@/components/UserAvatar'
 
 const uiAr = () => typeof document === 'undefined' || document.documentElement.lang !== 'en'
 
@@ -245,7 +246,7 @@ export default function UserDetailPage() {
               fontSize: 22, fontWeight: 500, flexShrink: 0,
             }}
           >
-            {user?.profile?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+            <UserAvatar user={{ avatar: user?.profile?.avatar, gender: user?.profile?.gender, name: user?.profile?.firstName }} size={56} />
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>

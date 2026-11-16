@@ -325,9 +325,7 @@ export function Navbar() {
                 <div className="hidden lg:block">
                   {user?.role === 'ADMIN' ? (
                     <Link href={`/${locale}/admin`} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium" style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#fff' }}>
-                        {initials || 'A'}
-                      </div>
+                      <UserAvatar user={{ gender: user?.profile?.gender, name: user?.profile?.firstName }} size={28} />
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}>Admin</span>
                     </Link>
                   ) : (

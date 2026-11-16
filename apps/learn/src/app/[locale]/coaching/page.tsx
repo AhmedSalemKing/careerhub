@@ -16,6 +16,7 @@ import {
   X, User,
   Briefcase, Award, MapPin
 } from 'lucide-react'
+import { UserAvatar } from '@/components/UserAvatar'
 
 interface Consultant {
   id: string
@@ -84,13 +85,7 @@ function BookingModal({
       <div className="relative z-10 w-full max-w-lg rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
           <div className="flex items-center gap-3">
-            {avatar ? (
-              <SmartImage src={avatar} width={40} height={40} className="h-10 w-10 rounded-full object-cover" alt={name} />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold">
-                {name[0]}
-              </div>
-            )}
+            <UserAvatar user={{ photo: avatar, gender: (consultant.profile as any)?.gender, name }} size={40} />
             <div>
               <h3 className="font-bold text-foreground">{name}</h3>
               <p className="text-xs text-[color:var(--muted)]">{consultant.speciality}</p>
@@ -263,13 +258,7 @@ function ConsultantModal({
             <X className="h-4 w-4" />
           </button>
           <div className="absolute -bottom-8 right-5">
-            {avatar ? (
-              <SmartImage src={avatar} width={64} height={64} className="h-16 w-16 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-lg" alt={name} />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-2xl font-bold text-white shadow-lg">
-                {name[0]}
-              </div>
-            )}
+            <UserAvatar user={{ photo: avatar, gender: (consultant.profile as any)?.gender, name }} size={64} />
           </div>
         </div>
         <div className="p-5 pt-12">
@@ -372,13 +361,7 @@ export default function CoachingPage() {
                 className="group rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 transition-all duration-300">
                 <div className="relative h-28 bg-gradient-to-br from-primary/20 to-purple-500/10">
                   <div className="absolute -bottom-7 right-5">
-                    {avatar ? (
-                      <SmartImage src={avatar} width={56} height={56} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-xl font-bold text-white shadow-md">
-                        {name[0]}
-                      </div>
-                    )}
+                    <UserAvatar user={{ photo: avatar, gender: (consultant.profile as any)?.gender, name }} size={56} />
                   </div>
                   <div className="absolute top-3 left-3 rounded-full bg-black/20 backdrop-blur-sm px-2.5 py-1 text-xs text-white font-semibold">
                     {sessions} {isAr ? 'جلسة' : 'session'}

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { get } from '@/lib/api'
 import { Clock, CheckCircle2, XCircle, RefreshCw } from 'lucide-react'
 import { useLocale } from 'next-intl'
+import { UserAvatar } from '@/components/UserAvatar'
 
 export default function PendingApprovalPage() {
   const isAr = useLocale() === 'ar'
@@ -172,18 +173,7 @@ export default function PendingApprovalPage() {
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12, padding: '12px 20px',
         }}>
-          {user.profile?.avatar ? (
-            <img src={user.profile.avatar} alt="avatar"
-              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: '#5120c8', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: '#fff', fontWeight: 700,
-            }}>
-              {user.email?.[0]?.toUpperCase()}
-            </div>
-          )}
+          <UserAvatar user={{ photo: user.profile?.avatar, gender: user.profile?.gender, name: user.profile?.firstName }} size={36} />
           <div>
             <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
               {user.profile?.firstName} {user.profile?.lastName}

@@ -15,6 +15,7 @@ import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { formatLiveTime } from '../../../../../../lib/live'
 import { DailyCall } from '@/app/components/live/DailyCall'
 import toast from 'react-hot-toast'
+import { UserAvatar } from '@/components/UserAvatar'
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -355,7 +356,7 @@ export default function GoLivePage() {
                   {pendingQuestions.map(q => (
                     <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>{q.userName[0]}</div>
+                        <UserAvatar user={{ name: q.userName }} size={22} />
                         <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
                         <span style={{ color: subtext, fontSize: 10, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>{formatLiveTime(q.timestamp, locale)}</span>
                       </div>

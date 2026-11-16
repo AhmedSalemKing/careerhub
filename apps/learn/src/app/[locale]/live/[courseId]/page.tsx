@@ -11,6 +11,7 @@ import { webLoginUrl } from '../../../../lib/constants'
 import { patch } from '../../../../lib/api'
 import { DailyCall } from '../../../components/live/DailyCall'
 import toast from 'react-hot-toast'
+import { UserAvatar } from '@/components/UserAvatar'
 
 type LiveState = 'loading' | 'not_found' | 'ended_with_recording' | 'ended_no_recording' | 'waiting' | 'live'
 
@@ -541,9 +542,7 @@ export default function LiveViewerPage() {
                 </div>
               ) : socketComments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 8, animation: 'slideUp 0.2s ease' }}>
-                  {c.avatar
-                    ? <img src={c.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    : <div style={{ width: 26, height: 26, borderRadius: '50%', background: c.isOwn ? '#dc2626' : '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{(c.userName?.[0]?.toUpperCase() || '?')}</div>}
+                  <UserAvatar user={{ photo: c.avatar, name: c.userName }} size={26} />
                   <div style={{ flex: 1 }}>
                     <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
                     <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>

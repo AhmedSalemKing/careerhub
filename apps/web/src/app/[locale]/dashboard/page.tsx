@@ -433,9 +433,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
                   <div key={c.id} role="button" tabIndex={0} className={`mentor-card${active ? ' on' : ''}`}
                     onClick={() => { setMentor(c); setSlot(null); setError(null) }}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMentor(c); setSlot(null); setError(null) } }}>
-                    {c.profile?.avatar
-                      ? <img src={c.profile.avatar} alt="" className="mentor-av" />
-                      : <span className="mentor-av">{name[0]}</span>}
+                    <UserAvatar user={{ photo: c.profile?.avatar, gender: c.profile?.gender, name }} size={44} className="mentor-av" />
                     <span className="mentor-info">
                       <b>{name}</b>
                       <small>{c.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}</small>
@@ -1476,7 +1474,7 @@ function ConsultantOverview() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 500, fontSize: 14, color: 'var(--primary)',
                   }}>
-                    {session.user?.profile?.firstName?.[0] || (isAr ? 'ع' : 'C')}
+                    <UserAvatar user={{ photo: session.user?.profile?.avatar, gender: session.user?.profile?.gender, name: session.user?.profile?.firstName }} size={42} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{

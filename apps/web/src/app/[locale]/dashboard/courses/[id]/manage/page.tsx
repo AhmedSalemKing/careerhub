@@ -21,6 +21,7 @@ import { AuthGate } from '../../../../../components/AuthGate'
 import { CourseManageTourLauncher } from '@/components/CourseManageTour'
 import { learnUrlWithToken } from '../../../../../../lib/learn-link'
 import { useAuthStore } from '../../../../../../stores/authStore'
+import { UserAvatar } from '@/components/UserAvatar'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -1947,9 +1948,7 @@ export default function ManageCoursePage() {
                     return (
                       <div key={en.id} className="flex items-center gap-3 px-5 py-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-                          {en.user?.profile?.avatar ? (
-                            <img src={en.user.profile.avatar} className="h-full w-full rounded-full object-cover" alt="" />
-                          ) : initials}
+                          <UserAvatar user={{ photo: en.user?.profile?.avatar, gender: en.user?.profile?.gender, name: firstName }} size={36} />
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-[var(--ink)]">{firstName} {lastName}</div>

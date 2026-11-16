@@ -19,6 +19,7 @@ import { CareerDetailTourLauncher } from '@/components/CareerDetailTour'
 import { EnrollConfirmModal } from '../../../../components/careers/EnrollConfirmModal'
 import { formatCurrency } from '../../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../../lib/marketConfig'
+import { UserAvatar } from '@/components/UserAvatar'
 
 type PathCourse = {
   id: string
@@ -645,7 +646,7 @@ export default function CareerPathDetailPage() {
                 <div className="consultants-row">
                   {view.trackConsultants.map((c) => (
                     <div key={c.id} className="consultant-avatar" title={c.name}>
-                      {c.avatar ? <img src={c.avatar} alt={c.name} loading="lazy" /> : <span aria-hidden="true">{(c.name || '?').trim().charAt(0)}</span>}
+                      <UserAvatar user={{ photo: c.avatar, name: c.name }} size={44} />
                       <span className="consultant-name">{c.name}</span>
                     </div>
                   ))}

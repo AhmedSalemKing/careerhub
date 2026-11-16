@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { formatCoursePrice, getCountryClient } from '../../../../lib/market'
+import { UserAvatar } from '@/components/UserAvatar'
 
 export default function PublicProfilePage() {
   const params = useParams()
@@ -46,13 +47,7 @@ export default function PublicProfilePage() {
 
       <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px', padding:'2rem', marginBottom:'1.5rem', display:'flex', gap:'1.5rem', alignItems:'flex-start', flexWrap:'wrap' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
-          {p.avatar ? (
-            <img src={p.avatar} alt={fullName} style={{ width:'96px', height:'96px', borderRadius:'50%', objectFit:'cover', border:'3px solid rgba(81,32,200,0.4)' }}/>
-          ) : (
-            <div style={{ width:'96px', height:'96px', borderRadius:'50%', background:'linear-gradient(135deg,#5120c8,#7c3aed)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2rem', fontWeight:700, color:'#fff', border:'3px solid rgba(81,32,200,0.4)' }}>
-              {fullName.charAt(0)}
-            </div>
-          )}
+          <UserAvatar user={{ photo: p.avatar, gender: p.gender, name: fullName }} size={96} />
           {profile.isVerified && (
             <div style={{ position:'absolute', bottom:0, right:0, width:'28px', height:'28px', borderRadius:'50%', background:'#5120c8', border:'2px solid var(--background, #0d0d0d)', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>

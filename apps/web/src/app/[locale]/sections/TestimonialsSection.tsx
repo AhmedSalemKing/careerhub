@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { UserAvatar } from '@/components/UserAvatar'
 
 /* ════════════════════════════════════════
    COMPONENT
@@ -44,7 +45,7 @@ export function TestimonialsSection({ siteConfig }: { siteConfig?: Record<string
 
           <figcaption className="dw-who">
             <div className="dw-avatar" aria-hidden="true">
-              {current.name.charAt(0)}
+              <UserAvatar user={{ name: current.name }} size={44} />
             </div>
             <div>
               <div className="dw-name">{current.name}</div>

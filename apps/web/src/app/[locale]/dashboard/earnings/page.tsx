@@ -6,6 +6,7 @@ import { get } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
 import { browserTimeZone } from '@/lib/time'
 import { safeDate } from '@/lib/formatDate'
+import { UserAvatar } from '@/components/UserAvatar'
 
 const parseSessionDate = (raw: unknown): Date | null => safeDate(raw)
 
@@ -313,12 +314,7 @@ export default function EarningsPage() {
                     <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
-                          <span
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px]"
-                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 500 }}
-                          >
-                            {(session.clientName || session.studentName || '?').charAt(0).toUpperCase()}
-                          </span>
+                          <UserAvatar user={{ gender: (session as any).clientGender ?? (session as any).studentGender, name: session.clientName || session.studentName }} size={32} />
                           <span style={{ fontWeight: 500 }}>
                             {session.clientName || session.studentName || (isAr ? 'عميل' : 'Client')}
                           </span>
