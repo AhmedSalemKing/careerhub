@@ -37,12 +37,14 @@ export class UsersService {
       select: {
         id: true,
         accountType: true,
+        role: true,
         createdAt: true,
         isVerified: true,
         profile: {
           select: {
             firstName: true,
             lastName: true,
+            gender: true,
             avatar: true,
             bio: true,
             speciality: true,
@@ -56,13 +58,16 @@ export class UsersService {
             id: true,
             titleAr: true,
             titleEn: true,
+            slug: true,
             thumbnail: true,
             price: true,
+            currency: true,
             type: true,
             _count: { select: { enrollments: true } },
+            ratings: { select: { value: true } },
           },
           orderBy: { createdAt: 'desc' },
-          take: 6,
+          take: 48,
         },
         _count: {
           select: { instructorCourses: true },
@@ -72,7 +77,17 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    const courses = user.instructorCourses;
+    if (user.accountType !== 'INSTRUCTOR' && String(user.role) !== 'INSTRUCTOR') {
+      throw new NotFoundException('Instructor not found');
+    }
+
+    const courses = user.instructorCourses.map(({ ratings, ...c }) => ({
+      ...c,
+      ratingCount: ratings.length,
+      avgRating: ratings.length ? ratings.reduce((a, r) => a + r.value, 0) / ratings.length : null,
+    }));
+    const allRatings = user.instructorCourses.flatMap((c) => c.ratings.map((r) => r.value));
+    const avgRating = allRatings.length ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length : null;
     const totalStudents = courses.reduce(
       (sum, c) => sum + (c._count?.enrollments || 0), 0
     );
@@ -89,6 +104,8 @@ export class UsersService {
           totalCourses: user._count.instructorCourses,
           publishedCourses: courses.length,
           totalStudents,
+          avgRating,
+          ratingCount: allRatings.length,
         },
         courses,
       },
