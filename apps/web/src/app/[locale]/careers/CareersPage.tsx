@@ -4,6 +4,8 @@ import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+
 import Link from 'next/link'
 import ConfirmModal from '@/components/ConfirmModal'
 import {
@@ -13,6 +15,8 @@ import {
   X, CheckCircle2, HelpCircle
 } from 'lucide-react'
 import { CareersTour } from '@/components/CareersTour'
+import { get } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 import { CAREER_PATHS } from '@/lib/career-paths'
 import { useTracks, trackSalarySpan, type Track } from '@/lib/tracks'
 import { VisionBadges } from '@/app/components/VisionBadge'
@@ -78,7 +82,41 @@ export default function CareersPage() {
     return `${formatCurrency(toMarketAmount(Number(m[1]), market), market, locale)} – ${formatCurrency(toMarketAmount(Number(m[2]), market), market, locale)}`
   }
   const router = useRouter()
-  const { data: learningTracks = [] } = useTracks(locale)
+    const { data: learningTracks = [] } = useTracks(locale)
+
+  // Enrollment: GET /career/paths/my lists the paths/tracks the signed-in user joined (ids are database ids).
+  // The catalogue list maps the slug-based card ids to those database ids.
+  const authToken = useAuthStore((s) => s.token)
+  const { data: myPathIds = [] } = useQuery<string[]>({
+    queryKey: ['careers-my-path-ids'],
+    enabled: !!authToken,
+    staleTime: 30_000,
+    retry: 1,
+    queryFn: async () => {
+      const res = await get('/career/paths/my')
+      const d = res?.data as any
+      const paths = d?.data?.paths ?? d?.data ?? []
+      return Array.isArray(paths) ? (paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean) as string[]) : []
+    },
+  })
+  const { data: dbPaths = [] } = useQuery<any[]>({
+    queryKey: ['careers-db-paths'],
+    enabled: !!authToken && myPathIds.length > 0,
+    staleTime: 5 * 60_000,
+    retry: 1,
+    queryFn: async () => {
+      const res = await get('/career/paths')
+      const d = res?.data as any
+      const arr = d?.data?.careerPaths ?? d?.data ?? d ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+  })
+  const isEnrolled = (p: PathItem): boolean => {
+    if (!authToken || myPathIds.length === 0) return false
+    const db = dbPaths.find((x: any) => x.slug === p.id || x.id === p.id)
+    return [p.id, p.track?.id, p.track?.slug, db?.id, db?.slug].some((v) => !!v && myPathIds.includes(v as string))
+  }
+
   
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -287,18 +325,20 @@ export default function CareersPage() {
               aria-label={isAr ? 'بحث' : 'Search'}
             />
           </label>
-          {categoryChips.map(cat => (
-            <button
-              key={cat.key}
-              type="button"
-              onClick={() => setActiveCategory(cat.key)}
-              className={`chip${activeCategory === cat.key ? ' on' : ''}`}
-              aria-pressed={activeCategory === cat.key}
-            >
-              {isAr ? cat.labelAr : cat.labelEn}
-              {activeCategory === cat.key && <span>({filteredPaths.length})</span>}
-            </button>
-          ))}
+                    <div className="chips-row">
+            {categoryChips.map(cat => (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => setActiveCategory(cat.key)}
+                className={`chip${activeCategory === cat.key ? ' on' : ''}`}
+                aria-pressed={activeCategory === cat.key}
+              >
+                {isAr ? cat.labelAr : cat.labelEn}
+                {activeCategory === cat.key && <span>({filteredPaths.length})</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Results count */}
@@ -312,7 +352,9 @@ export default function CareersPage() {
             const IconComp = ICON_MAP[path.icon] || Briefcase
             const tk = path.track
             const isHigh = (path.demand || '').toLowerCase().includes('very')
-            const roles = (path.progression && path.progression.length > 0 ? path.progression : path.skills ?? []).slice(0, 3)
+                        const roles = (path.progression && path.progression.length > 0 ? path.progression : path.skills ?? []).slice(0, 3)
+            const enrolled = isEnrolled(path)
+
 
             return (
               <article
@@ -335,6 +377,7 @@ export default function CareersPage() {
                       {isHigh ? (isAr ? 'طلب مرتفع' : 'High demand') : (isAr ? 'طلب جيد' : 'Good demand')}
                     </span>
                   )}
+                                    {enrolled && <span className="t-enrolled">{isAr ? 'مشترك بالفعل' : 'Enrolled'}</span>}
                   <span className="t-badge"><IconComp className="icon" size={18} aria-hidden="true" /></span>
                   <span className="t-count">
                     <Star className="icon" size={13} aria-hidden="true" />
@@ -375,14 +418,15 @@ export default function CareersPage() {
                     {/* Always shown. Managed tracks start from their details page (package + enrollment). */}
                     <button
                       type="button"
-                      className="t-btn primary"
+                                            className={`t-btn primary${enrolled ? ' enrolled' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (tk) router.push(`/${locale}/careers/${tk.slug || tk.id || path.id}`)
+                        else if (enrolled) router.push(`/${locale}/dashboard`)
                         else requestStartPath(path)
                       }}
                     >
-                      {isAr ? 'ابدأ المسار' : 'Start Path'}
+                      {enrolled ? (isAr ? 'متابعة المسار' : 'Continue Track') : (isAr ? 'ابدأ المسار' : 'Start Path')}
                     </button>
                   </div>
                 </div>

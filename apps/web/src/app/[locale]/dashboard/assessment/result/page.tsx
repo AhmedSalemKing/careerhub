@@ -230,6 +230,9 @@ export default function AssessmentResultPage() {
 
   const lowHours = data.weeklyHours != null && data.weeklyHours <= 5
 
+  // The recommended (rank 1) track that exists on the platform; the CTA opens it directly
+  const topTrack = data.tracks.find((t) => t.rank === 1 && t.trackSlug) ?? data.tracks.find((t) => t.trackSlug)
+
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className="dw-result">
       <AssessmentResultTourLauncher locale={locale} />
@@ -367,11 +370,15 @@ export default function AssessmentResultPage() {
           })}
         </div>
 
-        {/* Next step */}
+                {/* Next step */}
         <div className="rs-next" data-tour="result-next">
           <p>{isAr ? 'خطوتك القادمة' : 'Your next step'}</p>
           <h3>{isAr ? 'اختر مسارك وابدأ أول كورس' : 'Choose your path and start your first course'}</h3>
-          <Link href={`/${locale}/careers`}>{isAr ? 'تصفّح المسارات المهنية' : 'Browse career paths'}</Link>
+          {topTrack ? (
+            <Link href={`/${locale}/careers/${topTrack.trackSlug}`}>{isAr ? 'ابدأ المسار' : 'Start Your Track'}</Link>
+          ) : (
+            <Link href={`/${locale}/careers`}>{isAr ? 'تصفّح المسارات المهنية' : 'Browse career paths'}</Link>
+          )}
         </div>
 
         {/* Footer */}
