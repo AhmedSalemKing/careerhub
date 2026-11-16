@@ -19,7 +19,7 @@ export interface SelectOption {
  * option (use it for "All" filters); leave it out for required fields and rely on `placeholder`.
  */
 export function CustomSelect({
-  value, onChange, options, placeholder, disabled, required, ariaLabel, compact, className, style,
+  value, onChange, options, placeholder, disabled, required, ariaLabel, compact, className, style, searchable = true,
 }: {
   value: string
   onChange: (value: string) => void
@@ -33,14 +33,23 @@ export function CustomSelect({
   compact?: boolean
   className?: string
   style?: React.CSSProperties
+  /** Show a type-to-filter box at the top of the list. Defaults to true. */
+  searchable?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const [rect, setRect] = useState<{ top: number; left: number; width: number; up: boolean } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const headRef = useRef<HTMLDivElement>(null)
   const id = useId()
   const current = options.find((o) => o.value === value)
+  // Filtered view of the options (group headings follow because they derive from each option's `group`)
+  const needle = search.trim().toLowerCase()
+  const filtered = needle ? options.filter((o) => o.label.toLowerCase().includes(needle)) : options
+  const isAr = typeof document !== 'undefined' && (document.documentElement.lang || '').toLowerCase().startsWith('ar')
 
   // Anchor the list to the trigger. Returns false when the trigger is scrolled out of the viewport.
   const place = () => {
@@ -54,6 +63,7 @@ export function CustomSelect({
 
   const openList = () => {
     place()
+    setSearch('')
     setActive(Math.max(0, options.findIndex((o) => o.value === value)))
     setOpen(true)
   }
@@ -81,10 +91,11 @@ export function CustomSelect({
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); close() }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, options.length - 1)) }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, filtered.length - 1)) }
       else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)) }
-      else if (e.key === 'Enter' || e.key === ' ') {
-        const o = options[active]
+      // Space must stay typeable inside the search box
+      else if (e.key === 'Enter' || (e.key === ' ' && e.target !== searchRef.current)) {
+        const o = filtered[active]
         if (o) { e.preventDefault(); onChange(o.value); close() }
       }
     }
@@ -100,17 +111,23 @@ export function CustomSelect({
       window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onScroll)
     }
-  }, [open, active, options, onChange])
+  }, [open, active, filtered, onChange])
 
-  // keep the highlighted option in view while using the keyboard
+  // focus the search box as soon as the list is mounted (without scrolling any ancestor)
+  useEffect(() => {
+    if (open && searchable) searchRef.current?.focus({ preventScroll: true })
+  }, [open, searchable, rect !== null])
+
+  // keep the highlighted option in view while using the keyboard (the sticky search box covers the top edge)
   useEffect(() => {
     if (!open) return
     const list = listRef.current
     const el = list?.querySelector<HTMLElement>('[data-active="true"]')
     if (!list || !el) return
-    if (el.offsetTop < list.scrollTop) list.scrollTop = el.offsetTop
+    const head = headRef.current?.offsetHeight ?? 0
+    if (el.offsetTop - head < list.scrollTop) list.scrollTop = el.offsetTop - head
     else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight
-  }, [open, active])
+  }, [open, active, search])
 
   return (
     <div className={'cs' + (className ? ' ' + className : '')} style={style}>
@@ -161,9 +178,27 @@ export function CustomSelect({
             ...(rect.up ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.top + 4 }),
           }}
         >
-          {options.map((o, i) => (
+          {searchable && (
+            <div className="cs-search" ref={headRef}>
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                autoComplete="off"
+                aria-label={placeholder || (isAr ? 'بحث' : 'Search')}
+                placeholder={placeholder ? (isAr ? `ابحث في ${placeholder}...` : `Search ${placeholder}...`) : (isAr ? 'ابحث...' : 'Search...')}
+                onChange={(e) => { setSearch(e.target.value); setActive(0) }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          {filtered.length === 0 && (
+            <div className="cs-empty">{isAr ? 'لا توجد نتائج' : 'No results'}</div>
+          )}
+          {filtered.map((o, i) => (
             <div key={(o.value || '__empty') + ':' + i}>
-              {o.group && o.group !== options[i - 1]?.group && <div className="cs-group">{o.group}</div>}
+              {o.group && o.group !== filtered[i - 1]?.group && <div className="cs-group">{o.group}</div>}
               <div
                 role="option"
                 aria-selected={o.value === value}

@@ -1930,3 +1930,7 @@ code, pre, kbd, samp, code *, pre * {
 .cs-group { padding: 8px 12px 4px; font-size: 11px; font-weight: 700; color: var(--ink-3); }
 .cs-trigger.cs-sm { padding: 4px 8px; border-radius: 6px; font-size: 12px; }
 .cs-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-search { position: sticky; top: 0; z-index: 1; margin: -4px -4px 4px; padding: 6px 8px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.cs-search input { width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; outline: none; }
+.cs-search input:focus { border-color: var(--brand); }
+.cs-empty { padding: 10px; text-align: center; color: var(--ink-3); font-size: 13px; }
