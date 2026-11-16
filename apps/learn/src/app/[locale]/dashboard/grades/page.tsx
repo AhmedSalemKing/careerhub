@@ -10,6 +10,7 @@ import ScoreCircle from '@/components/quizzes/ScoreCircle'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import toast from 'react-hot-toast'
 import { GradesTourLauncher } from '@/components/GradesTour'
+import CustomSelect from '@/components/CustomSelect'
 
 interface AttemptRow {
   id: string
@@ -138,19 +139,14 @@ export default function GradesPage() {
         {courses.length > 1 && (
           <div data-tour="grades-course-filter" className="mt-6 flex items-center gap-2">
             <Filter className="h-4 w-4 text-[color:var(--muted)]" />
-            <select
-              className="rounded-[10px] border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', color: 'var(--foreground)' }}
+            <CustomSelect
               value={courseFilter}
-              onChange={(e) => setCourseFilter(e.target.value)}
-            >
-              <option value="">{isAr ? 'كل الكورسات' : 'All courses'}</option>
-              {courses.map((c) => (
-                <option key={c.courseId} value={c.courseId}>
-                  {c.courseTitle}
-                </option>
-              ))}
-            </select>
+              onChange={setCourseFilter}
+              options={[
+                { value: '', label: isAr ? 'كل الكورسات' : 'All courses' },
+                ...courses.map((c) => ({ value: c.courseId, label: c.courseTitle })),
+              ]}
+            />
           </div>
         )}
 

@@ -16,13 +16,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRequest } from '../_auth'
+import { MEMORY_PATH_ID } from './path-id'
 
 export const runtime = 'nodejs'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api')
   .replace(/\/+$/, '')
 
-export const MEMORY_PATH_ID = '__ai_chat_memory__'
 const MAX_STORED_CHARS = 800
 
 function extractToken(req: NextRequest): string | undefined {

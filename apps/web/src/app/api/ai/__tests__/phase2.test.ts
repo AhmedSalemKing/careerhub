@@ -8,7 +8,7 @@
  */
 
 import { verifyRequest } from '../_auth'
-import { MEMORY_PATH_ID } from '../memory/route'
+import { MEMORY_PATH_ID } from '../memory/path-id'
 import type { NextRequest } from 'next/server'
 
 // ── Shared fixtures ───────────────────────────────────────────────────────────

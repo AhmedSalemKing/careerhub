@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import CustomSelect from '@/components/CustomSelect'
 
 // مطابق تماماً لـ RegisterDto في الـ Backend
 const makeRegisterSchema = (isAr: boolean) => z
@@ -56,6 +57,8 @@ export function RegisterForm() {
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(makeRegisterSchema(locale === 'ar')),
     defaultValues: {
@@ -191,15 +194,19 @@ export function RegisterForm() {
 
       {/* الدولة */}
       <div>
-        <select {...register('country')} className={inputClass}>
-          <option value="Egypt">{locale === 'ar' ? 'مصر' : 'Egypt'}</option>
-          <option value="Saudi Arabia">{locale === 'ar' ? 'السعودية' : 'Saudi Arabia'}</option>
-          <option value="UAE">{locale === 'ar' ? 'الإمارات' : 'UAE'}</option>
-          <option value="Kuwait">{locale === 'ar' ? 'الكويت' : 'Kuwait'}</option>
-          <option value="Qatar">{locale === 'ar' ? 'قطر' : 'Qatar'}</option>
-          <option value="Jordan">{locale === 'ar' ? 'الأردن' : 'Jordan'}</option>
-          <option value="Other">{locale === 'ar' ? 'أخرى' : 'Other'}</option>
-        </select>
+        <CustomSelect
+          value={watch('country')}
+          onChange={(v) => setValue('country', v, { shouldValidate: true })}
+          options={[
+            { value: 'Egypt', label: locale === 'ar' ? 'مصر' : 'Egypt' },
+            { value: 'Saudi Arabia', label: locale === 'ar' ? 'السعودية' : 'Saudi Arabia' },
+            { value: 'UAE', label: locale === 'ar' ? 'الإمارات' : 'UAE' },
+            { value: 'Kuwait', label: locale === 'ar' ? 'الكويت' : 'Kuwait' },
+            { value: 'Qatar', label: locale === 'ar' ? 'قطر' : 'Qatar' },
+            { value: 'Jordan', label: locale === 'ar' ? 'الأردن' : 'Jordan' },
+            { value: 'Other', label: locale === 'ar' ? 'أخرى' : 'Other' },
+          ]}
+        />
         {errors.country && <p className={errorClass}>{errors.country.message}</p>}
       </div>
 

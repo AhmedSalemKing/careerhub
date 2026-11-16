@@ -16,6 +16,7 @@ import {
   ChevronUp,
   ListChecks,
 } from 'lucide-react'
+import CustomSelect from '@/app/components/CustomSelect'
 
 interface LessonDetail {
   lessonId: string
@@ -506,14 +507,14 @@ export default function InstructorReportsClient({ country }: { country: string }
       >
         <div>
           <label style={labelStyle}>{isAr ? 'المحاضر' : 'Instructor'}</label>
-          <select value={filterInstructor} onChange={(e) => setFilterInstructor(e.target.value)} style={inputStyle}>
-            <option value="">{isAr ? 'الكل' : 'All'}</option>
-            {instructors.map((i) => (
-              <option key={i.id} value={i.id}>
-                {instructorName(i)}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={filterInstructor}
+            onChange={setFilterInstructor}
+            options={[
+              { value: '', label: isAr ? 'الكل' : 'All' },
+              ...instructors.map((i) => ({ value: i.id, label: instructorName(i) })),
+            ]}
+          />
         </div>
 
         <div>
@@ -1118,32 +1119,22 @@ export default function InstructorReportsClient({ country }: { country: string }
             )}
 
             <label style={labelStyle}>{isAr ? 'المحاضر *' : 'Instructor *'}</label>
-            <select
+            <CustomSelect
               value={form.instructorId}
-              onChange={(e) => setForm((f) => ({ ...f, instructorId: e.target.value }))}
-              style={{ ...inputStyle, marginBottom: 12 }}
-            >
-              <option value="">{isAr ? 'اختر المحاضر' : 'Select instructor'}</option>
-              {instructors.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {instructorName(i)}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((f) => ({ ...f, instructorId: v }))}
+              options={instructors.map((i) => ({ value: i.id, label: instructorName(i) }))}
+              placeholder={isAr ? 'اختر المحاضر' : 'Select instructor'}
+              style={{ marginBottom: 12 }}
+            />
 
             <label style={labelStyle}>{isAr ? 'الدورة *' : 'Course *'}</label>
-            <select
+            <CustomSelect
               value={form.courseId}
-              onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
-              style={{ ...inputStyle, marginBottom: 12 }}
-            >
-              <option value="">{isAr ? 'اختر الدورة' : 'Select course'}</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {courseName(c)}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((f) => ({ ...f, courseId: v }))}
+              options={courses.map((c) => ({ value: c.id, label: courseName(c) }))}
+              placeholder={isAr ? 'اختر الدورة' : 'Select course'}
+              style={{ marginBottom: 12 }}
+            />
 
             <label style={labelStyle}>{isAr ? 'عنوان المحاضرة' : 'Lecture Title'}</label>
             <input
@@ -1174,23 +1165,21 @@ export default function InstructorReportsClient({ country }: { country: string }
             </div>
 
             <label style={labelStyle}>{isAr ? 'الحالة' : 'Status'}</label>
-            <select
+            <CustomSelect
               value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as any }))}
-              style={{ ...inputStyle, marginBottom: 12 }}
-            >
-              {STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {isAr
-                    ? status === 'DRAFT'
-                      ? 'مسودة'
-                      : status === 'COMPLETED'
-                        ? 'مكتملة'
-                        : 'ملغاة'
-                    : status}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((f) => ({ ...f, status: v as any }))}
+              options={STATUSES.map((status) => ({
+                value: status,
+                label: isAr
+                  ? status === 'DRAFT'
+                    ? 'مسودة'
+                    : status === 'COMPLETED'
+                      ? 'مكتملة'
+                      : 'ملغاة'
+                  : status,
+              }))}
+              style={{ marginBottom: 12 }}
+            />
 
             <label style={labelStyle}>{isAr ? 'ملاحظات' : 'Notes'}</label>
             <textarea

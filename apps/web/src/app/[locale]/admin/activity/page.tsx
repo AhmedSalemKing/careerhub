@@ -11,6 +11,7 @@ import {
   Search, RefreshCw, Monitor, TrendingUp, Clock, MapPin,
   ChevronLeft, ChevronRight, ShoppingCart,
 } from 'lucide-react'
+import CustomSelect from '@/app/components/CustomSelect'
 
 function timeAgo(dateStr: string, isAr: boolean): string {
   if (isNaN(new Date(dateStr).getTime())) return '—'
@@ -241,14 +242,17 @@ export default function ActivityPage() {
           <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>
             {isAr ? 'الدور' : 'Role'}
           </label>
-          <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPage(1) }}
-            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }}>
-            <option value="">{isAr ? 'الكل' : 'All'}</option>
-            <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
-            <option value="INSTRUCTOR">{isAr ? 'مدرس' : 'Instructor'}</option>
-            <option value="CONSULTANT">{isAr ? 'مرشد' : 'Mentor'}</option>
-            <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
-          </select>
+          <CustomSelect
+            value={filterRole}
+            onChange={(v) => { setFilterRole(v); setPage(1) }}
+            options={[
+              { value: '', label: isAr ? 'الكل' : 'All' },
+              { value: 'STUDENT', label: isAr ? 'طالب' : 'Student' },
+              { value: 'INSTRUCTOR', label: isAr ? 'مدرس' : 'Instructor' },
+              { value: 'CONSULTANT', label: isAr ? 'مرشد' : 'Mentor' },
+              { value: 'ADMIN', label: isAr ? 'مدير' : 'Admin' },
+            ]}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 180 }}>
           <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>

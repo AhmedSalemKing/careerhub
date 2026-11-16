@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ArrowRight, Save } from 'lucide-react'
 import { get, post } from '@/lib/api'
 import ToggleSwitch from '@/components/quizzes/ToggleSwitch'
+import CustomSelect from '@/app/components/CustomSelect'
 
 const inputCls =
   'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
@@ -134,26 +135,18 @@ export default function NewQuizPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className={labelCls}>{isAr ? 'الدرس المرتبط *' : 'Linked lesson *'}</label>
-                  <select
-                    className={inputCls}
+                  <CustomSelect
                     value={form.lessonId}
-                    onChange={(e) => {
-                      set('lessonId', e.target.value)
-                      const lesson = lessons.find((l) => l.id === e.target.value)
+                    onChange={(v) => {
+                      set('lessonId', v)
+                      const lesson = lessons.find((l) => l.id === v)
                       if (lesson) set('sectionId', lesson.sectionId)
                     }}
-                  >
-                    <option value="">{isAr ? 'اختر الدرس...' : 'Choose the lesson...'}</option>
-                    {sections.map((s: any) => (
-                      <optgroup key={s.id} label={s.title}>
-                        {(s.lessons ?? []).map((l: any) => (
-                          <option key={l.id} value={l.id}>
-                            {l.titleAr || l.title}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                    options={sections.flatMap((s: any) =>
+                      (s.lessons ?? []).map((l: any) => ({ value: l.id as string, label: (l.titleAr || l.title) as string, group: s.title as string })),
+                    )}
+                    placeholder={isAr ? 'اختر الدرس...' : 'Choose the lesson...'}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>{isAr ? 'القسم' : 'Section'}</label>

@@ -23,6 +23,7 @@ import {
   Award,
 } from 'lucide-react'
 import { useAuthStore } from '../../../../stores/authStore'
+import CustomSelect from '@/app/components/CustomSelect'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -410,33 +411,25 @@ export default function AdminCreateCoursePage() {
                 <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                 {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
               </label>
-              <select
+              <CustomSelect
                 value={form.isInstructor ? 'self' : form.instructorId}
-                onChange={(e) => {
-                  if (e.target.value === 'self') {
+                onChange={(v) => {
+                  if (v === 'self') {
                     set('isInstructor', true)
                     set('instructorId', '')
                   } else {
                     set('isInstructor', false)
-                    set('instructorId', e.target.value)
+                    set('instructorId', v)
                   }
                 }}
-                style={{
-                  ...inputStyle,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <option value="self" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}
-                </option>
-                {(instructors as any[]).map((inst: any) => (
-                  <option key={inst.id} value={inst.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {inst.profile?.firstName} {inst.profile?.lastName}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 'self', label: isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner' },
+                  ...(instructors as any[]).map((inst: any) => ({
+                    value: inst.id as string,
+                    label: `${inst.profile?.firstName ?? ''} ${inst.profile?.lastName ?? ''}`.trim(),
+                  })),
+                ]}
+              />
             </div>
 
             {/* Title */}
@@ -512,29 +505,19 @@ export default function AdminCreateCoursePage() {
               </div>
               <div>
                 <label style={labelStyle}>{isAr ? 'المستوى' : 'Level'}</label>
-                <select
+                <CustomSelect
                   value={form.level}
-                  onChange={(e) => set('level', e.target.value)}
-                  style={inputStyle}
-                >
-                  {LEVELS.map((l) => (
-                    <option key={l.value} value={l.value}>
-                      {isAr ? l.labelAr : l.labelEn}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => set('level', v)}
+                  options={LEVELS.map((l) => ({ value: l.value, label: isAr ? l.labelAr : l.labelEn }))}
+                />
               </div>
               <div>
                 <label style={labelStyle}>{isAr ? 'العملة' : 'Currency'}</label>
-                <select
+                <CustomSelect
                   value={form.currency}
-                  onChange={(e) => set('currency', e.target.value)}
-                  style={inputStyle}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.labelAr}</option>
-                  ))}
-                </select>
+                  onChange={(v) => set('currency', v)}
+                  options={CURRENCIES.map((c) => ({ value: c.value, label: c.labelAr }))}
+                />
               </div>
             </div>
 
@@ -542,29 +525,23 @@ export default function AdminCreateCoursePage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
-                <select
+                <CustomSelect
                   value={form.careerPathId}
-                  onChange={(e) => { set('careerPathId', e.target.value); set('categoryId', '') }}
-                  style={inputStyle}
-                >
-                  <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
-                  {(careerPaths as any[]).map((cp) => (
-                    <option key={cp.id} value={cp.id}>{isAr ? cp.titleAr : cp.titleEn}</option>
-                  ))}
-                </select>
+                  onChange={(v) => { set('careerPathId', v); set('categoryId', '') }}
+                  options={(careerPaths as any[]).map((cp) => ({ value: cp.id as string, label: (isAr ? cp.titleAr : cp.titleEn) as string }))}
+                  placeholder={isAr ? 'اختر المسار' : 'Select Career Path'}
+                />
               </div>
               <div>
                 <label style={labelStyle}>{isAr ? 'التصنيف' : 'Category'}</label>
-                <select
+                <CustomSelect
                   value={form.categoryId}
-                  onChange={(e) => set('categoryId', e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
-                  {(categories as any[]).filter((cat) => !allowedCategorySlugs || allowedCategorySlugs.includes(cat.slug)).map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                  onChange={(v) => set('categoryId', v)}
+                  options={(categories as any[])
+                    .filter((cat) => !allowedCategorySlugs || allowedCategorySlugs.includes(cat.slug))
+                    .map((cat) => ({ value: cat.id as string, label: cat.name as string }))}
+                  placeholder={isAr ? 'اختر التصنيف' : 'Select Category'}
+                />
               </div>
             </div>
           </div>

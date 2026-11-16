@@ -4559,6 +4559,10 @@ section[class*="hero"] { padding-block: 48px }
 .cs-opt { padding: 9px 12px; border-radius: 7px; color: var(--ink); font-size: 13px; cursor: pointer; }
 .cs-opt:hover { background: var(--wash); }
 .cs-opt.on { color: var(--brand); font-weight: 700; }
+.cs-opt.act { background: var(--wash); }
+.cs-group { padding: 8px 12px 4px; font-size: 11px; font-weight: 700; color: var(--ink-3); }
+.cs-trigger.cs-sm { padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+.cs-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* === Track course popup === */
 .dw2-course-btn { width: 100%; font: inherit; color: inherit; text-align: start; cursor: pointer; }

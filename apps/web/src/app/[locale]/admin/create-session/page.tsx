@@ -24,6 +24,7 @@ import {
   Plus,
   Phone,
 } from 'lucide-react'
+import CustomSelect from '@/app/components/CustomSelect'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -279,18 +280,15 @@ export default function AdminCreateSessionPage() {
                   <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                   {isAr ? 'المستخدم (اختياري)' : 'User (optional)'}
                 </label>
-                <select
+                <CustomSelect
                   value={form.studentId}
-                  onChange={(e) => set('studentId', e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">{isAr ? 'اختر المستخدم' : 'Select User'}</option>
-                  {(students as any[]).map((student: any) => (
-                    <option key={student.id} value={student.id}>
-                      {student.profile?.firstName} {student.profile?.lastName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => set('studentId', v)}
+                  options={(students as any[]).map((student: any) => ({
+                    value: student.id as string,
+                    label: `${student.profile?.firstName ?? ''} ${student.profile?.lastName ?? ''}`.trim(),
+                  }))}
+                  placeholder={isAr ? 'اختر المستخدم' : 'Select User'}
+                />
               </div>
 
               <div>
@@ -298,18 +296,15 @@ export default function AdminCreateSessionPage() {
                   <GraduationCap size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                   {isAr ? 'المرشد / المحاضر (اختياري)' : 'Mentor / Instructor (optional)'}
                 </label>
-                <select
+                <CustomSelect
                   value={form.consultantId}
-                  onChange={(e) => handleConsultantChange(e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">{isAr ? 'اختر المرشد' : 'Select Mentor'}</option>
-                  {(consultants as any[]).map((cons: any) => (
-                    <option key={cons.id} value={cons.id}>
-                      {cons.profile?.firstName} {cons.profile?.lastName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => handleConsultantChange(v)}
+                  options={(consultants as any[]).map((cons: any) => ({
+                    value: cons.id as string,
+                    label: `${cons.profile?.firstName ?? ''} ${cons.profile?.lastName ?? ''}`.trim(),
+                  }))}
+                  placeholder={isAr ? 'اختر المرشد' : 'Select Mentor'}
+                />
               </div>
             </div>
 

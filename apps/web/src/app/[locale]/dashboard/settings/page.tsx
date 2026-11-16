@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { SettingsTourLauncher } from '@/components/SettingsTour'
 import { InstructorSettingsTourLauncher } from '@/components/InstructorSettingsTour'
+import CustomSelect from '@/app/components/CustomSelect'
 
 function VerificationSection({ user }: { user: any }) {
   const isAr = useLocale() === 'ar'
@@ -445,12 +446,16 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label style={labelStyle}>{isAr ? 'طريقة الاجتماع' : 'Meeting Method'}</label>
-                <select value={profileForm.meetingMethod} onChange={e => setProfileForm(f => ({ ...f, meetingMethod: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
-                  <option value="">{isAr ? 'اختر...' : 'Select...'}</option>
-                  <option value="ONLINE">{isAr ? 'أونلاين' : 'Online'} {isAr ? '(Zoom/Google Meet)' : '(Zoom/Google Meet)'}</option>
-                  <option value="IN_PERSON">{isAr ? 'حضوري' : 'In Person'}</option>
-                  <option value="BOTH">{isAr ? 'كلاهما' : 'Both'}</option>
-                </select>
+                <CustomSelect
+                  value={profileForm.meetingMethod}
+                  onChange={(v) => setProfileForm(f => ({ ...f, meetingMethod: v }))}
+                  options={[
+                    { value: 'ONLINE', label: `${isAr ? 'أونلاين' : 'Online'} (Zoom/Google Meet)` },
+                    { value: 'IN_PERSON', label: isAr ? 'حضوري' : 'In Person' },
+                    { value: 'BOTH', label: isAr ? 'كلاهما' : 'Both' },
+                  ]}
+                  placeholder={isAr ? 'اختر...' : 'Select...'}
+                />
               </div>
             </div>
           )}

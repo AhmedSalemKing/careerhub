@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomSelect from '@/components/CustomSelect'
 
 interface RegisterFormData {
   email: string;
@@ -294,16 +295,15 @@ const RegisterForm: React.FC = () => {
         {/* Language Field (Optional) */}
         <div className="form-group">
           <label htmlFor="language">Preferred Language (Optional)</label>
-          <select
-            id="language"
-            name="language"
-            value={formData.language}
-            onChange={handleInputChange}
+          <CustomSelect
+            value={formData.language ?? 'en'}
+            onChange={(v) => setFormData(prev => ({ ...prev, language: v }))}
             disabled={isLoading}
-          >
-            <option value="en">English</option>
-            <option value="ar">العربية</option>
-          </select>
+            options={[
+              { value: 'en', label: 'English' },
+              { value: 'ar', label: 'العربية' },
+            ]}
+          />
         </div>
 
         {/* General Error */}

@@ -13,6 +13,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 import { formatCoursePrice, formatSarAmount } from "../../../../lib/market";
 import { MyCoursesTourLauncher } from '@/components/MyCoursesTour'
 import { MyCoursesInstructorTourLauncher } from '@/components/MyCoursesInstructorTour'
+import CustomSelect from '@/app/components/CustomSelect'
 
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
@@ -387,19 +388,13 @@ export default function MyCoursesPage() {
 								</button>
 							))}
 						</div>
-						<select data-tour="my-courses-sort" style={{
-							background: 'var(--surface)',
-							border: '1px solid var(--line)',
-							borderRadius: 12,
-							padding: '10px 14px',
-							color: 'var(--ink)',
-							fontFamily: 'var(--font-ui)',
-							fontWeight: 300,
-							fontSize: '0.85rem',
-							cursor: 'pointer',
-						}}>
-							<option>{isAr ? "الأحدث" : "Latest"}</option>
-						</select>
+						<div data-tour="my-courses-sort" style={{ minWidth: 150 }}>
+						  <CustomSelect
+						    value="latest"
+						    onChange={() => {}}
+						    options={[{ value: 'latest', label: isAr ? 'الأحدث' : 'Latest' }]}
+						  />
+						</div>
 					</div>
 
 					{/* 4. Course cards grid */}

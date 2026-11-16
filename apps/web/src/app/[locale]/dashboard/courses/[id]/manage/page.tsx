@@ -22,6 +22,7 @@ import { CourseManageTourLauncher } from '@/components/CourseManageTour'
 import { learnUrlWithToken } from '../../../../../../lib/learn-link'
 import { useAuthStore } from '../../../../../../stores/authStore'
 import { UserAvatar } from '@/components/UserAvatar'
+import CustomSelect from '@/app/components/CustomSelect'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -384,15 +385,11 @@ function AddLectureModal({
           {/* Section Select */}
           <div>
             <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{isAr ? 'القسم *' : 'Section *'}</label>
-            <select
+            <CustomSelect
               value={form.sectionId}
-              onChange={(e) => set('sectionId', e.target.value)}
-              className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
-            >
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.title}</option>
-              ))}
-            </select>
+              onChange={(v) => set('sectionId', v)}
+              options={sections.map((s) => ({ value: s.id, label: s.title }))}
+            />
           </div>
 
           {lessonType === 'VIDEO' && (

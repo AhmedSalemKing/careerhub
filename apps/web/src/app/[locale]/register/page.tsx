@@ -12,6 +12,7 @@ import { useMarket } from '../../contexts/MarketContext'
 import { MARKET_CONFIG } from '../../../lib/marketConfig'
 import { toast } from 'sonner'
 import { Camera, CheckCircle2, Upload, Loader2, X, GraduationCap, User, Briefcase, PartyPopper, Clock } from 'lucide-react'
+import CustomSelect from '@/app/components/CustomSelect'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -804,38 +805,21 @@ export default function RegisterPage() {
               )}
 
               <Field label={ar ? 'الدولة' : 'Country'} error={errors1.country} mutedColor={colors.mutedColor}>
-                <select
+                <CustomSelect
                   value={step1.country}
-                  onChange={(e) => setStep1({ ...step1, country: e.target.value })}
-                  className={`${INPUT_BASE} ${INPUT_FOCUS}`}
-                  style={{
-                    ...INPUT_STYLE,
-                    appearance: 'none',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 5.646a.5.5 0 0 1 .708 0L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: ar ? '12px center' : 'calc(100% - 12px) center',
-                    paddingRight: ar ? 16 : 36,
-                    paddingLeft: ar ? 36 : 16,
-                  }}
-                >
-                  <option value="" style={{ background: colors.cardBg, color: colors.textColor }}>
-                    {ar ? 'اختر الدولة' : 'Select country'}
-                  </option>
-                  {[
-                    { v: 'Egypt', ar: 'مصر' },
-                    { v: 'Saudi Arabia', ar: 'السعودية' },
-                    { v: 'UAE', ar: 'الإمارات' },
-                    { v: 'Kuwait', ar: 'الكويت' },
-                    { v: 'Qatar', ar: 'قطر' },
-                    { v: 'Jordan', ar: 'الأردن' },
-                    { v: 'Morocco', ar: 'المغرب' },
-                    { v: 'Other', ar: 'أخرى' },
-                  ].map((c) => (
-                    <option key={c.v} value={c.v} style={{ background: colors.cardBg, color: colors.textColor }}>
-                      {ar ? c.ar : c.v}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setStep1({ ...step1, country: v })}
+                  options={[
+                    { value: 'Egypt', label: ar ? 'مصر' : 'Egypt' },
+                    { value: 'Saudi Arabia', label: ar ? 'السعودية' : 'Saudi Arabia' },
+                    { value: 'UAE', label: ar ? 'الإمارات' : 'UAE' },
+                    { value: 'Kuwait', label: ar ? 'الكويت' : 'Kuwait' },
+                    { value: 'Qatar', label: ar ? 'قطر' : 'Qatar' },
+                    { value: 'Jordan', label: ar ? 'الأردن' : 'Jordan' },
+                    { value: 'Morocco', label: ar ? 'المغرب' : 'Morocco' },
+                    { value: 'Other', label: ar ? 'أخرى' : 'Other' },
+                  ]}
+                  placeholder={ar ? 'اختر الدولة' : 'Select country'}
+                />
               </Field>
             </div>
 

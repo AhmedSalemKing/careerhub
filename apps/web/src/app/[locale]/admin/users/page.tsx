@@ -10,6 +10,7 @@ import VerifiedBadge from '../../../../components/VerifiedBadge'
 import ConfirmModal from '@/components/ConfirmModal'
 import { formatDate } from '@/lib/format-date'
 import { UserAvatar } from '@/components/UserAvatar'
+import CustomSelect from '@/app/components/CustomSelect'
 
 type AdminUser = {
   id: string
@@ -311,21 +312,22 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3 text-foreground">{u.role}</td>
 <td className="px-4 py-3">
-                      <select
+                      <CustomSelect
+                        compact
                         value={u.accountType}
-                        onChange={(e) => handleRoleChangeRequest(
+                        onChange={(v) => handleRoleChangeRequest(
                           u.id,
                           `${u.profile?.firstName || ''} ${u.profile?.lastName || ''}`.trim() || u.email,
                           u.accountType,
-                          e.target.value
+                          v
                         )}
-                        style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '4px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--foreground)', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        <option value="STUDENT">{roleLabels.STUDENT}</option>
-                        <option value="INSTRUCTOR">{roleLabels.INSTRUCTOR}</option>
-                        <option value="CONSULTANT">{roleLabels.CONSULTANT}</option>
-                        <option value="ADMIN">{roleLabels.ADMIN}</option>
-                      </select>
+                        options={[
+                          { value: 'STUDENT', label: roleLabels.STUDENT },
+                          { value: 'INSTRUCTOR', label: roleLabels.INSTRUCTOR },
+                          { value: 'CONSULTANT', label: roleLabels.CONSULTANT },
+                          { value: 'ADMIN', label: roleLabels.ADMIN },
+                        ]}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-2 py-0.5 text-[11px] font-medium rounded border ${statusBadge(u)}`}>
@@ -440,16 +442,16 @@ export default function AdminUsersPage() {
                 onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                 style={MODAL_INPUT}
               />
-              <select
+              <CustomSelect
                 value={createForm.accountType}
-                onChange={e => setCreateForm(f => ({ ...f, accountType: e.target.value }))}
-                style={MODAL_INPUT}
-              >
-                <option value="STUDENT">{isAr ? 'مستخدم' : 'User'}</option>
-                <option value="INSTRUCTOR">{isAr ? 'محاضر' : 'Instructor'}</option>
-                <option value="CONSULTANT">{isAr ? 'مرشد' : 'Mentor'}</option>
-                <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
-              </select>
+                onChange={(v) => setCreateForm(f => ({ ...f, accountType: v }))}
+                options={[
+                  { value: 'STUDENT', label: isAr ? 'مستخدم' : 'User' },
+                  { value: 'INSTRUCTOR', label: isAr ? 'محاضر' : 'Instructor' },
+                  { value: 'CONSULTANT', label: isAr ? 'مرشد' : 'Mentor' },
+                  { value: 'ADMIN', label: isAr ? 'مدير' : 'Admin' },
+                ]}
+              />
               {createError && (
                 <p style={{ color: '#f87171', fontSize: 12, fontFamily: 'DM Sans, sans-serif', margin: 0 }}>{createError}</p>
               )}

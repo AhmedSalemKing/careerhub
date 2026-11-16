@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { formatCoursePrice } from '../../../../lib/market'
 import { useLocale } from 'next-intl'
+import CustomSelect from '@/app/components/CustomSelect'
 
 type PathOption = { id: string; title: string; slug?: string }
 type CourseRow = {
@@ -136,10 +137,12 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
         <h2 className="dw2-pk-title">{isAr ? 'إنشاء باكدج مسار' : 'Create a path package'}</h2>
 
         <label className="dw2-pk-label">{isAr ? 'المسار المهني' : 'Career path'}</label>
-        <select className="dw2-pk-input" value={pathId} onChange={(e) => setPathId(e.target.value)}>
-          <option value="">{isAr ? 'اختر المسار' : 'Choose the path'}</option>
-          {paths.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </select>
+        <CustomSelect
+          value={pathId}
+          onChange={setPathId}
+          options={paths.map((p) => ({ value: p.id, label: p.title }))}
+          placeholder={isAr ? 'اختر المسار' : 'Choose the path'}
+        />
 
         <label className="dw2-pk-label">{isAr ? 'الكورسات المضمّنة في الباكدج' : 'Courses included in the package'}</label>
         <input className="dw2-pk-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isAr ? 'ابحث عن كورس...' : 'Search for a course...'} />

@@ -1912,3 +1912,20 @@ code, pre, kbd, samp, code *, pre * {
 .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--surface) !important; }
 .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--surface) !important; }
 .driver-active-element { outline: 2px solid var(--brand) !important; outline-offset: 4px !important; border-radius: 12px !important; }
+
+/* CustomSelect (themed replacement for native <select>) */
+.cs { position: relative; width: 100%; }
+.cs-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1.5px solid var(--line-2, var(--line)); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; text-align: start; cursor: pointer; }
+.cs-trigger:hover, .cs-trigger.open { border-color: var(--brand); }
+.cs-trigger:disabled { opacity: .55; cursor: not-allowed; }
+.cs-trigger svg { flex: none; color: var(--ink-3); transition: transform .15s; }
+.cs-trigger.open svg { transform: rotate(180deg); }
+.cs-ph { color: var(--ink-3); }
+.cs-list { position: fixed; z-index: 9999; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; max-height: 240px; overflow-y: auto; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 22%, transparent); }
+.cs-opt { padding: 9px 12px; border-radius: 7px; color: var(--ink); font-size: 13px; cursor: pointer; }
+.cs-opt:hover { background: var(--wash); }
+.cs-opt.on { color: var(--brand); font-weight: 700; }
+.cs-opt.act { background: var(--wash); }
+.cs-group { padding: 8px 12px 4px; font-size: 11px; font-weight: 700; color: var(--ink-3); }
+.cs-trigger.cs-sm { padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+.cs-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
