@@ -42,13 +42,18 @@ export function CustomSelect({
   const id = useId()
   const current = options.find((o) => o.value === value)
 
-  const openList = () => {
+  // Anchor the list to the trigger. Returns false when the trigger is scrolled out of the viewport.
+  const place = () => {
     const r = triggerRef.current?.getBoundingClientRect()
-    if (r) {
-      const room = window.innerHeight - r.bottom
-      const up = room < 200 && r.top > room
-      setRect({ top: up ? r.top : r.bottom, left: r.left, width: r.width, up })
-    }
+    if (!r) return true
+    const room = window.innerHeight - r.bottom
+    const up = room < 200 && r.top > room
+    setRect({ top: up ? r.top : r.bottom, left: r.left, width: r.width, up })
+    return r.bottom > 0 && r.top < window.innerHeight
+  }
+
+  const openList = () => {
+    place()
     setActive(Math.max(0, options.findIndex((o) => o.value === value)))
     setOpen(true)
   }
@@ -64,8 +69,12 @@ export function CustomSelect({
   useEffect(() => {
     if (!open) return
     const close = () => setOpen(false)
-    // Scrolling the option list itself must not close it (that was the "dropdown disappears" bug)
-    const onScroll = (e: Event) => { if (!listRef.current?.contains(e.target as Node)) close() }
+    // Scrolling the option list itself must not close it. Any other scroll (page, modal body, an unrelated
+    // carousel) just re-anchors the list; it only closes once the trigger itself has left the viewport.
+    const onScroll = (e: Event) => {
+      if (listRef.current?.contains(e.target as Node)) return
+      if (!place()) close()
+    }
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       if (!triggerRef.current?.contains(t) && !listRef.current?.contains(t)) close()
@@ -83,18 +92,24 @@ export function CustomSelect({
     document.addEventListener('touchstart', onDown as any, { passive: true })
     document.addEventListener('keydown', onKey, true)
     window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
     return () => {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('touchstart', onDown as any)
       document.removeEventListener('keydown', onKey, true)
       window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
     }
   }, [open, active, options, onChange])
 
   // keep the highlighted option in view while using the keyboard
   useEffect(() => {
     if (!open) return
-    listRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({ block: 'nearest' })
+    const list = listRef.current
+    const el = list?.querySelector<HTMLElement>('[data-active="true"]')
+    if (!list || !el) return
+    if (el.offsetTop < list.scrollTop) list.scrollTop = el.offsetTop
+    else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight
   }, [open, active])
 
   return (
