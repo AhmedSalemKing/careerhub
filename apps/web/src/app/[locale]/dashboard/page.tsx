@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useLocale } from 'next-intl'
+import { UserAvatar } from '@/components/UserAvatar'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
@@ -834,13 +835,11 @@ function StudentOverview() {
 
       {/* HEADER */}
       <div className="dw-dash-head" data-tour="dashboard-welcome">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt="" className="dw2-char-av dw2-char-photo" />
-        ) : gender === 'FEMALE' || gender === 'MALE' ? (
-          <span className="dw2-char-av" aria-hidden="true" dangerouslySetInnerHTML={{ __html: gender === 'FEMALE' ? CHARACTERS.sa2 : CHARACTERS.eg1 }} />
-        ) : (
-          <span className="dw2-char-av dw2-char-letter" aria-hidden="true">{userName?.[0]?.toUpperCase() ?? '?'}</span>
-        )}
+        <UserAvatar
+          user={{ avatar: avatarUrl, gender, name: userName }}
+          size={64}
+          className="dw2-char-av dw2-char-photo"
+        />
         <div className="dw2-grow">
           <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>{isAr ? 'مرحباً بعودتك' : 'Welcome back'}</p>
           <h1>{userName}</h1>
