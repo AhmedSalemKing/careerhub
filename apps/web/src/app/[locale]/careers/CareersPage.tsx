@@ -77,7 +77,12 @@ export default function CareersPage() {
   const { market } = useMarket()
   // Catalogue salaries are SAR ranges like "12,000-30,000"; show them in the selected market's currency.
   const catalogSalary = (raw?: string) => {
-    const m = (raw || '').replace(/,/g, '').match(/(d+(?:.d+)?)s*-s*(d+(?:.d+)?)/)
+    const normalized = (raw || '')
+      .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660)) // Arabic-Indic digits
+      .replace(/[\u066C,]/g, '') // thousands separators (Arabic and Latin)
+      .replace(/\u066B/g, '.') // Arabic decimal separator
+      .replace(/[\u2013\u2014\u2212]/g, '-') // en dash, em dash, minus sign
+    const m = normalized.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
     if (!m) return raw ? `${raw}` : ''
     return `${formatCurrency(toMarketAmount(Number(m[1]), market), market, locale)} – ${formatCurrency(toMarketAmount(Number(m[2]), market), market, locale)}`
   }

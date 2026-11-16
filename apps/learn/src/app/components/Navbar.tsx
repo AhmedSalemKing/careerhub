@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { NotificationBell } from './NotificationBell'
 import { SearchBar } from './SearchBar'
 import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -277,22 +278,6 @@ export function Navbar() {
   const isActive = (href: string) => pathname === href
   const hideSearch = /^\/[^/]+\/?$/.test(pathname || '') || /^\/[^/]+\/learn\/[^/]+/.test(pathname || '')
 
-  const { data: unreadCount = 0 } = useQuery<number>({
-    queryKey: ['navbar-notifications-unread'],
-    enabled: isLoggedIn,
-    queryFn: async () => {
-      try {
-        const res = await api.get('/notifications')
-        const d = (res?.data as any)?.data
-        const list = Array.isArray(d) ? d : (d?.notifications ?? [])
-        return Array.isArray(list) ? list.filter((n: any) => !n.isRead).length : 0
-      } catch {
-        return 0
-      }
-    },
-    refetchInterval: 60000,
-  })
-
   const renderLink = (l: NavItem, mobile = false) => {
     const active = !l.external && isActive(l.href)
     const content = (
@@ -335,15 +320,7 @@ export function Navbar() {
 
             {mounted && isLoggedIn && (
               <>
-                <a
-                  href={`${WEB_URL}/${locale}/dashboard/notifications`}
-                  className="icon-btn"
-                  aria-label="Notifications"
-                  title={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-                >
-                  <Bell className="icon" />
-                  {unreadCount > 0 && <span className="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-                </a>
+                <NotificationBell />
                 <a href={`${WEB_URL}/${locale}/dashboard/ai-chat`} title="DeveWay AI" aria-label="DeveWay AI" className="icon-btn hide-sm">
                   <Sparkles className="icon" />
                 </a>
