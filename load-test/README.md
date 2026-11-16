@@ -31,6 +31,7 @@ Warning: the API blocks an IP after 10 failed logins in 15 minutes. Never point 
 | authenticated_learner | 25% | login, `/ar/dashboard`, `/ar/dashboard/my-courses`, `/api/career/paths/my`, `/api/notifications`; 25 VUs |
 | api_load | 20% | `/api/career/paths`, path detail, `/api/courses`, `/api/coaching/coaches`, `/api/consulting/consultants`, `/api/health`; 20 VUs |
 | mentor_flow | 5% | mentor login, `/api/consulting/sessions/my`, dashboard; 5 VUs |
+| learn_browsing | extra | learn app: `/ar/`, `/ar/courses`, `/en/`, `/ar/profile/<instructorId>` (id looked up in setup, or `-e INSTRUCTOR_ID=...`); 15 VUs |
 | spike | 10% | anonymous browsing, 0 to 100 VUs in 10s, hold 30s, down in 10s, starts at 4m |
 
 Requests are tagged `type: page | api | auth`, so thresholds and results separate them.
@@ -39,7 +40,7 @@ Requests are tagged `type: page | api | auth`, so thresholds and results separat
 - `http_req_failed` < 5%
 - `http_req_duration` p95 < 3000ms, p99 < 5000ms
 - pages p95 < 3000ms, API p95 < 2000ms
-- `page_errors` < 5%, `api_errors` < 10%
+- `page_errors` < 5%, `api_errors` < 10%, `learn_errors` < 5%
 
 ## Reading results
 The summary prints PASSED/FAILED, then page, API and auth lines. Full data is written to `load-test/results.json`.

@@ -18,6 +18,9 @@ const MENTOR = { email: __ENV.MENTOR_EMAIL || '', password: __ENV.MENTOR_PASSWOR
 // ─── METRICS ──────────────────────────────────────────────────────────────────
 const pageErrors = new Rate('page_errors')
 const apiErrors = new Rate('api_errors')
+const learnErrors = new Rate('learn_errors')
+const learnLoad = new Trend('learn_load_time', true)
+const learnRequests = new Counter('learn_requests')
 const authSuccess = new Rate('auth_success')
 const pageLoad = new Trend('page_load_time', true)
 const apiLoadTime = new Trend('api_load_time', true)
@@ -52,6 +55,17 @@ export const options = {
         { duration: '1m', target: 0 },
       ],
       exec: 'authFlow',
+    },
+    // Learn app (devewayhub), same ramp as anonymous_browsing but 15 VUs
+    learn_browsing: {
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '1m', target: 15 },
+        { duration: '3m', target: 15 },
+        { duration: '1m', target: 0 },
+      ],
+      exec: 'learnBrowsing',
     },
     // ~25% of traffic
     authenticated_learner: {
@@ -100,6 +114,8 @@ export const options = {
     http_req_duration: ['p(95)<3000', 'p(99)<5000'],
     page_errors: ['rate<0.05'],
     api_errors: ['rate<0.10'],
+    learn_errors: ['rate<0.05'],
+    'http_req_duration{type:learn}': ['p(95)<3000'],
     'http_req_duration{type:page}': ['p(95)<3000'],
     'http_req_duration{type:api}': ['p(95)<2000'],
   },
@@ -125,6 +141,16 @@ function page(url, name) {
 }
 
 // Authenticated page: the web app gates dashboards client-side or by redirect, so 3xx/401/403 are accepted.
+function learnPage(url, name) {
+  const res = http.get(url, { headers: headers(), redirects: 5, tags: { type: 'learn', name } })
+  const ok = res.status >= 200 && res.status < 400
+  check(res, { [`${name} status ok`]: () => ok })
+  learnErrors.add(!ok)
+  learnLoad.add(res.timings.duration)
+  learnRequests.add(1)
+  return res
+}
+
 function authedPage(url, name) {
   const res = http.get(url, { headers: headers(), redirects: 5, tags: { type: 'page', name } })
   const ok = (res.status >= 200 && res.status < 400) || EXPECTED_AUTH[res.status] === true
@@ -191,7 +217,16 @@ export function setup() {
   check(res, { 'bad login rejected (401/403/429)': () => EXPECTED_AUTH[res.status] === true })
 
   const paths = http.get(`${API_URL}/api/career/paths`, { headers: headers(), tags: { type: 'api', name: 'setup_paths' } })
-  return { slug: firstSlug(paths) }
+  // A real instructor id for the learn profile page, taken from the published courses.
+  let userId = __ENV.INSTRUCTOR_ID || null
+  if (!userId) {
+    const courses = http.get(`${API_URL}/api/courses?status=PUBLISHED&limit=10`, { headers: headers(), tags: { type: 'api', name: 'setup_courses' } })
+    const json = body(courses)
+    const list = json && json.data && Array.isArray(json.data.courses) ? json.data.courses : []
+    const withInstructor = list.find((c) => c.instructor && c.instructor.id)
+    userId = withInstructor ? withInstructor.instructor.id : null
+  }
+  return { slug: firstSlug(paths), userId }
 }
 
 // ─── SCENARIOS ────────────────────────────────────────────────────────────────
@@ -208,6 +243,20 @@ export function anonymousBrowsing() {
     page(`${BASE_URL}/en`, 'home_en')
     sleep(1 + Math.random())
     page(`${BASE_URL}/en/careers`, 'careers_en')
+  })
+  sleep(1 + Math.random() * 2)
+}
+
+// Learn app browsing
+export function learnBrowsing(data) {
+  group('learn_browsing', () => {
+    learnPage(`${LEARN_URL}/ar/`, 'learn_home_ar')
+    sleep(1 + Math.random() * 2)
+    learnPage(`${LEARN_URL}/ar/courses`, 'learn_courses_ar')
+    sleep(1 + Math.random() * 2)
+    learnPage(`${LEARN_URL}/en/`, 'learn_home_en')
+    sleep(1 + Math.random() * 2)
+    if (data && data.userId) learnPage(`${LEARN_URL}/ar/profile/${data.userId}`, 'learn_profile_ar')
   })
   sleep(1 + Math.random() * 2)
 }
@@ -290,6 +339,7 @@ export function handleSummary(data) {
 ${failed.map((t) => ' - threshold failed: ' + t).join('\n')}
  Pages: ${v('page_requests', 'count') || 0} requests, ${pct(v('page_errors', 'rate'))} error rate, p95=${ms(v('page_load_time', 'p(95)'))}
  APIs:  ${v('api_requests', 'count') || 0} requests, ${pct(v('api_errors', 'rate'))} error rate, p95=${ms(v('api_load_time', 'p(95)'))}
+ Learn: ${v('learn_requests', 'count') || 0} requests, ${pct(v('learn_errors', 'rate'))} error rate, p95=${ms(v('learn_load_time', 'p(95)'))}
  Auth:  ${authCount} attempts, ${pct(v('auth_success', 'rate'))} success rate
 ==================================================
  All requests: p95=${ms(v('http_req_duration', 'p(95)'))} p99=${ms(v('http_req_duration', 'p(99)'))} failed=${pct(v('http_req_failed', 'rate'))}
