@@ -2,15 +2,17 @@
 
 import { useEffect } from 'react'
 import { useLocale } from 'next-intl'
-import { X, Star, Briefcase, Languages as LanguagesIcon, CalendarDays } from 'lucide-react'
+import { X, Star, Languages as LanguagesIcon, CalendarDays } from 'lucide-react'
 import { UserAvatar } from '@/components/avatars/UserAvatar'
 import { useMarket } from '@/app/contexts/MarketContext'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { toMarketAmount } from '@/lib/marketConfig'
+import { MentorStats } from '@/components/coaching/MentorStats'
 
 export interface MentorForModal {
   id: string
   hourlyRate?: number | string | null
+  completedSessionsCount?: number | null
   profile?: {
     firstName?: string | null
     lastName?: string | null
@@ -86,9 +88,6 @@ export function MentorDetailsModal({ mentor, onClose }: { mentor: MentorForModal
             {p.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}
           </span>
           <div className="mt-1 flex flex-wrap items-center justify-center gap-4 text-sm" style={{ color: 'var(--ink-2)' }}>
-            {years > 0 && (
-              <span className="inline-flex items-center gap-1.5"><Briefcase size={15} />{isAr ? `${years} سنة خبرة` : `${years} years experience`}</span>
-            )}
             {typeof p.rating === 'number' && (
               <span className="inline-flex items-center gap-1.5"><Star size={15} fill="currentColor" />{p.rating.toFixed(1)}</span>
             )}
@@ -96,6 +95,10 @@ export function MentorDetailsModal({ mentor, onClose }: { mentor: MentorForModal
               <span className="inline-flex items-center gap-1.5"><LanguagesIcon size={15} />{langs.join(' · ')}</span>
             )}
           </div>
+        </div>
+
+        <div className="mt-3 flex justify-center">
+          <MentorStats years={years} completed={mentor.completedSessionsCount} isAr={isAr} center />
         </div>
 
         {p.bio && (

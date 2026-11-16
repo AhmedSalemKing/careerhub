@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useLocale } from 'next-intl'
 import { UserAvatar } from '@/components/UserAvatar'
+import { MentorStats } from '@/components/coaching/MentorStats'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
@@ -437,6 +438,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
                     <span className="mentor-info">
                       <b>{name}</b>
                       <small>{c.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}</small>
+                      <MentorStats years={c.profile?.yearsExperience} completed={c.completedSessionsCount} isAr={isAr} />
                     </span>
                     <span className="mentor-pick">{active ? (isAr ? 'مختار' : 'Selected') : (isAr ? 'اختر' : 'Choose')}</span>
                   </div>
@@ -444,6 +446,10 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
               })}
             </div>
           </>
+        )}
+
+        {mentor?.profile?.bio && (
+          <p className="book-note" style={{ textAlign: 'start', lineHeight: 1.7 }}>{mentor.profile.bio}</p>
         )}
 
         {mentor && (

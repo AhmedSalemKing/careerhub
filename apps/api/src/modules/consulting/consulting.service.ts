@@ -42,6 +42,25 @@ export const ConsultingStatus = {
 // payment, confirmed or running. PENDING and RESCHEDULED are the legacy
 // spellings written before the rebuild; they must keep blocking their slot or
 // two students can book the same time.
+// Explicit allow-list: these endpoints are public, so never return whole user rows (password hash, email, ...).
+const CONSULTANT_SELECT = {
+  id: true,
+  isVerified: true,
+  hourlyRate: true,
+  createdAt: true,
+  bio: true,
+  experience: true,
+  speciality: true,
+  profile: {
+    select: {
+      firstName: true, lastName: true, avatar: true, gender: true, bio: true,
+      speciality: true, yearsExperience: true,
+      qualifications: true, consultingAreas: true,
+      linkedinUrl: true, sessionPrice: true, sessionDuration: true,
+    },
+  },
+} as const
+
 const LOCKED_STATUSES = [
   ConsultingStatus.PENDING_APPROVAL,
   ConsultingStatus.AWAITING_PAYMENT,
@@ -97,21 +116,48 @@ export class ConsultingService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  /** Completed consulting sessions per mentor, in one query. */
+  private async completedSessionCounts(ids: string[]): Promise<Map<string, number>> {
+    if (ids.length === 0) return new Map()
+    const rows = await this.prisma.consultingSession.groupBy({
+      by: ['consultantId'],
+      where: { consultantId: { in: ids }, status: ConsultingStatus.COMPLETED },
+      _count: { _all: true },
+    })
+    return new Map(rows.map((r) => [r.consultantId, r._count._all]))
+  }
+
+  /**
+   * Public shape of a mentor. Registration historically stored bio / experience / speciality only on the user row,
+   * while this API reads the profile, so fall back to the user-level values for mentors not yet synced.
+   */
+  private toPublicConsultant(u: any, completedSessionsCount: number) {
+    const p = u.profile
+    return {
+      id: u.id,
+      isVerified: u.isVerified,
+      hourlyRate: u.hourlyRate,
+      createdAt: u.createdAt,
+      completedSessionsCount,
+      profile: p
+        ? {
+            ...p,
+            bio: p.bio || u.bio || null,
+            speciality: p.speciality || u.speciality || null,
+            yearsExperience: p.yearsExperience ?? u.experience ?? null,
+          }
+        : p,
+    }
+  }
+
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
-      const users = await this.prisma.user.findMany({
+      const rawUsers = await this.prisma.user.findMany({
         where: { accountType: 'CONSULTANT' },
-        include: {
-          profile: {
-            select: {
-              firstName: true, lastName: true, avatar: true, gender: true, bio: true,
-              speciality: true, yearsExperience: true,
-              qualifications: true, consultingAreas: true,
-              linkedinUrl: true, sessionPrice: true, sessionDuration: true,
-            }
-          },
-        },
+        select: CONSULTANT_SELECT,
       })
+      const completed = await this.completedSessionCounts(rawUsers.map((u) => u.id))
+      const users = rawUsers.map((u) => this.toPublicConsultant(u, completed.get(u.id) ?? 0))
 
       const keywords = SPECIALTY_KEYWORDS[query.filter || ''] || []
 
@@ -144,7 +190,7 @@ export class ConsultingService {
         if (p?.consultingAreas?.length) score += p.consultingAreas.length * 2
         if (u.isVerified) score += 15
 
-        return { ...u, _score: score, _count: { consultantSessions: 0 } }
+        return { ...u, _score: score }
       })
 
       if (query.filter && query.filter !== 'all') scored = scored.filter(u => u._score > 0)
@@ -167,19 +213,11 @@ export class ConsultingService {
   async getConsultant(consultantId: string) {
     const consultant = await this.prisma.user.findUnique({
       where: { id: consultantId, accountType: 'CONSULTANT' },
-      include: {
-        profile: {
-          select: {
-            firstName: true, lastName: true, avatar: true, gender: true, bio: true,
-            speciality: true, yearsExperience: true,
-            qualifications: true, consultingAreas: true,
-            linkedinUrl: true, sessionPrice: true, sessionDuration: true,
-          },
-        },
-      },
+      select: CONSULTANT_SELECT,
     })
     if (!consultant) throw new NotFoundException('Consultant not found')
-    return { success: true, data: consultant }
+    const completed = await this.completedSessionCounts([consultant.id])
+    return { success: true, data: this.toPublicConsultant(consultant, completed.get(consultant.id) ?? 0) }
   }
 
   async getAvailableSlots(consultantId: string, fromStr: string, toStr: string, durationMinutes = 60) {

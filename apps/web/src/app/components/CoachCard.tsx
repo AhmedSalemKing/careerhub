@@ -1,8 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { UserAvatar } from '@/components/UserAvatar'
+import { MentorStats } from '@/components/coaching/MentorStats'
 
 export type CoachCardCoach = {
   id: string
@@ -11,24 +12,25 @@ export type CoachCardCoach = {
   rating?: number | null
   hourlyRate?: number | null
   specialties?: string[] | null
+  experience?: number | null
+  bio?: string | null
+  completedSessionsCount?: number | null
+  /** The coaching list API nests the person's details here instead of sending name / avatarUrl. */
+  user?: { firstName?: string | null; lastName?: string | null; avatar?: string | null; gender?: string | null } | null
 }
 
 export function CoachCard({ coach }: { coach: CoachCardCoach }) {
   const t = useTranslations('coaches')
   const c = useTranslations('common')
+  const isAr = useLocale() === 'ar'
+  const name = coach.name || `${coach.user?.firstName ?? ''} ${coach.user?.lastName ?? ''}`.trim()
 
   return (
     <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-[color:var(--surface-2)]">
-          {coach.avatarUrl ? (
-            <Image src={coach.avatarUrl} alt={coach.name || ''} fill className="object-cover" loading="lazy" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-[color:var(--muted)]">CH</div>
-          )}
-        </div>
+        <UserAvatar user={{ photo: coach.avatarUrl ?? coach.user?.avatar, gender: coach.user?.gender, name }} size={48} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-extrabold text-foreground">{coach.name || c('empty')}</div>
+          <div className="truncate text-sm font-extrabold text-foreground">{name || c('empty')}</div>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
             <span>
               {t('rating')}: {typeof coach.rating === 'number' ? coach.rating.toFixed(1) : '-'}
@@ -39,6 +41,18 @@ export function CoachCard({ coach }: { coach: CoachCardCoach }) {
           </div>
         </div>
       </div>
+
+      <div className="mt-3">
+        <MentorStats years={coach.experience} completed={coach.completedSessionsCount} isAr={isAr} />
+      </div>
+      {coach.bio ? (
+        <p
+          className="mt-2 text-xs leading-6 text-[color:var(--muted)]"
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+        >
+          {coach.bio}
+        </p>
+      ) : null}
 
       {coach.specialties?.length ? (
         <div className="mt-4">

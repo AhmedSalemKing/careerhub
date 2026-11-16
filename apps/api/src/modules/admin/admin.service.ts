@@ -2351,7 +2351,11 @@ export class AdminService {
       }).catch(() => []),
     ]);
     const totalSpent = (payments as any[]).reduce((s, p) => s + p.amount, 0);
-    return { user, activities, payments, enrollments, totalSpent };
+    // Mentors: completed sessions are what users look at to trust them, so admins see the same number
+    const completedSessionsCount = (user as any)?.accountType === 'CONSULTANT'
+      ? await this.prisma.consultingSession.count({ where: { consultantId: id, status: 'COMPLETED' } }).catch(() => 0)
+      : undefined;
+    return { user, activities, payments, enrollments, totalSpent, completedSessionsCount };
   }
 
   // ── Activity stats ──

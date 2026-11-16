@@ -329,6 +329,12 @@ export default function UserDetailPage() {
                   ...((user?.speciality || user?.profile?.speciality)
                     ? [{ icon: Shield, label: isAr ? 'مجال التخصص' : 'Specialization', value: (user?.speciality || user?.profile?.speciality) as string }]
                     : []),
+                  ...((user?.experience ?? user?.profile?.yearsExperience) != null
+                    ? [{ icon: Calendar, label: isAr ? 'سنوات الخبرة' : 'Years of experience', value: String(user?.experience ?? user?.profile?.yearsExperience) }]
+                    : []),
+                  ...(userData?.completedSessionsCount != null
+                    ? [{ icon: Shield, label: isAr ? 'الجلسات المكتملة' : 'Completed sessions', value: String(userData.completedSessionsCount) }]
+                    : []),
                 ].map((row, i, rows) => {
                   const Icon = row.icon
                   return (
@@ -342,6 +348,12 @@ export default function UserDetailPage() {
                   )
                 })}
               </div>
+              {(user?.bio || user?.profile?.bio) && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>{isAr ? 'نبذة' : 'Bio'}</div>
+                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: 'var(--foreground)', whiteSpace: 'pre-wrap' }}>{user?.bio || user?.profile?.bio}</p>
+                </div>
+              )}
             </div>
 
             <div style={{ padding: 24, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)' }}>

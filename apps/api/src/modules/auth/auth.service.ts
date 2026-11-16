@@ -107,6 +107,8 @@ export class AuthService {
           timezone: this.getTimezoneFromCountry(country),
           avatar: avatar || null,
           speciality: speciality || null,
+          bio: bio || null,
+          yearsExperience: experience ?? null,
         },
       });
 
@@ -591,6 +593,7 @@ export class AuthService {
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
     if (data.sessionPrice !== undefined) profileData.sessionPrice = data.sessionPrice
     if (data.speciality !== undefined) profileData.speciality = data.speciality
+    if (data.experience !== undefined) profileData.yearsExperience = data.experience
     if (data.gender !== undefined) {
       const g = String(data.gender).toUpperCase()
       if (!['MALE', 'FEMALE', 'OTHER'].includes(g)) throw new BadRequestException('Gender must be MALE, FEMALE, or OTHER')
@@ -846,6 +849,7 @@ export class AuthService {
     const profileFields: Record<string, unknown> = {};
     if (data.bio !== undefined) profileFields.bio = data.bio;
     if (data.speciality !== undefined) profileFields.speciality = data.speciality;
+    if (data.experience !== undefined) profileFields.yearsExperience = data.experience;
     if (Object.keys(profileFields).length > 0) {
       await this.prisma.userProfile.update({ where: { userId }, data: profileFields });
     }

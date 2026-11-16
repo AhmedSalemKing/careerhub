@@ -25,6 +25,7 @@ import {
   User,
 } from 'lucide-react'
 import { BookingTourLauncher } from '@/components/BookingTour'
+import { MentorStats } from '@/components/coaching/MentorStats'
 
 interface ConsultantProfile {
   firstName?: string | null
@@ -44,6 +45,7 @@ interface Consultant {
   email?: string
   isVerified?: boolean
   hourlyRate?: number | string | null
+  completedSessionsCount?: number | null
   profile?: ConsultantProfile | null
 }
 
@@ -483,6 +485,14 @@ export default function BookConsultingPage() {
                   </p>
                 </div>
               </div>
+              <div className="mt-3">
+                <MentorStats years={consultant?.profile?.yearsExperience} completed={consultant?.completedSessionsCount} isAr={isAr} />
+              </div>
+              {consultant?.profile?.bio && (
+                <p className="mt-2 text-xs leading-6" style={{ color: 'var(--muted)', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {consultant.profile.bio}
+                </p>
+              )}
 
               <dl data-tour="booking-summary" className="mt-4 space-y-2.5 border-t pt-4 text-xs" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex justify-between gap-2">

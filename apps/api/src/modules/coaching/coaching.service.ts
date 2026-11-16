@@ -47,6 +47,10 @@ export class CoachingService {
         hourlyRate: true,
         rating: true,
         specialties: true,
+        experience: true,
+        bioEn: true,
+        bioAr: true,
+        _count: { select: { coachingSessions: { where: { status: 'COMPLETED' } } } },
         user: {
           select: {
             profile: {
@@ -54,6 +58,7 @@ export class CoachingService {
                 firstName: true,
                 lastName: true,
                 avatar: true,
+                gender: true,
               },
             },
           },
@@ -66,7 +71,11 @@ export class CoachingService {
       hourlyRate: coach.hourlyRate,
       rating: coach.rating,
       specialties: coach.specialties,
+      experience: coach.experience,
+      bio: language === 'ar' ? coach.bioAr : coach.bioEn,
+      completedSessionsCount: coach._count.coachingSessions,
       user: {
+        gender: coach.user.profile?.gender,
         firstName: coach.user.profile?.firstName,
         lastName: coach.user.profile?.lastName,
         avatar: coach.user.profile?.avatar,

@@ -20,6 +20,8 @@ type AdminUser = {
   isActive: boolean
   status: string
   isVerified?: boolean
+  experience?: number | null
+  speciality?: string | null
   createdAt: string
   profile?: { firstName: string; lastName: string; avatar?: string; gender?: string } | null
 }
@@ -307,6 +309,11 @@ export default function AdminUsersPage() {
                             {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
                           </p>
                           <p className="text-xs text-[color:var(--muted)]">{u.email}</p>
+                          {(u.accountType === 'CONSULTANT' || u.accountType === 'INSTRUCTOR') && (u.speciality || u.experience != null) && (
+                            <p className="text-xs text-[color:var(--muted)]">
+                              {[u.speciality, u.experience != null ? (isAr ? `${u.experience} سنة خبرة` : `${u.experience} yrs experience`) : null].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>

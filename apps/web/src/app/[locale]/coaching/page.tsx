@@ -9,6 +9,7 @@ import {
 import { get } from '@/lib/api'
 import { UserAvatar } from '@/components/avatars/UserAvatar'
 import { MentorDetailsModal } from '@/components/coaching/MentorDetailsModal'
+import { MentorStats } from '@/components/coaching/MentorStats'
 import { useMarket } from '../../contexts/MarketContext'
 import { formatCurrency } from '../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../lib/marketConfig'
@@ -292,6 +293,7 @@ interface ConsultantProfile {
 interface Consultant {
   id: string
   hourlyRate?: number | string | null
+  completedSessionsCount?: number | null
   profile?: ConsultantProfile | null
 }
 
@@ -528,7 +530,8 @@ export default function CoachingPage() {
                         <UserAvatar user={{ avatar: c.profile?.avatar, gender: c.profile?.gender, name }} size={64} />
                         <h3>{name}</h3>
                         <span className="cch-spec">{c.profile?.speciality || (isAr ? 'إرشاد مهني' : 'Career mentoring')}</span>
-                        {years > 0 && <p className="cch-meta">{isAr ? `${years} سنة خبرة` : `${years} years of experience`}</p>}
+                        <MentorStats years={years} completed={c.completedSessionsCount} isAr={isAr} center />
+                        {c.profile?.bio && <p className="cch-bio">{c.profile.bio}</p>}
                         {rate > 0 && (
                           <p className="cch-price">
                             <strong>{formatCurrency(toMarketAmount(rate, market), market, locale)}</strong>
@@ -629,6 +632,7 @@ const CSS = `
 .cch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .cch-coach { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 20px 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: inherit; text-decoration: none; transition: box-shadow .2s, transform .2s; }
 .cch-meta { margin: 0; font-size: 12px; color: var(--ink-2); }
+.cch-bio { margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .cch-price { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
 .cch-price strong { color: var(--brand); font-size: 18px; font-weight: 800; }
 .cch-btns { display: flex; gap: 8px; width: 100%; margin-top: auto; padding-top: 12px; }
