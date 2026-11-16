@@ -38,6 +38,7 @@ export class UsersService {
         id: true,
         accountType: true,
         role: true,
+        speciality: true,
         createdAt: true,
         isVerified: true,
         profile: {
@@ -92,7 +93,7 @@ export class UsersService {
         accountType: user.accountType,
         joinedAt: user.createdAt,
         isVerified: user.isVerified,
-        profile: user.profile,
+        profile: user.profile ? { ...user.profile, speciality: user.profile.speciality || user.speciality } : user.profile,
         stats: {
           totalCourses: user._count.instructorCourses,
           publishedCourses: courses.length,

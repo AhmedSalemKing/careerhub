@@ -106,6 +106,7 @@ export class AuthService {
           language: language || 'en',
           timezone: this.getTimezoneFromCountry(country),
           avatar: avatar || null,
+          speciality: speciality || null,
         },
       });
 
@@ -523,10 +524,10 @@ export class AuthService {
         id: true, email: true, role: true, isActive: true,
         accountType: true, status: true, createdAt: true,
         bio: true, experience: true, speciality: true,
-        hourlyRate: true,
+        hourlyRate: true, meetingMethod: true,
         profile: {
           select: {
-            firstName: true, lastName: true, avatar: true, gender: true,
+            firstName: true, lastName: true, avatar: true, gender: true, speciality: true,
             bio: true, phone: true, language: true, timezone: true,
             sessionPrice: true,
           }
@@ -589,6 +590,7 @@ export class AuthService {
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
     if (data.sessionPrice !== undefined) profileData.sessionPrice = data.sessionPrice
+    if (data.speciality !== undefined) profileData.speciality = data.speciality
     if (data.gender !== undefined) {
       const g = String(data.gender).toUpperCase()
       if (!['MALE', 'FEMALE', 'OTHER'].includes(g)) throw new BadRequestException('Gender must be MALE, FEMALE, or OTHER')
@@ -841,8 +843,11 @@ export class AuthService {
     if (Object.keys(userFields).length > 0) {
       await this.prisma.user.update({ where: { id: userId }, data: userFields });
     }
-    if (data.bio !== undefined) {
-      await this.prisma.userProfile.update({ where: { userId }, data: { bio: data.bio } });
+    const profileFields: Record<string, unknown> = {};
+    if (data.bio !== undefined) profileFields.bio = data.bio;
+    if (data.speciality !== undefined) profileFields.speciality = data.speciality;
+    if (Object.keys(profileFields).length > 0) {
+      await this.prisma.userProfile.update({ where: { userId }, data: profileFields });
     }
     return { success: true };
   }

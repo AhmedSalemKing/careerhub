@@ -199,10 +199,10 @@ export default function SettingsPage() {
         country: me.profile?.country || '',
         city: me.profile?.city || '',
         linkedinUrl: me.profile?.linkedinUrl || '',
-        speciality: me.profile?.speciality || '',
-        experience: me.profile?.experience?.toString() || '',
+        speciality: me.speciality || me.profile?.speciality || '',
+        experience: (me.experience ?? me.profile?.yearsExperience)?.toString() || '',
         hourlyRate: me.hourlyRate?.toString() || me.profile?.sessionPrice?.toString() || '',
-        meetingMethod: me.profile?.meetingMethod || '',
+        meetingMethod: me.meetingMethod || '',
         gender: me.profile?.gender === 'FEMALE' ? 'FEMALE' : 'MALE',
       })
       if (me.profile?.avatar) {

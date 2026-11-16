@@ -326,10 +326,13 @@ export default function UserDetailPage() {
                   { icon: User, label: isAr ? 'الدور' : 'Role', value: roleLabel(user?.accountType || user?.role, isAr) },
                   { icon: Shield, label: isAr ? 'الحالة' : 'Status', value: statusLabel(user?.status, isAr) },
                   { icon: Calendar, label: isAr ? 'تاريخ الانضمام' : 'Joined', value: formatDate(user?.createdAt, isAr) },
-                ].map((row, i) => {
+                  ...((user?.speciality || user?.profile?.speciality)
+                    ? [{ icon: Shield, label: isAr ? 'مجال التخصص' : 'Specialization', value: (user?.speciality || user?.profile?.speciality) as string }]
+                    : []),
+                ].map((row, i, rows) => {
                   const Icon = row.icon
                   return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 'none' }}>
                       <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Icon size={14} />
                       </div>
