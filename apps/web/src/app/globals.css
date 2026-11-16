@@ -776,7 +776,15 @@ select {
 }
 
 /* Custom dropdown lists */
-[role="listbox"],
+/* The list itself must scroll vertically; only horizontal overflow is clipped.
+   (A blanket `overflow: hidden !important` here froze every listbox, e.g. the register speciality list.) */
+[role="listbox"] {
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	overflow-x: hidden !important;
+	overflow-y: scroll !important;
+}
+
 [role="option"] {
 	max-width: 100% !important;
 	box-sizing: border-box !important;
