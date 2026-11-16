@@ -65,7 +65,11 @@ function SpecialityCombobox({
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler as any, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler as any)
+    }
   }, [])
 
   const q = value.trim().toLowerCase()
@@ -104,8 +108,11 @@ function SpecialityCombobox({
         <ul
           id={listId}
           role="listbox"
+          // Keep focus on the input while the scrollbar / list is dragged, and stop scroll chaining to the page
+          onMouseDown={(e) => e.preventDefault()}
           style={{
-            position: 'absolute', zIndex: 30, insetInline: 0, top: '100%', marginTop: 4, maxHeight: 220, overflowY: 'auto',
+            position: 'absolute', zIndex: 30, insetInline: 0, top: '100%', marginTop: 4, maxHeight: 240, overflowY: 'auto',
+            overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
             background: dropdownBg, border: `1px solid ${dropdownBorder}`, borderRadius: 12, padding: 4, listStyle: 'none',
             boxShadow: '0 12px 28px rgba(0,0,0,0.25)',
           }}
