@@ -17,7 +17,6 @@ interface InstructorCourse {
   thumbnail?: string | null
   price?: number | null
   currency?: string | null
-  avgRating?: number | null
   _count?: { enrollments?: number }
 }
 
@@ -36,7 +35,6 @@ interface InstructorProfile {
   stats?: {
     publishedCourses?: number
     totalStudents?: number
-    avgRating?: number | null
   }
   courses?: InstructorCourse[]
 }
@@ -80,7 +78,6 @@ export default async function InstructorProfilePage({ params }: PageProps) {
   const name = displayName(instructor)
   const courses = instructor.courses ?? []
   const stats = instructor.stats ?? {}
-  const rating = stats.avgRating ?? null
   const align = isAr ? 'text-right' : 'text-left'
   const joined = instructor.joinedAt
     ? new Date(instructor.joinedAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long' })
@@ -113,7 +110,6 @@ export default async function InstructorProfilePage({ params }: PageProps) {
             <div className="flex flex-wrap gap-4 mt-6">
               <StatCard value={String(stats.publishedCourses ?? courses.length)} label={isAr ? 'كورس' : 'Courses'} />
               <StatCard value={String(stats.totalStudents ?? 0)} label={isAr ? 'طالب' : 'Students'} />
-              <StatCard value={rating ? `★ ${rating.toFixed(1)}` : 'N/A'} label={isAr ? 'التقييم' : 'Rating'} />
             </div>
           </div>
         </div>
