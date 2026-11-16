@@ -295,11 +295,6 @@ interface Consultant {
   profile?: ConsultantProfile | null
 }
 
-function initials(c: Consultant): string {
-  const f = c.profile?.firstName?.trim()?.[0] ?? ''
-  const l = c.profile?.lastName?.trim()?.[0] ?? ''
-  return (f + l) || '؟'
-}
 
 /* ───────────────────────── page ───────────────────────── */
 

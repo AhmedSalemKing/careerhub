@@ -352,7 +352,6 @@ export default function ScheduleClient() {
     const canAct    = (s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS') && minsUntil >= -240
     const isLive    = s.status === 'IN_PROGRESS'
     const other     = getOtherPerson(s)
-    const initials  = userName(other).split(' ').map((w: string) => w[0] ?? '').join('').slice(0,2) || '?'
     const st        = statusConfig(s.status)
 
     return (

@@ -44,7 +44,7 @@ export default function GoogleAuthSuccess() {
           localStorage.setItem('careerhub_user', JSON.stringify(user))
           localStorage.setItem('deveway_user', JSON.stringify(user))
           setUser(user)
-          router.push('/ar/pending-approval')
+          router.push(`/${isAr ? 'ar' : 'en'}/pending-approval`)
           return
         }
 

@@ -108,7 +108,7 @@ return [
         const freshUser = (res.data as any)?.data
         if (freshUser && freshUser.accountType) {
           // Update store if accountType is missing or changed
-          if (!user.accountType || freshUser.accountType !== user.accountType) {
+          if (!user.accountType || freshUser.accountType !== user.accountType || (freshUser.status && freshUser.status !== user.status)) {
             setUserStore({ ...user, ...freshUser })
           }
         }
@@ -125,9 +125,28 @@ return [
     if (!mounted || !user) return
 
     if (user.status === 'PENDING' || user.status === 'BANNED' || user.status === 'REJECTED') {
-      const error = user.status === 'PENDING' ? 'pending_approval' : 'account_rejected'
-      // Through learn's /logout so its session is cleared too, then land on login with the error
-      logout(`/${locale}/login?error=${error}`)
+      // The stored status may be stale (e.g. admin approved since login), so
+      // confirm against the server before kicking the user out.
+      let cancelled = false
+      get('/auth/me')
+        .then((res) => {
+          if (cancelled) return
+          const fresh = (res.data as any)?.data
+          if (fresh?.status === 'ACTIVE') {
+            setUserStore({ ...user, ...fresh })
+            return
+          }
+          const status = fresh?.status ?? user.status
+          const error = status === 'PENDING' ? 'pending_approval' : 'account_rejected'
+          // Through learn's /logout so its session is cleared too, then land on login with the error
+          logout(`/${locale}/login?error=${error}`)
+        })
+        .catch(() => {
+          if (cancelled) return
+          const error = user.status === 'PENDING' ? 'pending_approval' : 'account_rejected'
+          logout(`/${locale}/login?error=${error}`)
+        })
+      return () => { cancelled = true }
     }
   }, [mounted, user, locale, logout, router])
 

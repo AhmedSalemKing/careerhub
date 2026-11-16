@@ -262,9 +262,6 @@ export function Navbar() {
   }, [])
 
   const isLoggedIn = mounted && !!token
-  const initials = mounted && user?.profile
-    ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
-    : ''
 
   /* Learn pages stay local; pages that live in the web app link back to it. */
   type NavItem = { key: string; href: string; label: string; external?: boolean }

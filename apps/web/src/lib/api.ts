@@ -117,6 +117,12 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
 
+      if (code === 'ACCOUNT_PENDING' || message.includes('under review') || message.includes('قيد المراجعة')) {
+        clearAuth()
+        window.location.href = `/${uiLoc()}/login?error=pending_approval`
+        return Promise.reject(error)
+      }
+
       if (code === 'ACCOUNT_DELETED' || message.includes('no longer exists') || message.includes('not found')) {
         clearAuth()
         window.location.href = `/${uiLoc()}/login?error=account_deleted`

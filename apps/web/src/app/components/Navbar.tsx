@@ -110,7 +110,6 @@ function UserDropdown({ locale }: { locale: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   const firstName = user?.profile?.firstName || user?.email?.split('@')[0] || ''
-  const initials = firstName[0]?.toUpperCase() || '?'
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -344,9 +343,6 @@ export function Navbar() {
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
 
-  const initials = mounted && user?.profile
-    ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
-    : ''
 
   /* ═══ Navigation Links (same five items as the reference nav) ═══ */
   type NavItem = { key: string; href: string; label: string; external?: boolean }

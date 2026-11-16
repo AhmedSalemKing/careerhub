@@ -25,7 +25,7 @@ export default function PendingApprovalPage() {
         store.setUser(freshUser)
         localStorage.setItem('careerhub_user', JSON.stringify(freshUser))
         setTimeout(() => {
-          router.push('/ar/dashboard')
+          router.push(`/${isAr ? 'ar' : 'en'}/dashboard`)
         }, 2500)
         return
       }
@@ -146,7 +146,7 @@ export default function PendingApprovalPage() {
           {isAr ? 'طلبك قيد المراجعة' : 'Your request is under review'}
         </h2>
         <p style={{ color: '#94a3b8', fontSize: 16, lineHeight: 1.7, maxWidth: 420 }}>
-          {isAr ? 'شكرا لانضمامك لـ DeveWay! يقوم فريقنا بمراجعة طلبك. ستتم إعادة توجيهك تلقائيا فور الموافقة.' : 'Thank you for joining DeveWay! Our team is reviewing your request. You will be redirected automatically once it is approved.'}
+          {isAr ? 'حسابك قيد المراجعة. سيتم إشعارك بالبريد الإلكتروني بمجرد الموافقة على طلبك.' : 'Your account is under review. You will be notified by email once your application is approved.'}
         </p>
       </div>
 

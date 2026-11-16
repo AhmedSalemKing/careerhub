@@ -72,7 +72,7 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search)
     const error = params.get('error')
     if (error === 'pending_approval') {
-      setLoginError(ar ? 'حسابك في انتظار مراجعة الإدارة. سنخطرك عند القبول.' : 'Your account is under review. We will notify you when approved.')
+      setLoginError(ar ? 'حسابك قيد المراجعة. سيتم إشعارك بالبريد الإلكتروني بمجرد الموافقة على طلبك.' : 'Your account is under review. You will be notified by email once your application is approved.')
     } else if (error === 'account_rejected') {
       setLoginError(ar ? 'تم رفض حسابك. تواصل مع الدعم للمزيد من المعلومات.' : 'Your application was rejected. Please contact support for more information.')
     } else if (error === 'google_failed') {
@@ -271,8 +271,8 @@ export default function LoginPage() {
             </h2>
             <p className="mb-4 text-sm leading-relaxed" style={{ color: colors.mutedColor }}>
               {ar
-                ? 'شكراً لتسجيلك! فريقنا يراجع بياناتك حالياً. سيتم إشعارك خلال 24-48 ساعة.'
-                : 'Thank you for registering! Our team is reviewing your application. You will be notified within 24-48 hours.'}
+                ? 'حسابك قيد المراجعة. سيتم إشعارك بالبريد الإلكتروني بمجرد الموافقة على طلبك.'
+                : 'Your account is under review. You will be notified by email once your application is approved.'}
             </p>
             <div
               className="rounded-xl p-4 text-sm mb-6"

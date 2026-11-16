@@ -1944,7 +1944,6 @@ export default function ManageCoursePage() {
                   {course.enrollments.map((en: any) => {
                     const firstName = en.user?.profile?.firstName ?? ''
                     const lastName = en.user?.profile?.lastName ?? ''
-                    const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || (isAr ? '؟' : '?')
                     return (
                       <div key={en.id} className="flex items-center gap-3 px-5 py-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">

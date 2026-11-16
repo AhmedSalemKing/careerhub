@@ -209,7 +209,18 @@ export default function RegisterPage() {
   const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setUser, setToken } = useAuthStore()
+  const { setUser, setToken, user: authedUser, token: authedToken } = useAuthStore()
+
+  // Guard: an already-registered, approved professional must never see the
+  // register form. Skipped during the Google onboarding flow (?google=...).
+  useEffect(() => {
+    if (searchParams.get('google')) return
+    if (!authedToken || !authedUser) return
+    const isPro = ['INSTRUCTOR', 'CONSULTANT', 'MENTOR', 'COACH'].includes(String(authedUser.accountType))
+    if (isPro && authedUser.status === 'ACTIVE') {
+      router.replace(`/${locale}/dashboard`)
+    }
+  }, [authedToken, authedUser, searchParams, router, locale])
   const ar = locale === 'ar'
 
   // 🎨 حالة الثيم (فاتح/داكن)
