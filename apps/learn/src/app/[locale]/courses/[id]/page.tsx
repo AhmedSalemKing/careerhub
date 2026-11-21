@@ -137,8 +137,12 @@ export default function CourseDetailPage({
 				const res = await get(`/courses/${courseId}/enrollment`);
 				const d = (res?.data as any)?.data ?? res?.data;
 				return d;
-			} catch (err) {
-				return null;
+			} catch (err: any) {
+				// Only a definite "no enrollment" answer may show the buy button.
+				// A network/server error (e.g. the API waking up) must not.
+				const status = err?.response?.status;
+				if (status === 401 || status === 403 || status === 404) return null;
+				throw err;
 			}
 		},
 		enabled: !!hasUser && !!courseId,
@@ -154,8 +158,12 @@ export default function CourseDetailPage({
 			try {
 				const res = await get(`/quizzes/grades/course/${courseId}`);
 				return (res?.data as any)?.data ?? res?.data ?? null;
-			} catch (err) {
-				return null;
+			} catch (err: any) {
+				// Only a definite "no enrollment" answer may show the buy button.
+				// A network/server error (e.g. the API waking up) must not.
+				const status = err?.response?.status;
+				if (status === 401 || status === 403 || status === 404) return null;
+				throw err;
 			}
 		},
 		enabled: !!hasUser && !!courseId,

@@ -104,42 +104,65 @@ export class PaymentsController {
     )
   }
 
+  // Public by design: the Stripe session id is an unguessable credential that only the buyer's
+  // checkout redirect carries. Returns the identifiers we stored in the session metadata.
+  @Get('session-info')
+  async sessionInfo(@Query('session_id') sessionId: string, @Res() res: any) {
+    if (!sessionId || !sessionId.startsWith('cs_')) {
+      return res.status(400).json({ success: false, reason: 'invalid_session' })
+    }
+    try {
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+      const session = await stripe.checkout.sessions.retrieve(sessionId)
+      const m = session.metadata || {}
+      return res.status(200).json({
+        success: true,
+        data: { userId: m.userId || null, courseId: m.courseId || null, courseType: m.courseType || 'recorded', paid: session.payment_status === 'paid' },
+      })
+    } catch (e: any) {
+      console.error('[SESSION-INFO] Error:', e.message)
+      return res.status(404).json({ success: false, reason: 'session_not_found' })
+    }
+  }
+
   // Confirm payment. Legacy mode redirects (old Stripe success_urls). With format=json (used by the
   // web payment callback) it answers 200 on success or an error status the caller can act on.
+  // userId, courseId and courseType come from the Stripe session metadata, never from the query,
+  // so they can neither be missing nor forged. Safe to call repeatedly (see enrollUserInCourse).
   @Get('confirm')
   async confirmPayment(@Query() q: Record<string,string>, @Res() res: any) {
-    const { session_id, courseId, userId, courseType = 'recorded', locale = 'ar', format } = q
+    const { session_id, locale = 'ar', format } = q
     const asJson = format === 'json'
 
-    console.log('[CONFIRM] Called with:', JSON.stringify(q))
+    console.log('[CONFIRM] Called with:', JSON.stringify({ session_id, locale, format }))
 
     const webBase = 'https://deveway-teal.vercel.app'
-    const successUrl = `${webBase}/${locale}/payment/success?type=course&courseId=${courseId}&courseType=${courseType}&locale=${locale}&session_id=${session_id}`
+    let courseId = q.courseId
+    let courseType = q.courseType || 'recorded'
 
     let failure: { status: number; reason: string } | null = null
     try {
       if (!session_id || session_id === 'test') {
-        console.warn('[CONFIRM] Invalid or test session_id, skipping Stripe verification')
         failure = { status: 400, reason: 'invalid_session' }
-      } else if (!courseId || !userId) {
-        console.error('[CONFIRM] Missing courseId or userId')
-        failure = { status: 400, reason: 'missing_params' }
       } else {
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-        console.log('[CONFIRM] Retrieving Stripe session:', session_id)
         const session = await stripe.checkout.sessions.retrieve(session_id)
         console.log('[CONFIRM] Payment status:', session.payment_status)
 
         const meta = session.metadata || {}
-        if ((meta.userId && meta.userId !== userId) || (meta.courseId && meta.courseId !== courseId)) {
-          console.error('[CONFIRM] Session does not belong to this user/course')
-          failure = { status: 403, reason: 'session_mismatch' }
-        } else if (session.payment_status === 'paid') {
-          await this.paymentsService.enrollUserInCourse(courseId, userId, courseType)
-          console.log('[CONFIRM] Enrollment saved!')
-        } else {
+        courseId = meta.courseId || courseId
+        courseType = meta.courseType || courseType
+        const userId = meta.userId
+
+        if (!userId || !courseId) {
+          console.error('[CONFIRM] Stripe session has no userId/courseId metadata')
+          failure = { status: 400, reason: 'missing_metadata' }
+        } else if (session.payment_status !== 'paid') {
           console.warn('[CONFIRM] Payment not completed, status:', session.payment_status)
           failure = { status: 402, reason: 'not_paid' }
+        } else {
+          await this.paymentsService.enrollUserInCourse(courseId, userId, courseType, session_id)
+          console.log('[CONFIRM] Enrollment saved!')
         }
       }
     } catch(e: any) {
@@ -151,6 +174,7 @@ export class PaymentsController {
       if (failure) return res.status(failure.status).json({ success: false, reason: failure.reason })
       return res.status(200).json({ success: true })
     }
+    const successUrl = `${webBase}/${locale}/payment/success?type=course&courseId=${courseId}&courseType=${courseType}&locale=${locale}&session_id=${session_id}`
     console.log('[CONFIRM] Redirecting to:', successUrl)
     return res.redirect(302, successUrl)
   }

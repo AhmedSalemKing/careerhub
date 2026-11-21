@@ -8,18 +8,6 @@ export const maxDuration = 60
 
 const API_BASE = (process.env.API_URL || 'https://api.deveways.com').replace(/\/api\/?$/, '').replace(/\/$/, '')
 
-function userIdFromJwt(token?: string): string | null {
-  if (!token) return null
-  try {
-    const part = token.split('.')[1]
-    const json = Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')
-    const payload = JSON.parse(json)
-    return typeof payload.sub === 'string' ? payload.sub : null
-  } catch {
-    return null
-  }
-}
-
 // The API may be waking up: retry gateway errors and network failures for a while.
 async function confirmWithRetry(url: string): Promise<Response | null> {
   const deadline = Date.now() + 50_000
@@ -54,15 +42,22 @@ export async function GET(req: NextRequest) {
   const fail = (reason: string) =>
     NextResponse.json({ ok: false, reason, redirect: `/${locale}/payment-failed?reason=${encodeURIComponent(reason)}&courseId=${encodeURIComponent(courseId)}` })
 
-  if (!sessionId || !courseId) return fail('missing_params')
+  if (!sessionId) return fail('missing_params')
 
-  const userId = userIdFromJwt(req.cookies.get('careerhub_token')?.value) || sp.get('userId') || ''
-  if (!userId) return fail('not_signed_in')
+  // No cookie involved: the Stripe session (validated by Stripe itself) is the only credential.
+  // session-info returns the userId/courseId/courseType stored in its metadata, and the confirm
+  // call derives the same values itself, so nothing here can be missing or forged.
+  const infoRes = await confirmWithRetry(`${API_BASE}/api/payments/session-info?session_id=${encodeURIComponent(sessionId)}`)
+  if (!infoRes?.ok) return fail(infoRes ? 'invalid_session' : 'server_unreachable')
+  const info = (await infoRes.json().catch(() => null))?.data
+  if (!info?.userId || !info?.courseId) return fail('missing_metadata')
+  const confirmedCourseId: string = info.courseId
+  const confirmedType: string = info.courseType || courseType
 
-  const q = new URLSearchParams({ session_id: sessionId, courseId, userId, courseType, locale, format: 'json' })
+  const q = new URLSearchParams({ session_id: sessionId, locale, format: 'json' })
   const res = await confirmWithRetry(`${API_BASE}/api/payments/confirm?${q.toString()}`)
   if (res?.ok) {
-    const ok = new URLSearchParams({ type: 'course', courseId, courseType, locale, session_id: sessionId })
+    const ok = new URLSearchParams({ type: 'course', courseId: confirmedCourseId, courseType: confirmedType, locale, session_id: sessionId })
     return NextResponse.json({ ok: true, redirect: `/${locale}/payment/success?${ok.toString()}` })
   }
   let reason = res ? 'confirm_failed' : 'server_unreachable'

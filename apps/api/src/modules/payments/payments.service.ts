@@ -88,7 +88,7 @@ export class PaymentsService {
         locale,
       },
       // Goes through the always-awake Next.js app, which then calls the API (so a sleeping API never shows its boot screen)
-      success_url: `${process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'}/api/payments/callback?session_id={CHECKOUT_SESSION_ID}&courseId=${courseId}&courseType=${courseType}&locale=${locale}`,
+      success_url: `${process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'}/api/payments/callback?session_id={CHECKOUT_SESSION_ID}&courseId=${courseId}&courseType=${courseType}&locale=${locale}&userId=${userId}`,
       cancel_url: `${baseLearnUrl}/${locale}/courses/${courseId}`,
       payment_intent_data: {
         metadata: {
@@ -333,7 +333,7 @@ export class PaymentsService {
       const metadata = session.metadata || {}
 
       if (metadata.type === 'course_enrollment') {
-        await this.handleCourseEnrollment(metadata)
+        await this.handleCourseEnrollment(metadata, session.id)
       } else if (metadata.type === 'consulting_session') {
         await this.handleConsultingPayment(metadata, session.amount_total || 0)
       } else if (metadata.type === 'package_enrollment') {
@@ -344,12 +344,17 @@ export class PaymentsService {
     return { received: true }
   }
 
-  async handleCourseEnrollment(metadata: Record<string, string>) {
+  async handleCourseEnrollment(metadata: Record<string, string>, stripeSessionId?: string) {
     const { courseId, userId, courseType } = metadata
-    return this.enrollUserInCourse(courseId, userId, courseType)
+    return this.enrollUserInCourse(courseId, userId, courseType, stripeSessionId)
   }
 
-  async enrollUserInCourse(courseId: string, userId: string, courseType: string) {
+  /**
+   * Idempotent: the enrollment is an upsert, and when a Stripe session id is given the payment record
+   * (unique transactionId) is created before any money is booked, so a second call for the same
+   * session (webhook + confirm, refresh, replay) returns without crediting the instructor again.
+   */
+  async enrollUserInCourse(courseId: string, userId: string, courseType: string, stripeSessionId?: string) {
     console.log('[ENROLL] Starting:', { courseId, userId, courseType })
     
     if (!courseId || !userId) {
@@ -376,52 +381,49 @@ export class PaymentsService {
         console.log('[ENROLL] Created new:', created.id)
       }
       
-      // Get course price for earnings
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
         select: { instructorId: true, price: true, titleAr: true, titleEn: true }
       })
-      
-      if (course?.instructorId && course?.price) {
-        const price = parseFloat(course.price.toString())
-        if (price > 0) {
-          try {
-            const share = Math.round(price * 0.8 * 100) / 100
-            await this.prisma.$executeRawUnsafe(
-              `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
-            )
-            console.log('[ENROLL] Instructor earnings updated:', share)
-          } catch (err: any) {
-            console.error('[ENROLL] Instructor earnings update failed (non-fatal):', err?.message)
-            // Do NOT re-throw — enrollment + tracking must still proceed.
-          }
-        }
-      }
-      
-      // Create payment record
-      try {
-        const course2 = await this.prisma.course.findUnique({
-          where: { id: courseId },
-          select: { price: true }
-        })
-        const price = parseFloat(course2?.price?.toString() || '0')
-        if (price > 0) {
+      const price = parseFloat(course?.price?.toString() || '0')
+
+      // Payment record first: its unique transactionId is the replay guard
+      if (price > 0) {
+        try {
           await this.prisma.payment.create({
             data: {
               userId,
               courseId,
               amount: price,
               status: 'COMPLETED',
+              ...(stripeSessionId && { transactionId: stripeSessionId }),
             }
           })
           console.log('[ENROLL] Payment record created')
+        } catch (pe: any) {
+          if (pe?.code === 'P2002' && stripeSessionId) {
+            console.log('[ENROLL] Session already processed, skipping:', stripeSessionId)
+            return true
+          }
+          console.error('[ENROLL] Payment record error (non-critical):', pe.message)
         }
-      } catch(pe: any) {
-        console.error('[ENROLL] Payment record error (non-critical):', pe.message)
+
+        if (course?.instructorId) {
+          try {
+            const share = Math.round(price * 0.8 * 100) / 100
+            await this.prisma.user.update({
+              where: { id: course.instructorId },
+              data: { earningsBalance: { increment: share } },
+            })
+            console.log('[ENROLL] Instructor earnings updated:', share)
+          } catch (err: any) {
+            console.error('[ENROLL] Instructor earnings update failed (non-fatal):', err?.message)
+          }
+        }
       }
 
       // Track activity for admin feed
-      const coursePrice = parseFloat(course?.price?.toString() || '0')
+      const coursePrice = price
       const courseTitle = course?.titleAr || course?.titleEn || 'Course'
 
       await this.activityService.track({
