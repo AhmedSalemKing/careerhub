@@ -104,38 +104,53 @@ export class PaymentsController {
     )
   }
 
-  // Confirm payment and redirect (used as success_url from Stripe)
+  // Confirm payment. Legacy mode redirects (old Stripe success_urls). With format=json (used by the
+  // web payment callback) it answers 200 on success or an error status the caller can act on.
   @Get('confirm')
   async confirmPayment(@Query() q: Record<string,string>, @Res() res: any) {
-    const { session_id, courseId, userId, courseType = 'recorded', locale = 'ar' } = q
+    const { session_id, courseId, userId, courseType = 'recorded', locale = 'ar', format } = q
+    const asJson = format === 'json'
 
     console.log('[CONFIRM] Called with:', JSON.stringify(q))
 
     const webBase = 'https://deveway-teal.vercel.app'
     const successUrl = `${webBase}/${locale}/payment/success?type=course&courseId=${courseId}&courseType=${courseType}&locale=${locale}&session_id=${session_id}`
 
+    let failure: { status: number; reason: string } | null = null
     try {
       if (!session_id || session_id === 'test') {
         console.warn('[CONFIRM] Invalid or test session_id, skipping Stripe verification')
+        failure = { status: 400, reason: 'invalid_session' }
       } else if (!courseId || !userId) {
         console.error('[CONFIRM] Missing courseId or userId')
+        failure = { status: 400, reason: 'missing_params' }
       } else {
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
         console.log('[CONFIRM] Retrieving Stripe session:', session_id)
         const session = await stripe.checkout.sessions.retrieve(session_id)
         console.log('[CONFIRM] Payment status:', session.payment_status)
 
-        if (session.payment_status === 'paid') {
+        const meta = session.metadata || {}
+        if ((meta.userId && meta.userId !== userId) || (meta.courseId && meta.courseId !== courseId)) {
+          console.error('[CONFIRM] Session does not belong to this user/course')
+          failure = { status: 403, reason: 'session_mismatch' }
+        } else if (session.payment_status === 'paid') {
           await this.paymentsService.enrollUserInCourse(courseId, userId, courseType)
           console.log('[CONFIRM] Enrollment saved!')
         } else {
           console.warn('[CONFIRM] Payment not completed, status:', session.payment_status)
+          failure = { status: 402, reason: 'not_paid' }
         }
       }
     } catch(e: any) {
       console.error('[CONFIRM] Error:', e.message)
+      failure = { status: 500, reason: 'confirm_error' }
     }
 
+    if (asJson) {
+      if (failure) return res.status(failure.status).json({ success: false, reason: failure.reason })
+      return res.status(200).json({ success: true })
+    }
     console.log('[CONFIRM] Redirecting to:', successUrl)
     return res.redirect(302, successUrl)
   }
