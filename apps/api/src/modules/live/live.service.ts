@@ -9,6 +9,12 @@ import { BunnyStreamService } from '../upload/bunny-stream.service'
 export class LiveService {
   private readonly logger = new Logger(LiveService.name);
 
+  // Daily access links last about an hour. A seek in the player issues a new Range request each time,
+  // so resolving a fresh link on every request (two Daily API calls) made playback crawl.
+  // Links are reused for 30 minutes, well inside their lifetime.
+  private readonly recordingUrlCache = new Map<string, { url: string; expires: number }>()
+  private static readonly RECORDING_URL_TTL_MS = 30 * 60 * 1000
+
   constructor(
     private prisma: PrismaService,
     private daily: DailyService,
@@ -20,6 +26,7 @@ export class LiveService {
     if (!course) throw new NotFoundException('Course not found')
     if (course.instructorId !== instructorId) throw new ForbiddenException('Not authorized')
 
+    this.recordingUrlCache.delete(courseId)
     const { roomUrl, roomName } = await this.daily.createRoom(courseId)
     const token = await this.daily.createToken(roomName, true)
 
@@ -113,7 +120,8 @@ export class LiveService {
       return { roomUrl: '', token: '', isLive: false }
     }
 
-    const token = await this.daily.createToken(session.dailyRoomName, false)
+    // Only the course instructor is an owner (full recording control); students are viewer-only
+    const token = await this.daily.createToken(session.dailyRoomName, isInstructor, { viewerOnly: !isInstructor })
     return { roomUrl: session.dailyRoomUrl ?? '', token, isLive: true }
   }
 
@@ -256,6 +264,17 @@ export class LiveService {
   }
 
   async getRecordingUrlForCourse(courseId: string): Promise<{ recordingUrl: string | null }> {
+    const cached = this.recordingUrlCache.get(courseId)
+    if (cached && cached.expires > Date.now()) return { recordingUrl: cached.url }
+
+    const result = await this.resolveRecordingUrl(courseId)
+    if (result.recordingUrl) {
+      this.recordingUrlCache.set(courseId, { url: result.recordingUrl, expires: Date.now() + LiveService.RECORDING_URL_TTL_MS })
+    }
+    return result
+  }
+
+  private async resolveRecordingUrl(courseId: string): Promise<{ recordingUrl: string | null }> {
     const session = await this.prisma.liveSession.findFirst({
       where: { courseId },
       orderBy: { createdAt: 'desc' },
@@ -289,19 +308,35 @@ export class LiveService {
   }
 
   async getLiveStatus(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { liveStatus: true, liveStartTime: true },
+    })
+    // The course itself is missing: this is the only "not found" case
+    if (!course) return { exists: false, isLive: false, recordingUrl: null }
+
     const session = await this.prisma.liveSession.findFirst({
       where: { courseId },
       orderBy: { createdAt: 'desc' },
-      select: { isLive: true, dailyRoomUrl: true, recordingUrl: true },
+      select: { isLive: true, status: true, dailyRoomUrl: true, recordingUrl: true },
     })
-    if (!session) {
-      return { exists: false, isLive: false, recordingUrl: null }
+
+    if (session?.isLive) {
+      return { exists: true, isLive: true, scheduled: false, roomUrl: session.dailyRoomUrl, recordingUrl: session.recordingUrl }
     }
+
+    const ended = session?.status === 'ENDED' || course.liveStatus === 'ended'
+    if (ended) {
+      return { exists: true, isLive: false, scheduled: false, roomUrl: session?.dailyRoomUrl ?? null, recordingUrl: session?.recordingUrl ?? null }
+    }
+
+    // Course exists but the instructor has not started the stream yet
     return {
       exists: true,
-      isLive: session.isLive,
-      roomUrl: session.dailyRoomUrl,
-      recordingUrl: session.recordingUrl,
+      isLive: false,
+      scheduled: true,
+      scheduledAt: course.liveStartTime ?? null,
+      recordingUrl: null,
     }
   }
 
@@ -398,7 +433,7 @@ export class LiveService {
       return course?.duration ?? 0
     })()
 
-    if (computedDuration > 0 && (!session?.durationMinutes || session.durationMinutes === 0)) {
+    if (session && computedDuration > 0 && (!session.durationMinutes || session.durationMinutes === 0)) {
       await this.prisma.liveSession.update({
         where: { id: session.id },
         data: { durationMinutes: computedDuration },
@@ -421,18 +456,17 @@ export class LiveService {
           name: instructorName,
           avatar: instructorProfile?.avatar ?? null,
         },
-        session: session
-          ? {
-              id: session.id,
-              status: sessionStatus,
-              scheduledAt: course.liveStartTime?.toISOString() ?? null,
-              startedAt: session.startedAt?.toISOString() ?? null,
-              endedAt: session.endedAt?.toISOString() ?? null,
-              durationMinutes: computedDuration,
-              viewerCount: course.liveViewerCount ?? 0,
-              dailyRecordingId: session.recording?.sid ?? null,
-            }
-          : null,
+        // Always present: a scheduled course has no LiveSession row until the instructor starts it
+        session: {
+          id: session?.id ?? null,
+          status: sessionStatus,
+          scheduledAt: course.liveStartTime?.toISOString() ?? null,
+          startedAt: session?.startedAt?.toISOString() ?? null,
+          endedAt: session?.endedAt?.toISOString() ?? null,
+          durationMinutes: session ? computedDuration : 0,
+          viewerCount: course.liveViewerCount ?? 0,
+          dailyRecordingId: session?.recording?.sid ?? null,
+        },
         recordingUrl,
       },
     }
@@ -509,8 +543,8 @@ export class LiveService {
     res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'video/mp4')
     res.setHeader('Content-Disposition', 'inline')
     res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
-    res.setHeader('Pragma', 'no-cache')
+    // Private (per-user, token in the URL) but cacheable so seeks and replays do not refetch bytes
+    res.setHeader('Cache-Control', 'private, max-age=3600')
 
     const statusCode = upstream.status === 206 ? 206 : 200
     res.status(statusCode)

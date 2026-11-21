@@ -54,6 +54,7 @@ export default function ProtectedVideo({
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [key, setKey] = useState(0)
+  const [ready, setReady] = useState(false)
 
   const storeUser = useAuthStore((s) => s.user)
 
@@ -87,6 +88,7 @@ export default function ProtectedVideo({
     setTimeout(() => {
       setError(false)
       setKey((k) => k + 1)
+      setReady(false)
       setRefreshing(false)
     }, 600)
   }
@@ -214,6 +216,20 @@ export default function ProtectedVideo({
           </button>
         </div>
       ) : (
+        <>
+        {!ready && (
+          <div
+            style={{
+              position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 10,
+              background: 'rgba(0,0,0,0.45)', borderRadius: 12, pointerEvents: 'none',
+              direction: isAr ? 'rtl' : 'ltr',
+            }}>
+            <style>{`@keyframes pvspin{to{transform:rotate(360deg)}}`}</style>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.25)', borderTopColor: '#fff', animation: 'pvspin 0.8s linear infinite' }} />
+            <span style={{ color: '#fff', fontSize: 13 }}>{isAr ? 'جاري تحميل الفيديو...' : 'Loading the video...'}</span>
+          </div>
+        )}
         <video
           key={key}
           ref={videoRef}
@@ -222,11 +238,17 @@ export default function ProtectedVideo({
           controlsList="nodownload noremoteplayback"
           disablePictureInPicture
           playsInline
+          preload="metadata"
           poster={poster || undefined}
           onContextMenu={blockContext}
+          onLoadedMetadata={() => setReady(true)}
+          onCanPlay={() => setReady(true)}
+          onPlaying={() => setReady(true)}
+          onWaiting={() => setReady(false)}
           onError={() => setError(true)}
           style={{ width: '100%', borderRadius: 12, display: 'block', aspectRatio: '16/9' }}
         />
+        </>
       )}
     </div>
   )

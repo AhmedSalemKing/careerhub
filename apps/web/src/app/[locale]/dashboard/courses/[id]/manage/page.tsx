@@ -947,6 +947,16 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [endingLive, setEndingLive] = useState(false)
+
+  const openStudio = () => router.push(`/${locale}/dashboard/courses/${courseId}/go-live`)
+  const endLiveNow = async () => {
+    if (!window.confirm(isAr ? 'هل تريد إنهاء البث المباشر؟' : 'Do you want to end the live stream?')) return
+    setEndingLive(true)
+    try { await post(`/live/end/${courseId}`, {}) } catch (e) { console.error('End live error:', e) }
+    setEndingLive(false)
+    refetchManage()
+  }
 
   // Student-facing course URL (no auth token, safe to share)
   const copyCourseLink = async () => {
@@ -958,7 +968,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
     } catch {}
   }
 
-  const { data: manageData, isLoading } = useQuery({
+  const { data: manageData, isLoading, refetch: refetchManage } = useQuery({
     queryKey: ['live-manage', courseId],
     queryFn: async () => {
       const res = await get(`/live/manage/${courseId}`)
@@ -1274,6 +1284,32 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               )}
             </div>
           </div>
+          {liveStatus === 'SCHEDULED' && (
+            <button onClick={openStudio} style={{
+              width: '100%', background: '#16a34a', color: '#fff', border: 'none',
+              borderRadius: 8, padding: '10px 12px', fontSize: '0.9rem',
+              fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+            }}>
+              {isAr ? 'بدء البث الآن' : 'Start the stream now'}
+            </button>
+          )}
+          {liveStatus === 'LIVE' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={openStudio} style={{
+                background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '8px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+              }}>
+                {isAr ? 'انضمام للبث' : 'Join the stream'}
+              </button>
+              <button onClick={endLiveNow} disabled={endingLive} style={{
+                background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '8px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                opacity: endingLive ? 0.6 : 1,
+              }}>
+                {isAr ? 'إنهاء البث' : 'End the stream'}
+              </button>
+            </div>
+          )}
           {liveStatus === 'ENDED' && recUrl && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button onClick={() => window.open(recUrl, '_blank')} style={{
@@ -1349,7 +1385,9 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 label: (isAr ? 'حالة التسجيل' : 'Recording status'),
                 badge: recUrl
                   ? { text: (isAr ? 'جاهز للمشاهدة' : 'Ready to watch'), bg: '#7c3aed22', color: '#a78bfa' }
-                  : { text: (isAr ? 'جارٍ التجهيز' : 'Processing'), bg: '#f59e0b22', color: '#f59e0b' }
+                  : liveStatus === 'ENDED'
+                    ? { text: (isAr ? 'جارٍ التجهيز' : 'Processing'), bg: '#f59e0b22', color: '#f59e0b' }
+                    : { text: (isAr ? 'غير متاح بعد' : 'Not available yet'), bg: '#1e2333', color: '#9ca3af' }
               },
             ].map(({ label, value, badge }) => (
               <div key={label} style={{

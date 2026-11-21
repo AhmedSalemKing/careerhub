@@ -43,6 +43,7 @@ export default function LiveViewerPage() {
   const [hasQuestion, setHasQuestion] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
   const [userToken, setUserToken] = useState('')
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null)
 
   const pollRef = useRef<any>(null)
   const joinedRef = useRef(false)
@@ -101,6 +102,14 @@ export default function LiveViewerPage() {
 
       if (!status?.exists) {
         setLiveState('not_found')
+        return
+      }
+
+      if (status.scheduled) {
+        // Course exists but the instructor has not started yet
+        setScheduledAt(status.scheduledAt ?? null)
+        setLiveState('waiting')
+        startPolling(t)
         return
       }
 
@@ -182,6 +191,11 @@ export default function LiveViewerPage() {
         if (!status?.exists) {
           setLiveState('not_found')
           clearInterval(pollRef.current)
+          return
+        }
+
+        if (status.scheduled) {
+          setScheduledAt(status.scheduledAt ?? null)
           return
         }
 
@@ -291,6 +305,13 @@ export default function LiveViewerPage() {
 
     return () => { clearInterval(pollRef.current) }
   }, [courseId])
+
+  const scheduledAtLabel = (() => {
+    if (!scheduledAt) return ''
+    const d = new Date(scheduledAt)
+    if (isNaN(d.getTime())) return ''
+    return new Intl.DateTimeFormat(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'full', timeStyle: 'short' }).format(d)
+  })()
 
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (liveState === 'loading') return (
@@ -484,6 +505,11 @@ export default function LiveViewerPage() {
               </div>
               <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>{tl('streamNotStartedTitle')}</p>
               <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, maxWidth: 340, lineHeight: 1.7, margin: 0 }}>{tl('streamNotStartedDesc')}</p>
+              {scheduledAtLabel && (
+                <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700, margin: 0 }}>
+                  {isAr ? `سيبدأ البث في: ${scheduledAtLabel}` : `The stream starts: ${scheduledAtLabel}`}
+                </p>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', animation: 'livePulse 1.2s infinite' }} />
                 <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{tl('waitingForInstructor')}</span>

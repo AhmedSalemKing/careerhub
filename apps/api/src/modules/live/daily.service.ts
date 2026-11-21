@@ -33,6 +33,8 @@ export class DailyService implements OnModuleInit {
     const roomName = `course-${courseId}-${Date.now()}`;
     const data = await this.request('/rooms', 'POST', {
       name: roomName,
+      // Private: joining requires a meeting token, so permissions can only come from our tokens
+      privacy: 'private',
       properties: {
         enable_chat: true,
         enable_screenshare: true,
@@ -71,11 +73,19 @@ export class DailyService implements OnModuleInit {
     }
   }
 
-  async createToken(roomName: string, isOwner: boolean): Promise<string> {
+  // viewerOnly: a student of a live course. Never an owner, cannot administer the room
+  // (which includes starting/stopping recordings) and cannot share their screen.
+  async createToken(roomName: string, isOwner: boolean, opts: { viewerOnly?: boolean } = {}): Promise<string> {
+    const viewerOnly = !!opts.viewerOnly && !isOwner;
     const data = await this.request('/meeting-tokens', 'POST', {
       properties: {
         room_name: roomName,
         is_owner: isOwner,
+        ...(viewerOnly && {
+          enable_screenshare: false,
+          start_cloud_recording: false,
+          permissions: { canAdminister: false },
+        }),
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 6,
       },
     });
