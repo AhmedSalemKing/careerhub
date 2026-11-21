@@ -1,0 +1,1511 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table users {
+  id String [pk]
+  email String [unique, not null]
+  password String [not null]
+  role UserRole [not null, default: 'USER']
+  isActive Boolean [not null, default: true]
+  accountType String [not null, default: 'STUDENT']
+  status String [not null, default: 'ACTIVE']
+  cvUrl String
+  bio String
+  experience Int
+  speciality String
+  linkedinUrl String
+  hourlyRate Float
+  meetingMethod String
+  googleId String [unique]
+  provider String [not null, default: 'local']
+  stripeCustomerId String
+  approvedAt DateTime
+  rejectedAt DateTime
+  rejectedReason String
+  lastSeenAt DateTime
+  idVerificationStatus String [not null, default: 'UNVERIFIED']
+  idFrontUrl String
+  idBackUrl String
+  idVerifiedAt DateTime
+  idRejectedReason String
+  isVerified Boolean [not null, default: false]
+  walletBalance Float [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  deletedAt DateTime
+  profile user_profiles
+  subscriptions Subscription [not null]
+  sessions sessions [not null]
+  passwordResetTokens password_reset_tokens [not null]
+  careerAssessments career_assessments [not null]
+  enrollments enrollments [not null]
+  lessonProgress lesson_progress [not null]
+  certificates certificates [not null]
+  payments payments [not null]
+  coachingSessions coaching_sessions [not null]
+  coachReviews coach_reviews [not null]
+  sentMessages chat_messages [not null]
+  receivedMessages chat_messages [not null]
+  notifications notifications [not null]
+  adminLogs admin_logs [not null]
+  uploadedFiles uploaded_files [not null]
+  fileShares file_shares [not null]
+  deviceTokens device_tokens [not null]
+  analyticsEvents analytics_events [not null]
+  quizAttempts quiz_test_attempts [not null]
+  coachProfile coaches
+  assessmentSessions assessment_sessions [not null]
+  userCareerPaths user_career_paths [not null]
+  userSessions consulting_sessions [not null]
+  consultantSessions consulting_sessions [not null]
+  earningsBalance Float [not null, default: 0]
+  instructorCourses Course [not null]
+  cart carts
+  conversations conversations [not null]
+  givenRatings ratings [not null]
+  receivedRatings ratings [not null]
+  activities user_activities [not null]
+  walletTransactions wallet_transactions [not null]
+  coachingCredits coaching_credits [not null]
+  instructorLectures instructor_lectures [not null]
+  compassSessions compass_sessions [not null]
+}
+
+Table user_profiles {
+  id String [pk]
+  userId String [unique, not null]
+  firstName String [not null]
+  lastName String [not null]
+  phone String
+  dateOfBirth DateTime
+  gender Gender
+  nationality String
+  country String
+  city String
+  avatar String
+  bio String
+  speciality String
+  yearsExperience Int
+  qualifications String[] [not null]
+  consultingAreas String[] [not null]
+  sessionPrice Float
+  sessionDuration Int [not null, default: 60]
+  linkedinUrl String
+  timezone String [not null, default: 'UTC']
+  language String [not null, default: 'en']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+}
+
+Table sessions {
+  id String [pk]
+  userId String [not null]
+  refreshToken String [unique, not null]
+  expiresAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
+Table password_reset_tokens {
+  id String [pk]
+  userId String [not null]
+  tokenHash String [unique, not null]
+  expiresAt DateTime [not null]
+  usedAt DateTime
+  ipAddress String
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
+Table career_paths {
+  id String [pk]
+  slug String [unique, not null]
+  titleEn String [not null]
+  titleAr String [not null]
+  descriptionEn String [not null]
+  descriptionAr String [not null]
+  skills String[] [not null]
+  salaryRangeEn String [not null]
+  salaryRangeAr String [not null]
+  jobTitlesEn String[] [not null]
+  jobTitlesAr String[] [not null]
+  demandLevel String [not null]
+  icon String
+  color String
+  isActive Boolean [not null, default: true]
+  sortOrder Int [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  courses Course [not null]
+  careerAssessments career_assessments [not null]
+}
+
+Table career_assessments {
+  id String [pk]
+  userId String [not null]
+  careerPathId String [not null]
+  status AssessmentStatus [not null, default: 'IN_PROGRESS']
+  score Int
+  results Json
+  startedAt DateTime [default: `now()`, not null]
+  completedAt DateTime
+  expiresAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  careerPath career_paths [not null]
+  questions assessment_questions [not null]
+}
+
+Table assessment_questions {
+  id String [pk]
+  assessmentId String [not null]
+  questionTextEn String [not null]
+  questionTextAr String [not null]
+  questionType String [not null]
+  options Json
+  correctAnswer String
+  userAnswer String
+  points Int [not null, default: 1]
+  order Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  assessment career_assessments [not null]
+}
+
+Table categories {
+  id String [pk]
+  nameAr String [not null]
+  nameEn String [not null]
+  slug String [unique, not null]
+  icon String
+  parentId String
+  parent categories
+  children categories [not null]
+  courses Course [not null]
+}
+
+Table Course {
+  id String [pk]
+  slug String [unique, not null]
+  careerPathId String
+  instructorId String
+  categoryId String
+  titleEn String [not null]
+  titleAr String
+  descriptionEn String
+  descriptionAr String
+  thumbnail String
+  previewVideo String
+  price Float [not null, default: 0]
+  currency String [not null, default: 'USD']
+  priceEGP Decimal
+  priceUSD Decimal
+  priceSAR Decimal
+  duration Int
+  level String [not null, default: 'BEGINNER']
+  tags String[] [not null]
+  careerPaths String[] [not null]
+  status CourseStatus [not null, default: 'DRAFT']
+  isFeatured Boolean [not null, default: false]
+  sortOrder Int [not null, default: 0]
+  expectedLessons Int [not null, default: 0]
+  certificateEnabled Boolean [not null, default: true]
+  providerName String
+  providerLogo String
+  isCompleted Boolean [not null, default: false]
+  completedAt DateTime
+  publishedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  type String [default: 'recorded']
+  streamKey String
+  streamUrl String
+  liveStartTime DateTime
+  liveEndTime DateTime
+  liveStatus String [default: 'scheduled']
+  autoPublishRecording Boolean [not null, default: false]
+  autoDeleteAfterLive Boolean [not null, default: false]
+  locationName String
+  locationAddress String
+  locationLat Float
+  locationLng Float
+  offlinePaymentType String [default: 'online']
+  maxAttendees Int
+  agoraChannelName String
+  liveViewerCount Int [not null, default: 0]
+  recordingUrl String
+  careerPath career_paths
+  category categories
+  instructor users
+  modules course_modules [not null]
+  sections sections [not null]
+  enrollments enrollments [not null]
+  certificates certificates [not null]
+  payments payments [not null]
+  cartItems cart_items [not null]
+  ratings ratings [not null]
+  bundles BundleCourse [not null]
+  quizzes quiz_tests [not null]
+  instructorLectures instructor_lectures [not null]
+}
+
+Table instructor_lectures {
+  id String [pk]
+  instructorId String [not null]
+  courseId String [not null]
+  title String
+  deliveredAt DateTime [not null]
+  durationMinutes Int [not null]
+  status LectureStatus [not null, default: 'DRAFT']
+  notes String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  instructor users [not null]
+  course Course [not null]
+}
+
+Table CourseBundle {
+  id String [pk]
+  titleEn String [not null]
+  titleAr String [not null]
+  description String
+  price Float [not null, default: 0]
+  discount Float [not null, default: 0]
+  isActive Boolean [not null, default: true]
+  isFeatured Boolean [not null, default: false]
+  sortOrder Int [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  bundles BundleCourse [not null]
+}
+
+Table BundleCourse {
+  id String [pk]
+  bundleId String [not null]
+  courseId String [not null]
+  order Int [not null, default: 0]
+  bundle CourseBundle [not null]
+  course Course [not null]
+
+  indexes {
+    (bundleId, courseId) [unique]
+  }
+}
+
+Table sections {
+  id String [pk]
+  title String [not null]
+  order Int [not null, default: 0]
+  courseId String [not null]
+  course Course [not null]
+  lessons lessons [not null]
+  quizzes quiz_tests [not null]
+}
+
+Table course_modules {
+  id String [pk]
+  courseId String [not null]
+  titleEn String [not null]
+  titleAr String [not null]
+  descriptionEn String
+  descriptionAr String
+  sortOrder Int [not null, default: 0]
+  isPublished Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  course Course [not null]
+  lessons lessons [not null]
+}
+
+Table lessons {
+  id String [pk]
+  moduleId String
+  sectionId String
+  title String [not null]
+  titleAr String
+  description String
+  descriptionAr String
+  content Json
+  type String [not null, default: 'VIDEO']
+  videoUrl String
+  videoDuration Int
+  fileUrl String
+  fileName String
+  fileSize Int
+  imageUrl String
+  isFree Boolean [not null, default: false]
+  order Int [not null, default: 0]
+  isPublished Boolean [not null, default: false]
+  liveStartTime DateTime
+  liveStatus String [default: 'scheduled']
+  agoraChannelName String
+  streamKey String
+  recordingUrl String
+  locationName String
+  locationAddress String
+  locationLat Float
+  locationLng Float
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  module course_modules
+  section sections
+  videoContent video_content
+  quizzes quiz_tests [not null]
+  progress lesson_progress [not null]
+}
+
+Table video_content {
+  id String [pk]
+  lessonId String [unique, not null]
+  streamId String [unique, not null]
+  uploadUrl String
+  playbackUrl String
+  thumbnail String
+  duration Int
+  status String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  lesson lessons [not null]
+}
+
+Table quiz_tests {
+  id String [pk]
+  courseId String [not null]
+  course Course [not null]
+  sectionId String
+  section sections
+  lessonId String
+  lesson lessons
+  title String [not null]
+  titleAr String
+  description String
+  durationMinutes Int [not null, default: 30]
+  passingScore Int [not null, default: 60]
+  shuffleQuestions Boolean [not null, default: false]
+  shuffleChoices Boolean [not null, default: false]
+  allowRetake Boolean [not null, default: true]
+  retakeThreshold Int [not null, default: 50]
+  unlimitedRetakes Boolean [not null, default: false]
+  maxAttempts Int [not null, default: 1]
+  showResults Boolean [not null, default: true]
+  status String [not null, default: 'DRAFT']
+  questions quiz_test_questions [not null]
+  attempts quiz_test_attempts [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table quiz_test_questions {
+  id String [pk]
+  quizId String [not null]
+  quiz quiz_tests [not null]
+  order Int [not null]
+  type String [not null]
+  questionText String [not null]
+  questionImage String
+  note String
+  points Int [not null, default: 1]
+  allowMultipleAnswers Boolean [not null, default: false]
+  choices quiz_test_choices [not null]
+  answers quiz_test_answers [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table quiz_test_choices {
+  id String [pk]
+  questionId String [not null]
+  question quiz_test_questions [not null]
+  text String [not null]
+  isCorrect Boolean [not null, default: false]
+  order Int [not null, default: 0]
+}
+
+Table quiz_test_attempts {
+  id String [pk]
+  quizId String [not null]
+  quiz quiz_tests [not null]
+  userId String [not null]
+  user users [not null]
+  startedAt DateTime [default: `now()`, not null]
+  submittedAt DateTime
+  endsAt DateTime [not null]
+  timeSpentSeconds Int
+  status String [not null, default: 'IN_PROGRESS']
+  autoScore Float [not null, default: 0]
+  manualScore Float [not null, default: 0]
+  totalScore Float [not null, default: 0]
+  maxScore Float [not null, default: 0]
+  percentage Float [not null, default: 0]
+  passed Boolean [not null, default: false]
+  teacherNotes String
+  answers quiz_test_answers [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table quiz_test_answers {
+  id String [pk]
+  attemptId String [not null]
+  attempt quiz_test_attempts [not null]
+  questionId String [not null]
+  question quiz_test_questions [not null]
+  selectedChoiceIds String[] [not null]
+  textAnswer String
+  fileUrl String
+  fileName String
+  autoGrade Float
+  manualGrade Float
+  feedback String
+  gradedAt DateTime
+  gradedBy String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  indexes {
+    (attemptId, questionId) [unique]
+  }
+}
+
+Table enrollments {
+  id String [pk]
+  userId String [not null]
+  courseId String [not null]
+  status EnrollmentStatus [not null, default: 'ACTIVE']
+  progress Float [not null, default: 0]
+  enrolledAt DateTime [default: `now()`, not null]
+  completedAt DateTime
+  expiresAt DateTime
+  user users [not null]
+  course Course [not null]
+
+  indexes {
+    (userId, courseId) [unique]
+  }
+}
+
+Table lesson_progress {
+  id String [pk]
+  userId String [not null]
+  lessonId String [not null]
+  status LessonStatus [not null, default: 'NOT_STARTED']
+  progress Float [not null, default: 0]
+  timeSpent Int [not null, default: 0]
+  completedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  lesson lessons [not null]
+
+  indexes {
+    (userId, lessonId) [unique]
+  }
+}
+
+Table certificates {
+  id String [pk]
+  userId String [not null]
+  courseId String [not null]
+  serialNumber String [unique, not null]
+  certificateUrl String [not null]
+  qrCodeUrl String [not null]
+  issuedAt DateTime [default: `now()`, not null]
+  expiresAt DateTime
+  user users [not null]
+  course Course [not null]
+
+  indexes {
+    (userId, courseId) [unique]
+  }
+}
+
+Table coaches {
+  id String [pk]
+  userId String [unique, not null]
+  bioEn String [not null]
+  bioAr String [not null]
+  specialties String[] [not null]
+  experience Int [not null]
+  hourlyRate Float [not null]
+  currency String [not null, default: 'USD']
+  availability Json [not null]
+  isVerified Boolean [not null, default: false]
+  rating Float [not null, default: 0]
+  reviewCount Int [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  coachingSlots coaching_slots [not null]
+  coachingSessions coaching_sessions [not null]
+  reviews coach_reviews [not null]
+}
+
+Table coaching_slots {
+  id String [pk]
+  coachId String [not null]
+  startTime DateTime [not null]
+  endTime DateTime [not null]
+  isBooked Boolean [not null, default: false]
+  price Float
+  currency String [not null, default: 'USD']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  coach coaches [not null]
+  sessions coaching_sessions [not null]
+}
+
+Table coaching_sessions {
+  id String [pk]
+  coachId String [not null]
+  userId String [not null]
+  slotId String [not null]
+  zoomMeetingId String
+  zoomJoinUrl String
+  status SessionStatus [not null, default: 'SCHEDULED']
+  notes String
+  recordingUrl String
+  price Float
+  startTime DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  coach coaches [not null]
+  user users [not null]
+  slot coaching_slots [not null]
+  reviews coach_reviews [not null]
+}
+
+Table coaching_credits {
+  id String [pk]
+  userId String [not null]
+  packageId String [not null]
+  sessionsRemaining Int [not null]
+  expiresAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+}
+
+Table coach_reviews {
+  id String [pk]
+  coachId String [not null]
+  userId String [not null]
+  sessionId String [not null]
+  rating Int [not null]
+  comment String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  coach coaches [not null]
+  user users [not null]
+  session coaching_sessions [not null]
+
+  indexes {
+    (userId, sessionId) [unique]
+  }
+}
+
+Table payments {
+  id String [pk]
+  userId String [not null]
+  courseId String
+  amount Float [not null]
+  currency String [not null, default: 'SAR']
+  method String [not null, default: 'STRIPE_CARD']
+  status String [not null, default: 'PENDING']
+  transactionId String [unique]
+  stripeIntentId String
+  description String
+  itemType String
+  itemId String
+  completedAt DateTime
+  refundedAt DateTime
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  course Course
+}
+
+Table chat_messages {
+  id String [pk]
+  senderId String [not null]
+  receiverId String [not null]
+  sessionId String
+  content String [not null]
+  type MessageType [not null, default: 'TEXT']
+  fileUrl String
+  isRead Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  sender users [not null]
+  receiver users [not null]
+}
+
+Table notifications {
+  id String [pk]
+  userId String [not null]
+  type NotificationType [not null]
+  titleEn String [not null]
+  titleAr String [not null]
+  contentEn String [not null]
+  contentAr String [not null]
+  data Json
+  isRead Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
+Table admin_logs {
+  id String [pk]
+  adminId String [not null]
+  action String [not null]
+  resource String [not null]
+  resourceId String
+  details Json
+  ipAddress String
+  userAgent String
+  createdAt DateTime [default: `now()`, not null]
+  admin users [not null]
+}
+
+Table uploaded_files {
+  id String [pk]
+  userId String [not null]
+  fileName String [not null]
+  originalName String [not null]
+  mimeType String [not null]
+  size Int [not null]
+  fileType String [not null]
+  key String [not null]
+  url String [not null]
+  isPublic Boolean [not null, default: false]
+  folder String [not null, default: 'general']
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  shares file_shares [not null]
+}
+
+Table device_tokens {
+  id String [pk]
+  userId String [not null]
+  token String [unique, not null]
+  platform String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+}
+
+Table analytics_events {
+  id String [pk]
+  userId String
+  event String [not null]
+  properties Json
+  sessionId String
+  ipAddress String
+  userAgent String
+  createdAt DateTime [default: `now()`, not null]
+  user users
+}
+
+Table file_shares {
+  id String [pk]
+  fileId String [not null]
+  shareId String [unique, not null]
+  userId String [not null]
+  expiresAt DateTime [not null]
+  password String
+  downloadLimit Int
+  downloadCount Int [not null, default: 0]
+  isPublic Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  file uploaded_files [not null]
+  user users [not null]
+}
+
+Table Subscription {
+  id String [pk]
+  userId String [not null]
+  plan String [not null]
+  status String [not null, default: 'ACTIVE']
+  startDate DateTime [default: `now()`, not null]
+  endDate DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+}
+
+Table user_career_paths {
+  id String [pk]
+  userId String [not null]
+  user users [not null]
+  pathId String [not null]
+  pathTitle String [not null]
+  pathCategory String [not null]
+  aiRecommended Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  indexes {
+    (userId, pathId) [unique]
+  }
+}
+
+Table assessment_sessions {
+  id String [pk]
+  userId String [not null]
+  user users [not null]
+  answers Json [not null, default: '[]']
+  report Json
+  status String [not null, default: 'IN_PROGRESS']
+  createdAt DateTime [default: `now()`, not null]
+  completedAt DateTime
+}
+
+Table site_settings {
+  id String [pk]
+  siteName String [not null, default: 'DeveWay']
+  primaryColor String [not null, default: '#5120c8']
+  backgroundColor String [not null, default: '#FFFFFF']
+  buttonColor String [not null, default: '#5120c8']
+  logoUrl String
+  updatedAt DateTime [not null]
+}
+
+Table site_setting {
+  id String [pk]
+  key String [unique, not null]
+  value Json [not null]
+  group String [not null, default: 'general']
+  type String [not null, default: 'text']
+  updatedAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table consulting_sessions {
+  id String [pk]
+  studentId String [not null]
+  consultantId String [not null]
+  sessionName String
+  topic String
+  notes String
+  description String
+  scheduledAt DateTime [not null]
+  duration Int [not null, default: 60]
+  actualDuration Int
+  dailyRoomName String
+  dailyRoomUrl String
+  status String [not null, default: 'PENDING_APPROVAL']
+  meetingType String [not null, default: 'daily']
+  meetingLink String
+  meetingLinkExpiresAt DateTime
+  price Float [not null, default: 0]
+  currency String [not null, default: 'SAR']
+  paymentStatus String [not null, default: 'UNPAID']
+  paymentId String
+  paidAt DateTime
+  proposedAt DateTime
+  proposedBy String
+  consultantApproved Boolean [not null, default: false]
+  userApproved Boolean [not null, default: true]
+  startedAt DateTime
+  endedAt DateTime
+  completedBy String
+  completedAt DateTime
+  cancelReason String
+  rescheduledBy String
+  rescheduledFrom DateTime
+  originalScheduledAt DateTime
+  imageUrl String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user users [not null]
+  consultant users [not null]
+}
+
+Table audit_logs {
+  id String [pk]
+  action String [not null]
+  entityType String
+  entityId String
+  adminId String
+  details Json
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table security_logs {
+  id String [pk]
+  event String [not null]
+  userId String
+  email String
+  ip String
+  userAgent String
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table conversations {
+  id String [pk]
+  userId String [not null]
+  user users [not null]
+  title String [not null, default: 'محادثة جديدة']
+  context String
+  report Json
+  reportGeneratedAt DateTime
+  interviewStage String [default: 'ORIENTATION']
+  evidenceLog Json [default: '[]']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  messages ai_messages [not null]
+}
+
+Table ai_messages {
+  id String [pk]
+  conversationId String [not null]
+  conversation conversations [not null]
+  role String [not null]
+  content String [not null]
+  tokens Int
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table ratings {
+  id String [pk]
+  userId String [not null]
+  courseId String
+  consultantId String
+  value Int [not null]
+  comment String
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+  course Course
+  consultant users
+
+  indexes {
+    (userId, courseId) [unique]
+    (userId, consultantId) [unique]
+  }
+}
+
+Table user_activities {
+  id String [pk]
+  userId String [not null]
+  action String [not null]
+  entity String
+  entityId String
+  metadata Json
+  ipAddress String
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
+Table carts {
+  id String [pk]
+  userId String [unique, not null]
+  user users [not null]
+  items cart_items [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table cart_items {
+  id String [pk]
+  cartId String [not null]
+  cart carts [not null]
+  courseId String [not null]
+  course Course [not null]
+  addedAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (cartId, courseId) [unique]
+  }
+}
+
+Table wallet_transactions {
+  id String [pk]
+  userId String [not null]
+  type String [not null]
+  amount Float [not null]
+  description String
+  status String [not null, default: 'SUCCESS']
+  stripePaymentIntentId String
+  courseId String
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
+Table exchange_rates {
+  id String [pk]
+  fromCurrency String [not null]
+  toCurrency String [not null]
+  rate Float [not null]
+  updatedAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (fromCurrency, toCurrency) [unique]
+  }
+}
+
+Table LiveSession {
+  id String [pk]
+  courseId String [not null]
+  channelName String [unique]
+  instructorId String [not null]
+  status LiveSessionStatus [not null, default: 'SCHEDULED']
+  isLive Boolean [not null, default: false]
+  dailyRoomName String
+  dailyRoomUrl String
+  recordingUrl String
+  startedAt DateTime
+  endedAt DateTime
+  durationMinutes Int [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  recording LiveRecording
+}
+
+Table LiveRecording {
+  id String [pk]
+  liveSessionId String [unique, not null]
+  status RecordingStatus [not null, default: 'PENDING']
+  resourceId String
+  sid String [unique]
+  b2Key String
+  bunnyVideoId String
+  lastError String
+  retryCount Int [not null, default: 0]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  liveSession LiveSession [not null]
+}
+
+Table WebhookEvent {
+  id String [pk]
+  source String [not null]
+  eventType String [not null]
+  externalId String
+  payload Json [not null]
+  processed Boolean [not null, default: false]
+  processedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table compass_versions {
+  id String [pk]
+  version String [unique, not null]
+  isActive Boolean [not null, default: false]
+  publishedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  stages compass_stages [not null]
+  questions compass_questions [not null]
+  sessions compass_sessions [not null]
+}
+
+Table compass_stages {
+  id String [pk]
+  versionId String [not null]
+  stageNumber Int [not null]
+  titleAr String [not null]
+  titleEn String [not null]
+  version compass_versions [not null]
+  questions compass_questions [not null]
+
+  indexes {
+    (versionId, stageNumber) [unique]
+  }
+}
+
+Table compass_questions {
+  id String [pk]
+  versionId String [not null]
+  stageId String [not null]
+  dimension CompassDimension [not null]
+  type CompassQuestionType [not null]
+  textAr String [not null]
+  textEn String [not null]
+  hintAr String
+  hintEn String
+  isBaseline Boolean [not null, default: true]
+  order Int [not null]
+  minAnswers Int
+  maxAnswers Int
+  maxFollowUpDepth Int [not null, default: 1]
+  version compass_versions [not null]
+  stage compass_stages [not null]
+  options compass_options [not null]
+  triggersRules compass_follow_up_rules [not null]
+  asFollowUp compass_follow_up_rules [not null]
+  answers compass_answers [not null]
+  sessionQuestions compass_session_questions [not null]
+}
+
+Table compass_options {
+  id String [pk]
+  questionId String [not null]
+  textAr String [not null]
+  textEn String [not null]
+  order Int [not null]
+  question compass_questions [not null]
+  followUpRules compass_follow_up_rules [not null]
+}
+
+Table compass_follow_up_rules {
+  id String [pk]
+  triggerQuestionId String [not null]
+  triggerOptionId String
+  triggerCondition String
+  followUpQuestionId String [not null]
+  dimension CompassDimension [not null]
+  reasonAr String [not null]
+  reasonEn String [not null]
+  priority Int [not null, default: 0]
+  triggerQuestion compass_questions [not null]
+  triggerOption compass_options
+  followUpQuestion compass_questions [not null]
+}
+
+Table compass_sessions {
+  id String [pk]
+  userId String [not null]
+  versionId String [not null]
+  status CompassSessionStatus [not null, default: 'IN_PROGRESS']
+  currentStage Int [not null, default: 1]
+  startedAt DateTime [default: `now()`, not null]
+  completedAt DateTime
+  expiresAt DateTime [not null]
+  user users [not null]
+  version compass_versions [not null]
+  answers compass_answers [not null]
+  sessionQuestions compass_session_questions [not null]
+  dimensionEvidence compass_dimension_evidence
+  report compass_reports
+}
+
+Table compass_session_questions {
+  id String [pk]
+  sessionId String [not null]
+  questionId String [not null]
+  presentedOrder Int [not null]
+  status CompassQuestionStatus [not null, default: 'PENDING']
+  branchingReason String
+  followUpDepth Int [not null, default: 0]
+  session compass_sessions [not null]
+  question compass_questions [not null]
+
+  indexes {
+    (sessionId, questionId) [unique]
+  }
+}
+
+Table compass_answers {
+  id String [pk]
+  sessionId String [not null]
+  questionId String [not null]
+  selectedOptionIds String[] [not null]
+  rankingOrder Json
+  textValue String
+  ratingValue Int
+  isFollowUp Boolean [not null, default: false]
+  followUpDepth Int [not null, default: 0]
+  answeredAt DateTime [default: `now()`, not null]
+  session compass_sessions [not null]
+  question compass_questions [not null]
+
+  indexes {
+    (sessionId, questionId) [unique]
+  }
+}
+
+Table compass_dimension_evidence {
+  id String [pk]
+  sessionId String [unique, not null]
+  interests Int
+  skills Int
+  behavioralIndicators Int
+  motivation Int
+  workPreferences Int
+  marketReadiness Int
+  careerFitScore Int
+  confidence Int
+  scoringVersion String
+  evidenceFindings Json [not null, default: '{}']
+  skillDiscrepancies Json [not null, default: '[]']
+  session compass_sessions [not null]
+}
+
+Table compass_reports {
+  id String [pk]
+  sessionId String [unique, not null]
+  profileSummaryAr String
+  profileSummaryEn String
+  candidatePaths Json [not null, default: '[]']
+  strengthsAr Json [not null, default: '[]']
+  strengthsEn Json [not null, default: '[]']
+  skillGapsAr Json [not null, default: '[]']
+  skillGapsEn Json [not null, default: '[]']
+  experienceGapsAr Json [not null, default: '[]']
+  experienceGapsEn Json [not null, default: '[]']
+  learningRoadmapAr Json [not null, default: '{}']
+  learningRoadmapEn Json [not null, default: '{}']
+  limitations String
+  aiNarrativeAr String
+  aiNarrativeEn String
+  generatedAt DateTime [default: `now()`, not null]
+  session compass_sessions [not null]
+}
+
+Table tracks {
+  id String [pk]
+  slug String [unique, not null]
+  nameAr String [not null]
+  nameEn String [not null]
+  descAr String [not null]
+  descEn String [not null]
+  weeks Int [not null]
+  level String [not null]
+  levelEn String [not null]
+  languages String [not null]
+  coverImage String
+  sessionPrice Float [note: 'optional fixed session price (SAR); when null it is derived from the cheapest matching consultant']
+  speciality String [note: 'matches UserProfile.speciality so consultants can be listed on the track']
+  visionDescKSA String
+  visionDescEG String
+  vision2030 String[] [not null]
+  skills String[] [not null]
+  skillsEn String[] [not null]
+  jobs Json [not null, default: '[]', note: '[{ titleAr, titleEn, descAr, descEn, salaryMinEG, salaryMaxEG, salaryMinKSA, salaryMaxKSA, vision: ["KSA"|"EG"] }]']
+  courses Json [not null, default: '[]', note: '[{ order, titleAr, titleEn, type, typeEn, weeks, provider, language, courseId? }]']
+  freeItemsAr String[] [not null]
+  freeItemsEn String[] [not null]
+  isActive Boolean [not null, default: true]
+  country String [not null, default: 'BOTH']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  Note: 'Learning tracks shown on the home page and /careers (managed from the admin panel).'
+}
+
+Table packages {
+  id String [pk]
+  pathId String [not null, note: 'id of the Track (kind TRACK) or CareerPath (kind CAREER_PATH) the bundle belongs to']
+  pathKind String [not null, default: 'TRACK']
+  courseIds String[] [not null]
+  originalPrice Float
+  finalPrice Float [not null]
+  notes String
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  Note: 'A priced bundle of courses sold for one learning track (or career path); created from the admin "إنشاء باكدج" form.'
+}
+
+Enum UserRole {
+  USER
+  COACH
+  ADMIN
+  SUPER_ADMIN
+}
+
+Enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+Enum AssessmentStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+Enum LectureStatus {
+  DRAFT
+  COMPLETED
+  CANCELLED
+}
+
+Enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+Enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+  CANCELLED
+}
+
+Enum LessonStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+Enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+Enum NotificationType {
+  COURSE_ENROLLMENT
+  LESSON_COMPLETED
+  CERTIFICATE_EARNED
+  COACHING_REMINDER
+  PAYMENT_CONFIRMED
+  SYSTEM_ANNOUNCEMENT
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  USER_APPROVED
+  USER_REJECTED
+  USER_BANNED
+  ROLE_CHANGED
+  WALLET_TOPUP
+  SESSION_BOOKED
+  SESSION_CONFIRMED
+  SESSION_CANCELLED
+  LIVE_STARTED
+  LIVE_ENDED
+}
+
+Enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+}
+
+Enum LiveSessionStatus {
+  SCHEDULED
+  STARTING
+  LIVE
+  ENDING
+  ENDED
+}
+
+Enum RecordingStatus {
+  PENDING
+  STARTING
+  RECORDING
+  STOPPING
+  PROCESSING
+  UPLOADING
+  READY
+  FAILED
+  NEEDS_ATTENTION
+}
+
+Enum CompassDimension {
+  CONTEXT
+  INTERESTS
+  SKILLS
+  BEHAVIORAL_INDICATORS
+  MOTIVATION
+  WORK_PREFERENCES
+  MARKET_READINESS
+}
+
+Enum CompassQuestionType {
+  SINGLE_CHOICE
+  MULTI_SELECT
+  RANKING
+  RATING_SCALE
+  SHORT_TEXT
+  SCENARIO
+  PRACTICAL_MINI
+}
+
+Enum CompassSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  ABANDONED
+}
+
+Enum CompassQuestionStatus {
+  PENDING
+  PRESENTED
+  ANSWERED
+  SKIPPED
+}
+
+Ref: user_profiles.userId - users.id [delete: Cascade]
+
+Ref: sessions.userId > users.id [delete: Cascade]
+
+Ref: password_reset_tokens.userId > users.id [delete: Cascade]
+
+Ref: career_assessments.userId > users.id [delete: Cascade]
+
+Ref: career_assessments.careerPathId > career_paths.id
+
+Ref: assessment_questions.assessmentId > career_assessments.id [delete: Cascade]
+
+Ref: categories.parentId - categories.id
+
+Ref: Course.careerPathId > career_paths.id
+
+Ref: Course.categoryId > categories.id
+
+Ref: Course.instructorId > users.id
+
+Ref: instructor_lectures.instructorId > users.id
+
+Ref: instructor_lectures.courseId > Course.id
+
+Ref: BundleCourse.bundleId > CourseBundle.id [delete: Cascade]
+
+Ref: BundleCourse.courseId > Course.id [delete: Cascade]
+
+Ref: sections.courseId > Course.id [delete: Cascade]
+
+Ref: course_modules.courseId > Course.id [delete: Cascade]
+
+Ref: lessons.moduleId > course_modules.id [delete: Cascade]
+
+Ref: lessons.sectionId > sections.id [delete: Cascade]
+
+Ref: video_content.lessonId - lessons.id [delete: Cascade]
+
+Ref: quiz_tests.courseId > Course.id [delete: Cascade]
+
+Ref: quiz_tests.sectionId > sections.id [delete: Set Null]
+
+Ref: quiz_tests.lessonId > lessons.id [delete: Set Null]
+
+Ref: quiz_test_questions.quizId > quiz_tests.id [delete: Cascade]
+
+Ref: quiz_test_choices.questionId > quiz_test_questions.id [delete: Cascade]
+
+Ref: quiz_test_attempts.quizId > quiz_tests.id [delete: Cascade]
+
+Ref: quiz_test_attempts.userId > users.id [delete: Cascade]
+
+Ref: quiz_test_answers.attemptId > quiz_test_attempts.id [delete: Cascade]
+
+Ref: quiz_test_answers.questionId > quiz_test_questions.id [delete: Cascade]
+
+Ref: enrollments.userId > users.id [delete: Cascade]
+
+Ref: enrollments.courseId > Course.id
+
+Ref: lesson_progress.userId > users.id [delete: Cascade]
+
+Ref: lesson_progress.lessonId > lessons.id [delete: Cascade]
+
+Ref: certificates.userId > users.id [delete: Cascade]
+
+Ref: certificates.courseId > Course.id
+
+Ref: coaches.userId - users.id
+
+Ref: coaching_slots.coachId > coaches.id [delete: Cascade]
+
+Ref: coaching_sessions.coachId > coaches.id
+
+Ref: coaching_sessions.userId > users.id
+
+Ref: coaching_sessions.slotId > coaching_slots.id
+
+Ref: coaching_credits.userId > users.id [delete: Cascade]
+
+Ref: coach_reviews.coachId > coaches.id [delete: Cascade]
+
+Ref: coach_reviews.userId > users.id [delete: Cascade]
+
+Ref: coach_reviews.sessionId > coaching_sessions.id [delete: Cascade]
+
+Ref: payments.userId > users.id
+
+Ref: payments.courseId > Course.id
+
+Ref: chat_messages.senderId > users.id
+
+Ref: chat_messages.receiverId > users.id
+
+Ref: notifications.userId > users.id [delete: Cascade]
+
+Ref: admin_logs.adminId > users.id
+
+Ref: uploaded_files.userId > users.id [delete: Cascade]
+
+Ref: device_tokens.userId > users.id [delete: Cascade]
+
+Ref: analytics_events.userId > users.id [delete: Set Null]
+
+Ref: file_shares.fileId > uploaded_files.id [delete: Cascade]
+
+Ref: file_shares.userId > users.id
+
+Ref: Subscription.userId > users.id
+
+Ref: user_career_paths.userId > users.id
+
+Ref: assessment_sessions.userId > users.id
+
+Ref: consulting_sessions.studentId > users.id [delete: Cascade]
+
+Ref: consulting_sessions.consultantId > users.id [delete: Cascade]
+
+Ref: conversations.userId > users.id [delete: Cascade]
+
+Ref: ai_messages.conversationId > conversations.id [delete: Cascade]
+
+Ref: ratings.userId > users.id
+
+Ref: ratings.courseId > Course.id
+
+Ref: ratings.consultantId > users.id
+
+Ref: user_activities.userId > users.id [delete: Cascade]
+
+Ref: carts.userId - users.id [delete: Cascade]
+
+Ref: cart_items.cartId > carts.id [delete: Cascade]
+
+Ref: cart_items.courseId > Course.id [delete: Cascade]
+
+Ref: wallet_transactions.userId > users.id [delete: Cascade]
+
+Ref: LiveRecording.liveSessionId - LiveSession.id
+
+Ref: compass_stages.versionId > compass_versions.id
+
+Ref: compass_questions.versionId > compass_versions.id
+
+Ref: compass_questions.stageId > compass_stages.id
+
+Ref: compass_options.questionId > compass_questions.id
+
+Ref: compass_follow_up_rules.triggerQuestionId > compass_questions.id
+
+Ref: compass_follow_up_rules.triggerOptionId > compass_options.id
+
+Ref: compass_follow_up_rules.followUpQuestionId > compass_questions.id
+
+Ref: compass_sessions.userId > users.id
+
+Ref: compass_sessions.versionId > compass_versions.id
+
+Ref: compass_session_questions.sessionId > compass_sessions.id
+
+Ref: compass_session_questions.questionId > compass_questions.id
+
+Ref: compass_answers.sessionId > compass_sessions.id
+
+Ref: compass_answers.questionId > compass_questions.id
+
+Ref: compass_dimension_evidence.sessionId - compass_sessions.id
+
+Ref: compass_reports.sessionId - compass_sessions.id
