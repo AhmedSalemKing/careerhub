@@ -49,10 +49,47 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// One shared refresh at a time. The API reads the httpOnly refresh_token cookie (withCredentials),
+// so nothing token-like needs to be readable by JavaScript for this to work.
+let refreshInFlight: Promise<string | null> | null = null
+function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(`${getBaseURL()}/auth/refresh`, undefined, { withCredentials: true, timeout: 60000 })
+      .then((res) => {
+        const token: string | undefined = res.data?.data?.accessToken ?? res.data?.accessToken
+        if (!token) return null
+        // Update whichever copies this browser already holds, so the request interceptor picks up the new one
+        if (localStorage.getItem('careerhub_token')) localStorage.setItem('careerhub_token', token)
+        if (localStorage.getItem('deveway_token')) localStorage.setItem('deveway_token', token)
+        if (getCookie('careerhub_token')) document.cookie = `careerhub_token=${token}; path=/; max-age=${7 * 24 * 3600}; SameSite=Lax`
+        if (getCookie('access_token')) document.cookie = `access_token=${token}; path=/; max-age=${15 * 60}; SameSite=Lax`
+        return token
+      })
+      .catch(() => null)
+      .finally(() => { refreshInFlight = null })
+  }
+  return refreshInFlight
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config
+
+    // Expired access token: refresh once and replay the request before treating it as a logout
+    if (
+      error.response?.status === 401 &&
+      config &&
+      !config._authRefreshed &&
+      !String(config.url || '').includes('/auth/') &&
+      typeof window !== 'undefined' &&
+      !isLoggingOut()
+    ) {
+      config._authRefreshed = true
+      const fresh = await refreshAccessToken()
+      if (fresh) return api(config)
+    }
 
     // Retry on network errors or server sleeping (502/503)
     if (config) {

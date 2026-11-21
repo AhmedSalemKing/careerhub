@@ -716,8 +716,10 @@ export class AuthService {
       accountType: user.accountType,
     };
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
+    // jti makes every token unique and individually identifiable (needed for any future revocation list).
+    // Lifetimes come from JWT_EXPIRES_IN / JWT_REFRESH_EXPIRES_IN (see config/jwt.config.ts).
+    const accessToken = this.jwtService.sign({ ...payload, jti: crypto.randomUUID() });
+    const refreshToken = this.jwtService.sign({ ...payload, jti: crypto.randomUUID() }, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
     });

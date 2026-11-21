@@ -56,8 +56,8 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('deveway_refresh')
           || document.cookie.match(/deveway_refresh=([^;]+)/)?.[1]
-        if (!refreshToken) throw error
-        const refreshRes = await api.post('/auth/refresh', { refreshToken })
+        // The API normally reads its httpOnly refresh_token cookie; the body copy is only a legacy fallback
+        const refreshRes = await api.post('/auth/refresh', refreshToken ? { refreshToken } : undefined)
         const newToken = refreshRes.data?.data?.accessToken ?? refreshRes.data?.accessToken
         const newRefresh = refreshRes.data?.data?.refreshToken ?? refreshRes.data?.refreshToken
         if (newToken) localStorage.setItem('deveway_token', newToken)
