@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncMentorPrice } from '../../common/mentor-price';
 import { ZoomService } from './zoom.service';
 
 @Injectable()
@@ -681,6 +682,8 @@ export class CoachingService {
         availability: {} as any,
       } as any,
     });
+
+    await syncMentorPrice(this.prisma, coachData.userId, coachData.hourlyRate);
 
     this.logger.log(`Coach created: ${coachData.userId}`);
 

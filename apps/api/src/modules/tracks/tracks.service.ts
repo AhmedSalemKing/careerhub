@@ -234,7 +234,7 @@ export class TracksService implements OnModuleInit {
           id: u.id,
           name: `${u.profile?.firstName ?? ''} ${u.profile?.lastName ?? ''}`.trim(),
           avatar: u.profile?.avatar ?? null,
-          sessionPrice: u.profile?.sessionPrice ?? u.hourlyRate ?? null,
+          sessionPrice: u.hourlyRate ?? u.profile?.sessionPrice ?? null,
         }))
         .sort((a, b) => (a.sessionPrice ?? Infinity) - (b.sessionPrice ?? Infinity));
     } catch (e: any) {

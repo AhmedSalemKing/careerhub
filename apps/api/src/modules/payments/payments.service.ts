@@ -242,7 +242,7 @@ export class PaymentsService {
       where: { id: sessionId },
       include: {
         consultant: {
-          select: { profile: { select: { firstName: true, lastName: true, sessionPrice: true } } }
+          select: { hourlyRate: true, profile: { select: { firstName: true, lastName: true, sessionPrice: true } } }
         }
       }
     })
@@ -256,7 +256,9 @@ export class PaymentsService {
       )
     }
 
-    const price = parseFloat(consultingSession.consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = parseFloat(
+      (consultingSession.consultant?.hourlyRate ?? consultingSession.consultant?.profile?.sessionPrice)?.toString() || '0',
+    )
     if (price <= 0) throw new BadRequestException('Session is free')
 
     const user = await this.prisma.user.findUnique({

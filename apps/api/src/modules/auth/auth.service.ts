@@ -14,6 +14,7 @@ import * as crypto from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
 import { verifyAutoLoginToken } from './auto-login-token';
+import { syncMentorPrice } from '../../common/mentor-price';
 
 @Injectable()
 export class AuthService {
@@ -109,6 +110,7 @@ export class AuthService {
           speciality: speciality || null,
           bio: bio || null,
           yearsExperience: experience ?? null,
+          sessionPrice: hourlyRate ?? null,
         },
       });
 
@@ -591,7 +593,6 @@ export class AuthService {
     if (data.country !== undefined) profileData.country = data.country
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
-    if (data.sessionPrice !== undefined) profileData.sessionPrice = data.sessionPrice
     if (data.speciality !== undefined) profileData.speciality = data.speciality
     if (data.experience !== undefined) profileData.yearsExperience = data.experience
     if (data.gender !== undefined) {
@@ -610,14 +611,19 @@ export class AuthService {
     const userFields: Record<string, unknown> = {}
     if (data.speciality !== undefined) userFields.speciality = data.speciality
     if (data.experience !== undefined) userFields.experience = data.experience
-    if (data.hourlyRate !== undefined) userFields.hourlyRate = data.hourlyRate
     if (data.meetingMethod !== undefined) userFields.meetingMethod = data.meetingMethod
     if (data.bio !== undefined) userFields.bio = data.bio
-    
+
     if (Object.keys(userFields).length > 0) {
       await this.prisma.user.update({ where: { id: userId }, data: userFields })
     }
-    
+
+    // Price lives in users.hourlyRate, user_profiles.sessionPrice and coaches.hourlyRate: write all three.
+    const price = data.hourlyRate ?? data.sessionPrice
+    if (price !== undefined && price !== null) {
+      await syncMentorPrice(this.prisma, userId, Number(price))
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true }
@@ -840,11 +846,13 @@ export class AuthService {
     if (data.speciality !== undefined) userFields.speciality = data.speciality;
     if (data.experience !== undefined) userFields.experience = data.experience;
     if (data.linkedinUrl !== undefined) userFields.linkedinUrl = data.linkedinUrl;
-    if (data.hourlyRate !== undefined) userFields.hourlyRate = data.hourlyRate;
     if (data.meetingMethod !== undefined) userFields.meetingMethod = data.meetingMethod;
 
     if (Object.keys(userFields).length > 0) {
       await this.prisma.user.update({ where: { id: userId }, data: userFields });
+    }
+    if (data.hourlyRate !== undefined && data.hourlyRate !== null) {
+      await syncMentorPrice(this.prisma, userId, Number(data.hourlyRate));
     }
     const profileFields: Record<string, unknown> = {};
     if (data.bio !== undefined) profileFields.bio = data.bio;

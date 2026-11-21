@@ -136,12 +136,14 @@ export class ConsultingService {
     return {
       id: u.id,
       isVerified: u.isVerified,
-      hourlyRate: u.hourlyRate,
+      hourlyRate: u.hourlyRate ?? p?.sessionPrice ?? null,
       createdAt: u.createdAt,
       completedSessionsCount,
       profile: p
         ? {
             ...p,
+            // users.hourlyRate is the canonical price; keep profile.sessionPrice consistent for the list/sort/UI.
+            sessionPrice: u.hourlyRate ?? p.sessionPrice ?? null,
             bio: p.bio || u.bio || null,
             speciality: p.speciality || u.speciality || null,
             yearsExperience: p.yearsExperience ?? u.experience ?? null,
@@ -315,7 +317,7 @@ export class ConsultingService {
 
     const duration = data.duration || (consultant.profile?.sessionDuration as number) || DEFAULT_DURATION
     const baseDuration = (consultant.profile?.sessionDuration as number) || DEFAULT_DURATION
-    const basePrice = Number(consultant.profile?.sessionPrice || consultant.hourlyRate || 0)
+    const basePrice = Number(consultant.hourlyRate || consultant.profile?.sessionPrice || 0)
     // The stored profile price is the price of the default session length.
     // Scale it to the duration the student picked so the summary, the stored
     // price and the payment amount always match.

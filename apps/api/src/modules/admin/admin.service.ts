@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncMentorPrice } from '../../common/mentor-price';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
@@ -800,9 +801,9 @@ export class AdminService {
     if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) {
       throw new BadRequestException('hourlyRate must be a positive number');
     }
-    const user = await this.prisma.user.update({
+    await syncMentorPrice(this.prisma, userId, hourlyRate);
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      data: { hourlyRate },
       select: { id: true, hourlyRate: true },
     });
     await this.notificationsService.createNotification({
@@ -1360,6 +1361,9 @@ export class AdminService {
       data: { status: 'ACTIVE', approvedAt: new Date(), ...rateData },
       include: { profile: true },
     });
+    if (rateData.hourlyRate != null) {
+      await syncMentorPrice(this.prisma, userId, rateData.hourlyRate);
+    }
     if (rateData.hourlyRate != null && before?.hourlyRate !== rateData.hourlyRate) {
       await this.notificationsService.createNotification({
         userId,
