@@ -1,4 +1,5 @@
-﻿import {
+﻿import { assertFileMatchesDeclaredType } from '../../common/file-sniff';
+import {
   Injectable,
   Logger,
   BadRequestException,
@@ -53,6 +54,7 @@ export class UploadService {
     if (!fileType) {
       throw new BadRequestException('Invalid file type');
     }
+    assertFileMatchesDeclaredType(file);
 
     const fileName = this.generateFileName(file.originalname);
     const key = this.generateFileKey(userId, fileName, options.folder);
@@ -141,6 +143,7 @@ export class UploadService {
     if (!this.allowedMimeTypes.image.includes(image.mimetype)) {
       throw new BadRequestException('Invalid image format');
     }
+    assertFileMatchesDeclaredType(image);
 
     let processedImage = image.buffer;
 
@@ -260,6 +263,7 @@ export class UploadService {
       throw new BadRequestException('No video provided');
     }
 
+    assertFileMatchesDeclaredType(video);
     if (!this.allowedMimeTypes.video.includes(video.mimetype)) {
       throw new BadRequestException('Invalid video format');
     }
@@ -335,6 +339,7 @@ export class UploadService {
       throw new BadRequestException('No document provided');
     }
 
+    assertFileMatchesDeclaredType(document);
     if (!this.allowedMimeTypes.document.includes(document.mimetype)) {
       throw new BadRequestException('Invalid document format');
     }
@@ -823,7 +828,11 @@ export class UploadService {
     const { writeFile, mkdir } = await import('fs/promises');
     const { join } = await import('path');
 
-    const safeName = `cv_${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+    assertFileMatchesDeclaredType(file, ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+    // UUID name with an extension from the verified type: no personal data and no client-chosen extension
+    const { randomUUID } = await import('crypto');
+    const ext = file.mimetype === 'application/pdf' ? '.pdf' : file.mimetype === 'application/msword' ? '.doc' : '.docx';
+    const safeName = `cv_${randomUUID()}${ext}`;
     const uploadDir = join(process.cwd(), 'uploads', 'cvs');
     await mkdir(uploadDir, { recursive: true });
     await writeFile(join(uploadDir, safeName), file.buffer);

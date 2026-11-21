@@ -25,6 +25,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { User } from '@prisma/client';
+import { assertFileMatchesDeclaredType } from '../../common/file-sniff';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Users')
@@ -123,6 +124,7 @@ export class UsersController {
     )
     file: Express.Multer.File,
   ) {
+    assertFileMatchesDeclaredType(file, ['image/jpeg', 'image/png', 'image/webp']);
     const avatarUrl = await this.usersService.uploadAvatar(user.id, file);
     return {
       success: true,

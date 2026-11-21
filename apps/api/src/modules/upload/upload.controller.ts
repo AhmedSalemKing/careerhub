@@ -32,6 +32,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { User } from '@prisma/client';
+import { assertFileMatchesDeclaredType } from '../../common/file-sniff';
 
 
 @ApiTags('Upload')
@@ -218,6 +219,7 @@ export class UploadController {
   @ApiResponse({ status: 201, description: 'Video uploaded successfully' })
   async uploadVideo(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No video file provided');
+    assertFileMatchesDeclaredType(file, ['video/mp4', 'video/webm', 'video/quicktime']);
 
     // Videos go to Bunny.net Stream, which transcodes them and returns an HLS
     // (.m3u8) playback URL. If Bunny is not configured we fall back to the

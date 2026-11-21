@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import type { UploadApiOptions } from 'cloudinary';
 import { Readable } from 'stream';
+import { randomUUID } from 'crypto';
+import { assertFileMatchesDeclaredType, SAFE_EXTENSION_BY_MIME } from '../../common/file-sniff';
 
 const EXTENSION_BY_MIME: Record<string, string> = {
   'application/pdf': '.pdf',
@@ -44,6 +46,10 @@ export class CloudinaryService {
       throw new Error('File buffer is empty or missing');
     }
 
+    // Single gate for every Cloudinary upload: the bytes must match the declared type, and script-capable
+    // formats (SVG, HTML, PHP ...) are refused. Throws a 400 before anything leaves the server.
+    assertFileMatchesDeclaredType(file);
+
     return new Promise((resolve, reject) => {
       try {
         const options: UploadApiOptions = {
@@ -62,8 +68,11 @@ export class CloudinaryService {
           options.use_filename = false;
           options.unique_filename = false;
         } else {
-          options.use_filename = true;
+          // Random public id: the client's file name (often a person's name) never reaches the CDN URL
+          options.use_filename = false;
           options.unique_filename = true;
+          if (resourceType === 'image') options.allowed_formats = ['jpg', 'png', 'webp', 'gif'];
+          if (resourceType === 'video') options.allowed_formats = ['mp4', 'webm', 'mov'];
         }
 
         const upload = cloudinary.uploader.upload_stream(
@@ -102,27 +111,12 @@ export class CloudinaryService {
   }
 
   /**
-   * Builds an extension-preserving, unique public id for a `raw` upload.
-   * Cloudinary requires raw public ids to include the original extension.
-   * Example: "answer.pdf" -> "answer-1712345678901-a1b2c3.pdf".
+   * Public id for a `raw` upload: a random UUID plus an extension taken from the verified MIME type.
+   * Cloudinary requires raw public ids to carry an extension so the CDN serves a sensible file name.
+   * Nothing from the client's file name is used (no personal data, no attacker-chosen extension).
    */
   private buildRawPublicId(file: Express.Multer.File): string {
-    const originalName = file.originalname || 'file';
-    const extMatch = originalName.match(/\.[A-Za-z0-9]{1,10}$/);
-    const extension = (
-      extMatch?.[0] ??
-      EXTENSION_BY_MIME[file.mimetype] ??
-      ''
-    ).toLowerCase();
-
-    const baseName = (extMatch ? originalName.slice(0, -extMatch[0].length) : originalName)
-      .normalize('NFKD')
-      .replace(/[^\w.-]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^[-.]+|[-.]+$/g, '')
-      .slice(0, 80);
-
-    const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    return `${baseName || 'file'}-${unique}${extension}`;
+    const extension = SAFE_EXTENSION_BY_MIME[(file.mimetype || '').toLowerCase()] ?? '';
+    return `${randomUUID()}${extension}`;
   }
 }
